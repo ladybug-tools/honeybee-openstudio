@@ -1,5 +1,6 @@
 # coding=utf-8
 """Methods to write to OpenStudio."""
+import time
 import openstudio
 
 from ladybug_geometry.geometry3d import Face3D
@@ -279,7 +280,7 @@ def room_to_openstudio(room, model, adj_map=None):
     return os_space
 
 
-def model_to_openstudio(model):
+def model_to_openstudio(model, seed_model=None):
     """Create an OpenStudio Model from a Honeybee Model.
 
     The resulting Model will include all geometry (Rooms, Faces, Apertures,
@@ -310,17 +311,13 @@ def model_to_openstudio(model):
 
         # save the OpenStudio model to an OSM
         osm = os.path.join(folders.default_simulation_folder, 'in.osm')
-        os_path = openstudio.OpenStudioUtilitiesCore.toPath(osm)
-        osm_path_obj = openstudio.Path(os_path)
-        model.save(osm_path_obj, overwrite=True)
+        model.save(osm, overwrite=True)
 
         # save the OpenStudio model to an IDF file
-        idf_translator = openstudio.EnergyPlusForwardTranslator()
+        idf_translator = openstudio.energyplus.ForwardTranslator()
         workspace = idf_translator.translateModel(os_model)
         idf = os.path.join(folders.default_simulation_folder, 'in.idf')
-        ep_path = openstudio.OpenStudioUtilitiesCore.toPath(idf)
-        idf_path_obj = openstudio.Path(ep_path)
-        workspace.save(idf_path_obj, overwrite=True)
+        workspace.save(idf, overwrite=True)
     """
     # duplicate model to avoid mutating it as we edit it for energy simulation
     original_model = model
@@ -337,7 +334,7 @@ def model_to_openstudio(model):
         raise ValueError(error)
 
     # create the OpenStudio model object
-    os_model = openstudio.model.Model()
+    os_model = openstudio.model.Model() if seed_model is None else seed_model
     building = os_model.getBuilding()
     if model._display_name is not None:
         building.setName(clean_ep_string(model.display_name))
@@ -350,7 +347,10 @@ def model_to_openstudio(model):
     story_map = {}
     adj_map = {'faces': {}, 'sub_faces': {}}
     for room in model.rooms:
+        r_start = time.time()
         os_space = room_to_openstudio(room, os_model, adj_map)
+        r_end = time.time()
+        print('Translated Room: {} - time {}'.format(room.display_name, r_end - r_start))
         try:
             story_map[room.story].append(os_space)
         except KeyError:  # first room found on the story
@@ -367,6 +367,8 @@ def model_to_openstudio(model):
             os_space.setBuildingStory(story)
 
     # assign adjacencies to all of the rooms
+    a_start = time.time()
+    print('Setting Adjacency for Rooms')
     already_adj = set()
     for room in model.rooms:
         for face in room.faces:
@@ -385,8 +387,11 @@ def model_to_openstudio(model):
                         base_os_sub_face = adj_map['sub_faces'][sub_face.identifier]
                         adj_os_sub_face = adj_map['sub_faces'][adj_id]
                         base_os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
+    a_end = time.time()
+    print('Adjacencies Solved - time {}'.format(a_end - a_start))
 
     # add the orphaned objects
+    print('Translating Shades')
     for face in model.orphaned_faces:
         face_to_openstudio(face, os_model)
     for aperture in model.orphaned_apertures:
@@ -397,6 +402,6 @@ def model_to_openstudio(model):
         shade_to_openstudio(shade, os_model)
     for shade_mesh in model.shade_meshes:
         shade_mesh_to_openstudio(shade_mesh, os_model)
-    
+
     # return the Model object
     return os_model
