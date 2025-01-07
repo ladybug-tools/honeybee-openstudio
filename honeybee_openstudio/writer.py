@@ -1,6 +1,5 @@
 # coding=utf-8
 """Methods to write to OpenStudio."""
-import time
 import openstudio
 
 from ladybug_geometry.geometry3d import Face3D
@@ -347,10 +346,7 @@ def model_to_openstudio(model, seed_model=None):
     story_map = {}
     adj_map = {'faces': {}, 'sub_faces': {}}
     for room in model.rooms:
-        r_start = time.time()
         os_space = room_to_openstudio(room, os_model, adj_map)
-        r_end = time.time()
-        print('Translated Room: {} - time {}'.format(room.display_name, r_end - r_start))
         try:
             story_map[room.story].append(os_space)
         except KeyError:  # first room found on the story
@@ -367,8 +363,6 @@ def model_to_openstudio(model, seed_model=None):
             os_space.setBuildingStory(story)
 
     # assign adjacencies to all of the rooms
-    a_start = time.time()
-    print('Setting Adjacency for Rooms')
     already_adj = set()
     for room in model.rooms:
         for face in room.faces:
@@ -387,11 +381,8 @@ def model_to_openstudio(model, seed_model=None):
                         base_os_sub_face = adj_map['sub_faces'][sub_face.identifier]
                         adj_os_sub_face = adj_map['sub_faces'][adj_id]
                         base_os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
-    a_end = time.time()
-    print('Adjacencies Solved - time {}'.format(a_end - a_start))
 
     # add the orphaned objects
-    print('Translating Shades')
     for face in model.orphaned_faces:
         face_to_openstudio(face, os_model)
     for aperture in model.orphaned_apertures:
