@@ -11,6 +11,10 @@ from honeybee.door import Door
 from honeybee.shade import Shade
 from honeybee.shademesh import ShadeMesh
 
+from honeybee_openstudio.writer import shade_mesh_to_openstudio, shade_to_openstudio, \
+    door_to_openstudio, aperture_to_openstudio, face_to_openstudio, room_to_openstudio, \
+    model_to_openstudio
+
 
 def test_shade_writer():
     """Test the basic functionality of the Shade writer."""
@@ -18,7 +22,7 @@ def test_shade_writer():
     rect_verts = [[0, 0, 3], [1, 0, 3], [1, 1, 3], [0, 1, 3]]
     shade = Shade.from_vertices('overhang', rect_verts)
 
-    os_shade = shade.to.openstudio(shade, os_model)
+    os_shade = shade_to_openstudio(shade, os_model)
     assert str(os_shade.name()) == 'overhang'
     os_shade_str = str(os_shade)
     assert os_shade_str.startswith('OS:ShadingSurface,')
@@ -38,7 +42,7 @@ def test_shade_mesh_writer():
     mesh = Mesh3D(pts, [(0, 1, 2, 3), (2, 3, 4)])
     shade = ShadeMesh('Awning_1', mesh)
 
-    os_shades = shade.to.openstudio(shade, os_model)
+    os_shades = shade_mesh_to_openstudio(shade, os_model)
     assert len(os_shades) == 2
     os_shade_str1 = str(os_shades[0])
     assert os_shade_str1.startswith('OS:ShadingSurface,')
@@ -69,7 +73,7 @@ def test_aperture_writer():
     wa = Aperture.from_vertices('wall_window', vertices_wall)
     wf.add_aperture(wa)
     Room('Test_Room_1', [wf])
-    os_ap = wa.to.openstudio(wa, os_model)
+    os_ap = aperture_to_openstudio(wa, os_model)
     assert str(os_ap.name()) == 'wall_window'
     assert os_ap.subSurfaceType() == 'FixedWindow'
     os_ap_str = str(os_ap)
@@ -85,7 +89,7 @@ def test_aperture_writer():
     ra = Aperture.from_vertices('roof_window', vertices_roof)
     rf.add_aperture(ra)
     Room('Test_Room_1', [rf])
-    os_ap = ra.to.openstudio(ra, os_model)
+    os_ap = aperture_to_openstudio(ra, os_model)
     assert str(os_ap.name()) == 'roof_window'
     assert os_ap.subSurfaceType() == 'Skylight'
     os_ap_str = str(os_ap)
@@ -110,7 +114,7 @@ def test_door_writer():
     wd = Door.from_vertices('wall_door', vertices_wall)
     wf.add_door(wd)
     Room('Test_Room_1', [wf])
-    os_dr = wd.to.openstudio(wd, os_model)
+    os_dr = door_to_openstudio(wd, os_model)
     assert str(os_dr.name()) == 'wall_door'
     assert os_dr.subSurfaceType() == 'Door'
     os_dr_str = str(os_dr)
@@ -126,7 +130,7 @@ def test_door_writer():
     rd = Door.from_vertices('roof_door', vertices_roof)
     rf.add_door(rd)
     Room('Test_Room_1', [rf])
-    os_dr = rd.to.openstudio(rd, os_model)
+    os_dr = door_to_openstudio(rd, os_model)
     assert str(os_dr.name()) == 'roof_door'
     assert os_dr.subSurfaceType() == 'OverheadDoor'
     os_dr_str = str(os_dr)
@@ -148,7 +152,7 @@ def test_face_writer():
 
     face = Face.from_vertices('wall_face', wall_pts)
     Room('Test_Room_1', [face])
-    os_face = face.to.openstudio(face, os_model)
+    os_face = face_to_openstudio(face, os_model)
     assert str(os_face.name()) == 'wall_face'
     assert os_face.surfaceType() == 'Wall'
     assert os_face.outsideBoundaryCondition() == 'Outdoors'
@@ -165,7 +169,7 @@ def test_face_writer():
 
     face = Face.from_vertices('roof_face', roof_pts)
     Room('Test_Room_1', [face])
-    os_face = face.to.openstudio(face, os_model)
+    os_face = face_to_openstudio(face, os_model)
     assert str(os_face.name()) == 'roof_face'
     assert os_face.surfaceType() == 'RoofCeiling'
     assert os_face.outsideBoundaryCondition() == 'Outdoors'
@@ -182,7 +186,7 @@ def test_face_writer():
 
     face = Face.from_vertices('floor_face', floor_pts)
     Room('Test_Room_1', [face])
-    os_face = face.to.openstudio(face, os_model)
+    os_face = face_to_openstudio(face, os_model)
     assert str(os_face.name()) == 'floor_face'
     assert os_face.surfaceType() == 'Floor'
     assert os_face.outsideBoundaryCondition() == 'Ground'
@@ -208,7 +212,7 @@ def test_room_writer():
     south_face.apertures[0].overhang(0.5, indoor=True)
     south_face.apertures[0].move_shades(Vector3D(0, 0, -0.5))
 
-    os_room = room.to.openstudio(room, os_model)
+    os_room = room_to_openstudio(room, os_model)
     assert str(os_room.name()) == 'Tiny_House_Space'
 
     spaces = os_model.getSpaces()
@@ -236,7 +240,7 @@ def test_model_writer():
 
     model = Model('Tiny_House', [room], shade_meshes=[awning_1])
 
-    os_model = model.to.openstudio(model)
+    os_model = model_to_openstudio(model)
     spaces = os_model.getSpaces()
     assert len(spaces) == 1
     faces = os_model.getSurfaces()
@@ -252,6 +256,6 @@ def test_model_writer_from_standard_hbjson():
     standard_test = './tests/assets/2023_rac_advanced_sample_project.hbjson'
     model = Model.from_file(standard_test)
 
-    os_model = model.to.openstudio(model)
+    os_model = model_to_openstudio(model)
     spaces = os_model.getSpaces()
     assert len(spaces) == 102
