@@ -7,6 +7,7 @@ from honeybee_energy.config import folders as hbe_folders
 if (sys.version_info >= (3, 0)):  # we are in cPython and can import normally
     import openstudio
     # load all of the classes used by this package
+    # geometry classes
     OSModel = openstudio.model.Model
     OSPoint3dVector = openstudio.Point3dVector
     OSPoint3d = openstudio.Point3d
@@ -18,6 +19,17 @@ if (sys.version_info >= (3, 0)):  # we are in cPython and can import normally
     OSThermalZone = openstudio.model.ThermalZone
     OSBuildingStory = openstudio.model.BuildingStory
     OSSurfacePropertyOtherSideCoefficients = openstudio.model.SurfacePropertyOtherSideCoefficients
+    # material classes
+    OSMasslessOpaqueMaterial = openstudio.model.MasslessOpaqueMaterial
+    OSStandardOpaqueMaterial = openstudio.model.StandardOpaqueMaterial
+    OSRoofVegetation = openstudio.model.RoofVegetation
+    OSSimpleGlazing = openstudio.model.SimpleGlazing
+    OSStandardGlazing = openstudio.model.StandardGlazing
+    OSGas = openstudio.model.Gas
+    OSGasMixture = openstudio.model.GasMixture
+    OSBlind = openstudio.model.Blind
+    OSShade = openstudio.model.Shade
+    OSWindowPropertyFrameAndDivider = openstudio.model.WindowPropertyFrameAndDivider
 
 else:  # we are in IronPython and we must import the .NET bindings
     try:  # first see if OpenStudio has already been loaded
@@ -42,6 +54,7 @@ else:  # we are in IronPython and we must import the .NET bindings
         import OpenStudio as openstudio
 
     # load all of the classes used by this package
+    # geometry classes
     OSModel = openstudio.Model
     OSPoint3dVector = openstudio.Point3dVector
     OSPoint3d = openstudio.Point3d
@@ -53,3 +66,14 @@ else:  # we are in IronPython and we must import the .NET bindings
     OSThermalZone = openstudio.ThermalZone
     OSBuildingStory = openstudio.BuildingStory
     OSSurfacePropertyOtherSideCoefficients = openstudio.SurfacePropertyOtherSideCoefficients
+    # material classes
+    OSMasslessOpaqueMaterial = openstudio.MasslessOpaqueMaterial
+    OSStandardOpaqueMaterial = openstudio.StandardOpaqueMaterial
+    OSRoofVegetation = openstudio.RoofVegetation
+    OSSimpleGlazing = openstudio.SimpleGlazing
+    OSStandardGlazing = openstudio.StandardGlazing
+    OSGas = openstudio.Gas
+    OSGasMixture = openstudio.GasMixture
+    OSBlind = openstudio.Blind
+    OSShade = openstudio.Shade
+    OSWindowPropertyFrameAndDivider = openstudio.WindowPropertyFrameAndDivider

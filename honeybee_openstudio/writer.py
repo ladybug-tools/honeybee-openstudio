@@ -52,6 +52,9 @@ def shade_mesh_to_openstudio(shade_mesh, model):
         os_shade.setName('{}_{}'.format(shade_mesh.identifier, i))
         os_shade.setShadingSurfaceGroup(os_shd_group)
         os_shades.append(os_shade)
+    if shade_mesh._display_name is not None:
+        for os_shade in os_shades:
+            os_shade.setDisplayName(shade_mesh.display_name)
     return os_shades
 
 
@@ -68,6 +71,8 @@ def shade_to_openstudio(shade, model):
     os_vertices = face_3d_to_openstudio(shade.geometry)
     os_shade = OSShadingSurface(os_vertices, model)
     os_shade.setName(shade.identifier)
+    if shade._display_name is not None:
+        os_shade.setDisplayName(shade.display_name)
     return os_shade
 
 
@@ -101,6 +106,8 @@ def door_to_openstudio(door, model):
 
     # set the object name and return it
     os_door.setName(door.identifier)
+    if door._display_name is not None:
+        os_door.setDisplayName(door.display_name)
     return os_door
 
 
@@ -134,6 +141,8 @@ def aperture_to_openstudio(aperture, model):
 
     # set the object name and return it
     os_aperture.setName(aperture.identifier)
+    if aperture._display_name is not None:
+        os_aperture.setDisplayName(aperture.display_name)
     return os_aperture
 
 
@@ -203,13 +212,15 @@ def face_to_openstudio(face, model, adj_map=None):
         # create the sub-faces
         sub_faces = {}
         for ap in face.apertures:
-            os_ap = aperture_to_openstudio(ap, model)
-            os_ap.setSurface(os_face)
-            sub_faces[ap.identifier] = os_ap
+            if len(ap.geometry) <= 4:  # ignore apertures to be triangulated
+                os_ap = aperture_to_openstudio(ap, model)
+                os_ap.setSurface(os_face)
+                sub_faces[ap.identifier] = os_ap
         for dr in face.doors:
-            os_dr = door_to_openstudio(dr, model)
-            os_dr.setSurface(os_face)
-            sub_faces[dr.identifier] = os_dr
+            if len(dr.geometry) <= 4:  # ignore doors to be triangulated
+                os_dr = door_to_openstudio(dr, model)
+                os_dr.setSurface(os_face)
+                sub_faces[dr.identifier] = os_dr
 
         # update the adjacency map if it exists
         if adj_map is not None:
@@ -227,6 +238,8 @@ def face_to_openstudio(face, model, adj_map=None):
 
     # set the object name and return it
     os_face.setName(face.identifier)
+    if face._display_name is not None:
+        os_face.setDisplayName(face.display_name)
     return os_face
 
 
@@ -249,6 +262,9 @@ def room_to_openstudio(room, model, adj_map=None):
     os_zone = OSThermalZone(model)
     os_zone.setName(room.identifier)
     os_space.setThermalZone(os_zone)
+    if room._display_name is not None:
+        os_space.setDisplayName(room.display_name)
+        os_zone.setDisplayName(room.display_name)
 
     # assign the multiplier, exclude_floor_area, and geometry properties
     if room.multiplier != 1:
@@ -284,7 +300,12 @@ def room_to_openstudio(room, model, adj_map=None):
     return os_space
 
 
-def model_to_openstudio(model, seed_model=None):
+def model_to_openstudio(
+    model, seed_model=None, schedule_directory=None,
+    use_geometry_names=False, use_resource_names=False,
+    triangulate_sub_faces=True, triangulate_non_planar_orphaned=False,
+    enforce_rooms=False
+):
     """Create an OpenStudio Model from a Honeybee Model.
 
     The resulting Model will include all geometry (Rooms, Faces, Apertures,
@@ -296,6 +317,40 @@ def model_to_openstudio(model, seed_model=None):
         seed_model: An optional OpenStudio Model object to which the Honeybee
             Model will be added. If None, a new OpenStudio Model will be
             initialized within this method. (Default: None).
+        schedule_directory: An optional file directory to which all file-based
+            schedules should be written to. If None, all ScheduleFixedIntervals
+            will be translated to Schedule:Compact and written fully into the
+            IDF string instead of to Schedule:File. (Default: None).
+        use_geometry_names: Boolean to note whether a cleaned version of all
+            geometry display names should be used instead of identifiers when
+            translating the Model to OSM and IDF. Using this flag will affect
+            all Rooms, Faces, Apertures, Doors, and Shades. It will generally
+            result in more read-able names in the OSM and IDF but this means
+            that it will not be easy to map the EnergyPlus results back to the
+            input Honeybee Model. Cases of duplicate IDs resulting from
+            non-unique names will be resolved by adding integers to the ends
+            of the new IDs that are derived from the name. (Default: False).
+        use_resource_names: Boolean to note whether a cleaned version of all
+            resource display names should be used instead of identifiers when
+            translating the Model to OSM and IDF. Using this flag will affect
+            all Materials, Constructions, ConstructionSets, Schedules, Loads,
+            and ProgramTypes. It will generally result in more read-able names
+            for the resources in the OSM and IDF. Cases of duplicate IDs
+            resulting from non-unique names will be resolved by adding integers
+            to the ends of the new IDs that are derived from the name. (Default: False).
+        triangulate_sub_faces: Boolean to note whether sub-faces (including
+            Apertures and Doors) should be triangulated if they have more than
+            4 sides (True) or whether they should be left as they are (False).
+            This triangulation is necessary when exporting directly to EnergyPlus
+            since it cannot accept sub-faces with more than 4 vertices. (Default: True).
+        triangulate_non_planar_orphaned: Boolean to note whether any non-planar
+            orphaned geometry in the model should be triangulated upon export.
+            This can be helpful because OpenStudio simply raises an error when
+            it encounters non-planar geometry, which would hinder the ability
+            to save files that are to be corrected later. (Default: False).
+        enforce_rooms: Boolean to note whether this method should enforce the
+            presence of Rooms in the Model, which is as necessary prerequisite
+            for simulation in EnergyPlus. (Default: False).
 
     Usage:
 
@@ -327,9 +382,15 @@ def model_to_openstudio(model, seed_model=None):
         idf = os.path.join(folders.default_simulation_folder, 'in.idf')
         workspace.save(idf, overwrite=True)
     """
+    # check for rooms if this is enforced
+    if enforce_rooms:
+        assert len(model.rooms) != 0, \
+            'Model contains no Rooms and therefore cannot be simulated in EnergyPlus.'
+
     # duplicate model to avoid mutating it as we edit it for energy simulation
     original_model = model
     model = model.duplicate()
+
     # scale the model if the units are not meters
     if model.units != 'Meters':
         model.convert_to_units('Meters')
@@ -340,8 +401,25 @@ def model_to_openstudio(model, seed_model=None):
         error = 'Failed to remove degenerate Rooms.\nYour Model units system is: {}. ' \
             'Is this correct?'.format(original_model.units)
         raise ValueError(error)
+    if triangulate_non_planar_orphaned:
+        model.triangulate_non_planar_quads(0.01)
 
-    # create the OpenStudio model object
+    # remove the HVAC from any Rooms lacking setpoints
+    rem_msgs = model.properties.energy.remove_hvac_from_no_setpoints()
+    if len(rem_msgs) != 0:
+        print('\n'.join(rem_msgs))
+
+    # reset the IDs to be derived from the display_names if requested
+    if use_geometry_names:
+        id_map = model.reset_ids()
+        model.properties.energy.sync_detailed_hvac_ids(id_map['rooms'])
+    if use_resource_names:
+        model.properties.energy.reset_resource_ids()
+
+    # resolve the properties across zones
+    single_zones, zone_dict = model.properties.energy.resolve_zones()
+
+    # create the OpenStudio model object and setup the Building
     os_model = OSModel() if seed_model is None else seed_model
     building = os_model.getBuilding()
     if model._display_name is not None:
@@ -360,6 +438,26 @@ def model_to_openstudio(model, seed_model=None):
             story_map[room.story].append(os_space)
         except KeyError:  # first room found on the story
             story_map[room.story] = [os_space]
+
+    # triangulate any apertures or doors with more than 4 vertices
+    tri_apertures, _ = model.triangulated_apertures()
+    for tri_aps in tri_apertures:
+        for i, ap in enumerate(tri_aps):
+            if i != 0:
+                ap.properties.energy.vent_opening = None
+            os_ap = aperture_to_openstudio(ap, model)
+            os_face = adj_map['faces'][ap.parent.identifier]
+            os_ap.setSurface(os_face)
+            adj_map['sub_faces'][ap.identifier] = os_ap
+    tri_doors, _ = model.triangulated_doors()
+    for tri_drs in tri_doors:
+        for i, dr in enumerate(tri_drs):
+            if i != 0:
+                dr.properties.energy.vent_opening = None
+            os_dr = door_to_openstudio(dr, model)
+            os_face = adj_map['faces'][dr.parent.identifier]
+            os_dr.setSurface(os_face)
+            adj_map['sub_faces'][dr.identifier] = os_dr
 
     # assign stories to the rooms
     for story_id, os_spaces in story_map.items():
