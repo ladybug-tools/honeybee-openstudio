@@ -1,4 +1,7 @@
+# coding=utf-8
 """OpenStudio construction translators."""
+from __future__ import division
+
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.construction.window import WindowConstruction
 from honeybee_energy.construction.windowshade import WindowConstructionShade
@@ -12,15 +15,15 @@ from honeybee_openstudio.openstudio import OSConstruction, OSMaterialVector, \
     OSStandardOpaqueMaterial, OSStandardGlazing
 
 
-def standard_construction_to_openstudio(construction, model):
+def standard_construction_to_openstudio(construction, os_model):
     """Convert Honeybee OpaqueConstruction or WindowConstruction to OpenStudio."""
-    os_construction = OSConstruction(model)
+    os_construction = OSConstruction(os_model)
     os_construction.setName(construction.identifier)
     if construction._display_name is not None:
         os_construction.setDisplayName(construction.display_name)
     os_materials = OSMaterialVector()
     for mat_id in construction.layers:
-        material = model.getMaterialByName(mat_id)
+        material = os_model.getMaterialByName(mat_id)
         if material.is_initialized():
             os_material = material.get()
             try:
@@ -31,18 +34,18 @@ def standard_construction_to_openstudio(construction, model):
     return os_construction
 
 
-def window_shade_construction_to_openstudio(construction, model):
+def window_shade_construction_to_openstudio(construction, os_model):
     """Convert Honeybee WindowConstructionShade to OpenStudio Constructions."""
     # create the unshaded construction
     standard_construction_to_openstudio(construction.window_construction)
     # create the shaded construction
-    os_shaded_con = OSConstruction(model)
+    os_shaded_con = OSConstruction(os_model)
     os_shaded_con.setName(construction.identifier)
     if construction._display_name is not None:
         os_shaded_con.setDisplayName(construction.display_name)
     os_materials = OSMaterialVector()
     for mat_id in construction.layers:
-        material = model.getMaterialByName(mat_id)
+        material = os_model.getMaterialByName(mat_id)
         if material.is_initialized():
             os_material = material.get()
             try:
@@ -53,7 +56,7 @@ def window_shade_construction_to_openstudio(construction, model):
     return os_shaded_con
 
 
-def window_shading_control_to_openstudio(construction, model):
+def window_shading_control_to_openstudio(construction, os_model):
     """Convert Honeybee WindowConstructionShade to OpenStudio ShadingControl.
 
     Each Aperture or Door that has a WindowConstructionShade assigned to it
@@ -61,7 +64,7 @@ def window_shading_control_to_openstudio(construction, model):
     OpenStudio SubSurface using the setShadingControl method.
     """
     # create the ShadingControl object
-    os_shaded_con = model.getConstructionByName(construction.identifier)
+    os_shaded_con = os_model.getConstructionByName(construction.identifier)
     if os_shaded_con.is_initialized():
         os_shaded_con = os_shaded_con.get()
     else:
@@ -75,7 +78,7 @@ def window_shading_control_to_openstudio(construction, model):
     os_shade_control.setShadingControlType(control_type)
     os_shade_control.setShadingType(construction._ep_shading_type)
     if construction.schedule is not None:
-        sch = model.getScheduleByName(construction.schedule.identifier)
+        sch = os_model.getScheduleByName(construction.schedule.identifier)
         if sch.is_initialized():
             sch = sch.get()
             os_shade_control.setSchedule(sch)
@@ -84,9 +87,9 @@ def window_shading_control_to_openstudio(construction, model):
     return os_shade_control
 
 
-def air_construction_to_openstudio(construction, model):
+def air_construction_to_openstudio(construction, os_model):
     """Convert Honeybee AirBoundaryConstruction to OpenStudio ConstructionAirBoundary."""
-    os_construction = OSConstructionAirBoundary(model)
+    os_construction = OSConstructionAirBoundary(os_model)
     os_construction.setName(construction.identifier)
     if construction._display_name is not None:
         os_construction.setDisplayName(construction.display_name)
@@ -94,14 +97,14 @@ def air_construction_to_openstudio(construction, model):
     return os_construction
 
 
-def air_mixing_to_openstudio(face, target_zone, source_zone, model):
+def air_mixing_to_openstudio(face, target_zone, source_zone, os_model):
     """Convert Honeybee AirBoundaryConstruction to OpenStudio ZoneMixing.
 
     Args:
         face: A honeybee Face that has an AirBoundary face type.
         target_zone: The OpenStudio ThermalZone for the target of air mixing.
         source_zone: The OpenStudio ThermalZone for the source of air mixing.
-        model: The OpenStudio model to which the zone mixing is being added.
+        os_model: The OpenStudio Model to which the zone mixing is being added.
     """
     # calculate the flow rate and schedule
     construction = face.properties.energy.construction
@@ -115,28 +118,28 @@ def air_mixing_to_openstudio(face, target_zone, source_zone, model):
     os_zone_mixing = OSZoneMixing(target_zone)
     os_zone_mixing.setSourceZone(source_zone)
     os_zone_mixing.setDesignFlowRate(flow_rate)
-    flow_sch_ref = model.getScheduleByName(schedule)
+    flow_sch_ref = os_model.getScheduleByName(schedule)
     if flow_sch_ref.is_initialized():
         flow_sched = flow_sch_ref.get()
         os_zone_mixing.setSchedule(flow_sched)
     return os_zone_mixing
 
 
-def shade_construction_to_openstudio(construction, model):
+def shade_construction_to_openstudio(construction, os_model):
     """Convert Honeybee ShadeConstruction to OpenStudio Construction."""
-    os_construction = OSConstruction(model)
+    os_construction = OSConstruction(os_model)
     os_construction.setName(construction.identifier)
     if construction._display_name is not None:
         os_construction.setDisplayName(construction.display_name)
     os_materials = OSMaterialVector()
     if construction.is_specular:
-        os_material = OSStandardGlazing(model)
+        os_material = OSStandardGlazing(os_model)
         os_material.setFrontSideSolarReflectanceatNormalIncidence(
             construction.solar_reflectance)
         os_material.setFrontSideVisibleReflectanceatNormalIncidence(
             construction.visible_reflectance)
     else:
-        os_material = OSStandardOpaqueMaterial(model)
+        os_material = OSStandardOpaqueMaterial(os_model)
         os_material.setSolarAbsorptance(1 - construction.solar_reflectance)
         os_material.setVisibleAbsorptance(1 - construction.visible_reflectance)
     try:
@@ -147,28 +150,28 @@ def shade_construction_to_openstudio(construction, model):
     return os_construction
 
 
-def construction_to_openstudio(construction, model):
+def construction_to_openstudio(construction, os_model):
     """Convert any Honeybee energy construction into an OpenStudio object.
 
     Args:
         construction: A honeybee-energy Python object of a construction.
-        model: The OpenStudio Model object to which the Room will be added.
+        os_model: The OpenStudio Model object to which the Room will be added.
 
     Returns:
         An OpenStudio object for the construction.
     """
     if isinstance(construction, (OpaqueConstruction, WindowConstruction)):
-        return standard_construction_to_openstudio(construction, model)
+        return standard_construction_to_openstudio(construction, os_model)
     elif isinstance(construction, WindowConstructionShade):
-        return window_shade_construction_to_openstudio(construction, model)
+        return window_shade_construction_to_openstudio(construction, os_model)
     elif isinstance(construction, WindowConstructionDynamic):
         # TODO: implement dynamic window constructions
         raise NotImplementedError(
             'WindowConstructionDynamic to OpenStudio not implemented.')
     elif isinstance(construction, ShadeConstruction):
-        return shade_construction_to_openstudio(construction, model)
+        return shade_construction_to_openstudio(construction, os_model)
     elif isinstance(construction, AirBoundaryConstruction):
-        return air_construction_to_openstudio(construction, model)
+        return air_construction_to_openstudio(construction, os_model)
     else:
         raise ValueError(
             '{} is not a recognized Energy Construction type'.format(type(construction))

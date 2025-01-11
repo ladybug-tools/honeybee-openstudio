@@ -1,3 +1,4 @@
+# coding=utf-8
 """Import OpenStudio SDK classes in different Python environments."""
 import sys
 import os
@@ -19,6 +20,17 @@ if (sys.version_info >= (3, 0)):  # we are in cPython and can import normally
     OSThermalZone = openstudio.model.ThermalZone
     OSBuildingStory = openstudio.model.BuildingStory
     OSSurfacePropertyOtherSideCoefficients = openstudio.model.SurfacePropertyOtherSideCoefficients
+    # schedule classes
+    OSScheduleTypeLimits = openstudio.model.ScheduleTypeLimits
+    OSScheduleRuleset = openstudio.model.ScheduleRuleset
+    OSScheduleRule = openstudio.model.ScheduleRule
+    OSScheduleDay = openstudio.model.ScheduleDay
+    OSScheduleFixedInterval = openstudio.model.ScheduleFixedInterval
+    OSExternalFile = openstudio.model.ExternalFile
+    OSScheduleFile = openstudio.model.ScheduleFile
+    OSDoubleVector = openstudio.DoubleVector
+    OSTime = openstudio.Time
+    OSTimeSeries = openstudio.TimeSeries
     # material classes
     OSMasslessOpaqueMaterial = openstudio.model.MasslessOpaqueMaterial
     OSStandardOpaqueMaterial = openstudio.model.StandardOpaqueMaterial
@@ -80,6 +92,17 @@ else:  # we are in IronPython and we must import the .NET bindings
     OSThermalZone = openstudio.ThermalZone
     OSBuildingStory = openstudio.BuildingStory
     OSSurfacePropertyOtherSideCoefficients = openstudio.SurfacePropertyOtherSideCoefficients
+    # schedule classes
+    OSScheduleTypeLimits = openstudio.ScheduleTypeLimits
+    OSScheduleRuleset = openstudio.ScheduleRuleset
+    OSScheduleRule = openstudio.ScheduleRule
+    OSScheduleDay = openstudio.ScheduleDay
+    OSScheduleFixedInterval = openstudio.ScheduleFixedInterval
+    OSExternalFile = openstudio.ExternalFile
+    OSScheduleFile = openstudio.ScheduleFile
+    OSDoubleVector = openstudio.DoubleVector
+    OSTime = openstudio.Time
+    OSTimeSeries = openstudio.TimeSeries
     # material classes
     OSMasslessOpaqueMaterial = openstudio.MasslessOpaqueMaterial
     OSStandardOpaqueMaterial = openstudio.StandardOpaqueMaterial
