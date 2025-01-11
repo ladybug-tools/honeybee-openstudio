@@ -228,7 +228,7 @@ def frame_material_to_openstudio(material, model):
 
 
 def material_to_openstudio(material, model):
-    """Get a OpenStudio object for a given Honeybee energy material.
+    """Convert any Honeybee energy material into an OpenStudio object.
 
     Args:
         material: A honeybee-energy Python object of a material layer.

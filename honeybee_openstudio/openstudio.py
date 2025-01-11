@@ -30,6 +30,20 @@ if (sys.version_info >= (3, 0)):  # we are in cPython and can import normally
     OSBlind = openstudio.model.Blind
     OSShade = openstudio.model.Shade
     OSWindowPropertyFrameAndDivider = openstudio.model.WindowPropertyFrameAndDivider
+    # constructions classes
+    OSConstruction = openstudio.model.Construction
+    OSMaterialVector = openstudio.model.MaterialVector
+    OSShadingControl = openstudio.model.ShadingControl
+    OSConstructionAirBoundary = openstudio.model.ConstructionAirBoundary
+    OSZoneMixing = openstudio.model.ZoneMixing
+    # ems classes
+    OSEnergyManagementSystemProgram = openstudio.model.EnergyManagementSystemProgram
+    OSEnergyManagementSystemProgramCallingManager = \
+        openstudio.model.EnergyManagementSystemProgramCallingManager
+    OSEnergyManagementSystemSensor = openstudio.model.EnergyManagementSystemSensor
+    OSEnergyManagementSystemActuator = openstudio.model.EnergyManagementSystemActuator
+    OSEnergyManagementSystemConstructionIndexVariable = \
+        openstudio.model.EnergyManagementSystemConstructionIndexVariable
 
 else:  # we are in IronPython and we must import the .NET bindings
     try:  # first see if OpenStudio has already been loaded
@@ -77,3 +91,17 @@ else:  # we are in IronPython and we must import the .NET bindings
     OSBlind = openstudio.Blind
     OSShade = openstudio.Shade
     OSWindowPropertyFrameAndDivider = openstudio.WindowPropertyFrameAndDivider
+    # constructions classes
+    OSConstruction = openstudio.Construction
+    OSMaterialVector = openstudio.model.MaterialVector
+    OSShadingControl = openstudio.ShadingControl
+    OSConstructionAirBoundary = openstudio.ConstructionAirBoundary
+    OSZoneMixing = openstudio.ZoneMixing
+    # ems classes
+    OSEnergyManagementSystemProgram = openstudio.EnergyManagementSystemProgram
+    OSEnergyManagementSystemProgramCallingManager = \
+        openstudio.EnergyManagementSystemProgramCallingManager
+    OSEnergyManagementSystemSensor = openstudio.EnergyManagementSystemSensor
+    OSEnergyManagementSystemActuator = openstudio.EnergyManagementSystemActuator
+    OSEnergyManagementSystemConstructionIndexVariable = \
+        openstudio.EnergyManagementSystemConstructionIndexVariable
