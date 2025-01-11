@@ -6,10 +6,14 @@ from honeybee.altnumber import autocalculate
 from honeybee.facetype import RoofCeiling, Floor, AirBoundary
 from honeybee.boundarycondition import Outdoors, Ground, Surface
 from honeybee_energy.boundarycondition import OtherSideTemperature
+from honeybee_energy.lib.constructionsets import generic_construction_set
 
 from honeybee_openstudio.openstudio import OSModel, OSPoint3dVector, OSPoint3d, \
     OSShadingSurfaceGroup, OSShadingSurface, OSSubSurface, OSSurface, OSSpace, \
     OSThermalZone, OSBuildingStory, OSSurfacePropertyOtherSideCoefficients
+from honeybee_openstudio.material import material_to_openstudio
+from honeybee_openstudio.construction import construction_to_openstudio, \
+    air_mixing_to_openstudio
 
 
 def face_3d_to_openstudio(face_3d):
@@ -55,6 +59,18 @@ def shade_mesh_to_openstudio(shade_mesh, model):
     if shade_mesh._display_name is not None:
         for os_shade in os_shades:
             os_shade.setDisplayName(shade_mesh.display_name)
+    construction = shade_mesh.properties.energy.construction
+    if not construction.is_default:
+        os_construction = model.getMaterialByName(construction.identifier)
+        if os_construction.is_initialized():
+            for os_shade in os_shades:
+                os_shade.setConstruction(os_construction)
+    trans_sched = shade_mesh.properties.energy.transmittance_schedule
+    if trans_sched is not None:
+        os_schedule = model.getScheduleByName(trans_sched.identifier)
+        if os_schedule.is_initialized():
+            for os_shade in os_shades:
+                os_shade.setTransmittanceSchedule(os_schedule)
     return os_shades
 
 
@@ -73,6 +89,17 @@ def shade_to_openstudio(shade, model):
     os_shade.setName(shade.identifier)
     if shade._display_name is not None:
         os_shade.setDisplayName(shade.display_name)
+    construction = shade.properties.energy.construction
+    if not construction.is_default:
+        os_construction = model.getMaterialByName(construction.identifier)
+        if os_construction.is_initialized():
+            os_shade.setConstruction(os_construction)
+    trans_sched = shade.properties.energy.transmittance_schedule
+    if trans_sched is not None:
+        os_schedule = model.getScheduleByName(trans_sched.identifier)
+        if os_schedule.is_initialized():
+            os_shade.setTransmittanceSchedule(os_schedule)
+    # TODO: add the translation of PVProperties
     return os_shade
 
 
@@ -256,23 +283,13 @@ def room_to_openstudio(room, model, adj_map=None):
     Returns:
         An OpenStudio Space object for the Room.
     """
-    # create the space and thermal zone
+    # create the space
     os_space = OSSpace(model)
     os_space.setName('{}_Space'.format(room.identifier))
-    os_zone = OSThermalZone(model)
-    os_zone.setName(room.identifier)
-    os_space.setThermalZone(os_zone)
     if room._display_name is not None:
         os_space.setDisplayName(room.display_name)
-        os_zone.setDisplayName(room.display_name)
-
-    # assign the multiplier, exclude_floor_area, and geometry properties
-    if room.multiplier != 1:
-        os_zone.setMultiplier(room.multiplier)
     if room.exclude_floor_area:
         os_space.setPartofTotalFloorArea(False)
-    os_zone.setCeilingHeight(room.geometry.max.z - room.geometry.min.z)
-    os_zone.setVolume(room.volume)
 
     # assign all of the faces to the room
     for face in room.faces:
@@ -303,8 +320,7 @@ def room_to_openstudio(room, model, adj_map=None):
 def model_to_openstudio(
     model, seed_model=None, schedule_directory=None,
     use_geometry_names=False, use_resource_names=False,
-    triangulate_sub_faces=True, triangulate_non_planar_orphaned=False,
-    enforce_rooms=False
+    triangulate_non_planar_orphaned=False, enforce_rooms=False
 ):
     """Create an OpenStudio Model from a Honeybee Model.
 
@@ -338,11 +354,6 @@ def model_to_openstudio(
             for the resources in the OSM and IDF. Cases of duplicate IDs
             resulting from non-unique names will be resolved by adding integers
             to the ends of the new IDs that are derived from the name. (Default: False).
-        triangulate_sub_faces: Boolean to note whether sub-faces (including
-            Apertures and Doors) should be triangulated if they have more than
-            4 sides (True) or whether they should be left as they are (False).
-            This triangulation is necessary when exporting directly to EnergyPlus
-            since it cannot accept sub-faces with more than 4 vertices. (Default: True).
         triangulate_non_planar_orphaned: Boolean to note whether any non-planar
             orphaned geometry in the model should be triangulated upon export.
             This can be helpful because OpenStudio simply raises an error when
@@ -427,17 +438,75 @@ def model_to_openstudio(
     else:
         building.setName(model.identifier)
 
-    # TODO: translate all of the schedules, constructions and programs
+    # TODO: translate all of the schedules
 
-    # create all of the rooms
-    story_map = {}
+    # write all of the materials and constructions
+    materials, constructions, dynamic_cons = [], [], []
+    all_constrs = model.properties.energy.constructions + \
+        generic_construction_set.constructions_unique
+    for constr in set(all_constrs):
+        try:
+            materials.extend(constr.materials)
+            constructions.append(constr)
+            if constr.has_frame:
+                materials.append(constr.frame)
+            if constr.has_shade:
+                if constr.window_construction in all_constrs:
+                    constructions.pop(-1)  # avoid duplicate specification
+                if constr.is_switchable_glazing:
+                    materials.append(constr.switched_glass_material)
+            elif constr.is_dynamic:
+                dynamic_cons.append(constr)
+        except AttributeError:
+            try:  # AirBoundaryConstruction or ShadeConstruction
+                constructions.append(constr)  # AirBoundaryConstruction
+            except TypeError:
+                pass  # ShadeConstruction; no need to write it
+    for mat in set(materials):
+        material_to_openstudio(mat, os_model)
+    for constr in constructions:
+        construction_to_openstudio(constr, os_model)
+
+    # TODO: translate all of the construction sets and programs
+
+    # create all of the spaces
+    space_map, story_map = {}, {}
     adj_map = {'faces': {}, 'sub_faces': {}}
     for room in model.rooms:
         os_space = room_to_openstudio(room, os_model, adj_map)
+        space_map[room.identifier] = os_space
         try:
             story_map[room.story].append(os_space)
         except KeyError:  # first room found on the story
             story_map[room.story] = [os_space]
+
+    # create all of the zones
+    zone_map = {}
+    for room in single_zones:
+        os_zone = OSThermalZone(os_model)
+        os_zone.setName(room.identifier)
+        os_space = space_map[room.identifier]
+        os_space.setThermalZone(os_zone)
+        zone_map[room.identifier] = os_zone
+        if room.multiplier != 1:
+            os_zone.setMultiplier(room.multiplier)
+        os_zone.setCeilingHeight(room.geometry.max.z - room.geometry.min.z)
+        os_zone.setVolume(room.volume)
+        # TODO: assign the setpoint and the ventilation objects
+    for zone_id, zone_data in zone_dict.items():
+        rooms, z_prop, set_pt, vent = zone_data
+        mult, ceil_hgt, vol, _, _ = z_prop
+        os_zone = OSThermalZone(os_model)
+        os_zone.setName(zone_id)
+        for room in rooms:
+            os_space = space_map[room.identifier]
+            os_space.setThermalZone(os_zone)
+            zone_map[room.identifier] = os_zone
+        if mult != 1:
+            os_zone.setMultiplier(mult)
+        os_zone.setCeilingHeight(ceil_hgt)
+        os_zone.setVolume(vol)
+        # TODO: assign the setpoint and the ventilation objects
 
     # triangulate any apertures or doors with more than 4 vertices
     tri_apertures, _ = model.triangulated_apertures()
@@ -488,6 +557,22 @@ def model_to_openstudio(
                         base_os_sub_face = adj_map['sub_faces'][sub_face.identifier]
                         adj_os_sub_face = adj_map['sub_faces'][adj_id]
                         base_os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
+
+    # if simple ventilation is being used, add air mixing objects
+    vent_sim_control = model.properties.energy.ventilation_simulation_control
+    if vent_sim_control.vent_control_type == 'SingleZone':
+        for room in model.rooms:
+            for face in room.faces:
+                if isinstance(face.type, AirBoundary):  # write the air mixing objects
+                    try:
+                        adj_room = face.boundary_condition.boundary_condition_objects[-1]
+                        target_zone = zone_dict[room.identifier]
+                        source_zone = zone_dict[adj_room]
+                        air_mixing_to_openstudio(face, target_zone, source_zone, os_model)
+                    except AttributeError as e:
+                        raise ValueError(
+                            'Face "{}" is an Air Boundary but lacks a Surface boundary '
+                            'condition.\n{}'.format(face.full_id, e))
 
     # add the orphaned objects
     for face in model.orphaned_faces:
