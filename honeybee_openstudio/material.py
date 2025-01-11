@@ -1,4 +1,7 @@
+# coding=utf-8
 """OpenStudio material translators."""
+from __future__ import division
+
 from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialNoMass, \
     EnergyMaterialVegetation
 from honeybee_energy.material.glazing import EnergyWindowMaterialGlazing, \
@@ -14,9 +17,9 @@ from honeybee_openstudio.openstudio import OSStandardOpaqueMaterial, \
     OSGas, OSGasMixture, OSShade, OSBlind, OSWindowPropertyFrameAndDivider
 
 
-def opaque_material_to_openstudio(material, model):
+def opaque_material_to_openstudio(material, os_model):
     """Convert Honeybee EnergyMaterial to OpenStudio StandardOpaqueMaterial."""
-    os_opaque_mat = OSStandardOpaqueMaterial(model)
+    os_opaque_mat = OSStandardOpaqueMaterial(os_model)
     os_opaque_mat.setName(material.identifier)
     if material._display_name is not None:
         os_opaque_mat.setDisplayName(material.display_name)
@@ -31,9 +34,9 @@ def opaque_material_to_openstudio(material, model):
     return os_opaque_mat
 
 
-def opaque_no_mass_material_to_openstudio(material, model):
+def opaque_no_mass_material_to_openstudio(material, os_model):
     """Convert Honeybee EnergyMaterialNoMass to OpenStudio MasslessOpaqueMaterial."""
-    os_nomass_mat = OSMasslessOpaqueMaterial(model)
+    os_nomass_mat = OSMasslessOpaqueMaterial(os_model)
     os_nomass_mat.setName(material.identifier)
     if material._display_name is not None:
         os_nomass_mat.setDisplayName(material.display_name)
@@ -45,9 +48,9 @@ def opaque_no_mass_material_to_openstudio(material, model):
     return os_nomass_mat
 
 
-def vegetation_material_to_openstudio(material, model):
+def vegetation_material_to_openstudio(material, os_model):
     """Convert Honeybee EnergyMaterialVegetation to OpenStudio RoofVegetation."""
-    os_veg_mat = OSRoofVegetation(model)
+    os_veg_mat = OSRoofVegetation(os_model)
     os_veg_mat.setName(material.identifier)
     if material._display_name is not None:
         os_veg_mat.setDisplayName(material.display_name)
@@ -71,9 +74,9 @@ def vegetation_material_to_openstudio(material, model):
     return os_veg_mat
 
 
-def glazing_material_to_openstudio(material, model):
+def glazing_material_to_openstudio(material, os_model):
     """Convert Honeybee EnergyWindowMaterialGlazing to OpenStudio StandardGlazing."""
-    os_glazing = OSStandardGlazing(model)
+    os_glazing = OSStandardGlazing(os_model)
     os_glazing.setName(material.identifier)
     if material._display_name is not None:
         os_glazing.setDisplayName(material.display_name)
@@ -93,9 +96,9 @@ def glazing_material_to_openstudio(material, model):
     return os_glazing
 
 
-def simple_glazing_sys_material_to_openstudio(material, model):
+def simple_glazing_sys_material_to_openstudio(material, os_model):
     """Convert Honeybee EnergyWindowMaterialSimpleGlazSys to OpenStudio SimpleGlazing."""
-    os_glz_sys = OSSimpleGlazing(model)
+    os_glz_sys = OSSimpleGlazing(os_model)
     os_glz_sys.setName(material.identifier)
     if material._display_name is not None:
         os_glz_sys.setDisplayName(material.display_name)
@@ -105,9 +108,9 @@ def simple_glazing_sys_material_to_openstudio(material, model):
     return os_glz_sys
 
 
-def gas_material_to_openstudio(material, model):
+def gas_material_to_openstudio(material, os_model):
     """Convert Honeybee EnergyWindowMaterialGas to OpenStudio Gas."""
-    os_gas = OSGas(model)
+    os_gas = OSGas(os_model)
     os_gas.setName(material.identifier)
     if material._display_name is not None:
         os_gas.setDisplayName(material.display_name)
@@ -116,9 +119,9 @@ def gas_material_to_openstudio(material, model):
     return os_gas
 
 
-def gas_mixture_material_to_openstudio(material, model):
+def gas_mixture_material_to_openstudio(material, os_model):
     """Convert Honeybee EnergyWindowMaterialGasMixture to OpenStudio GasMixture."""
-    os_gas_mix = OSGasMixture(model)
+    os_gas_mix = OSGasMixture(os_model)
     os_gas_mix.setName(material.identifier)
     if material._display_name is not None:
         os_gas_mix.setDisplayName(material.display_name)
@@ -129,9 +132,9 @@ def gas_mixture_material_to_openstudio(material, model):
     return os_gas_mix
 
 
-def gas_custom_material_to_openstudio(material, model):
+def gas_custom_material_to_openstudio(material, os_model):
     """Convert Honeybee EnergyWindowMaterialGasCustom to OpenStudio Gas."""
-    os_gas_custom = OSGas(model)
+    os_gas_custom = OSGas(os_model)
     os_gas_custom.setName(material.identifier)
     if material._display_name is not None:
         os_gas_custom.setDisplayName(material.display_name)
@@ -151,9 +154,9 @@ def gas_custom_material_to_openstudio(material, model):
     return os_gas_custom
 
 
-def shade_material_to_openstudio(material, model):
+def shade_material_to_openstudio(material, os_model):
     """Convert Honeybee EnergyWindowMaterialShade to OpenStudio Shade."""
-    os_shade_mat = OSShade(model)
+    os_shade_mat = OSShade(os_model)
     os_shade_mat.setName(material.identifier)
     if material._display_name is not None:
         os_shade_mat.setDisplayName(material.display_name)
@@ -174,9 +177,9 @@ def shade_material_to_openstudio(material, model):
     return os_shade_mat
 
 
-def blind_material_to_openstudio(material, model):
+def blind_material_to_openstudio(material, os_model):
     """Convert Honeybee EnergyWindowMaterialBlind to OpenStudio Blind."""
-    os_blind = OSBlind(model)
+    os_blind = OSBlind(os_model)
     os_blind.setName(material.identifier)
     if material._display_name is not None:
         os_blind.setDisplayName(material.display_name)
@@ -209,9 +212,9 @@ def blind_material_to_openstudio(material, model):
     return os_blind
 
 
-def frame_material_to_openstudio(material, model):
+def frame_material_to_openstudio(material, os_model):
     """Convert Honeybee EnergyWindowFrame to OpenStudio WindowPropertyFrameAndDivider."""
-    os_frame_mat = OSWindowPropertyFrameAndDivider(model)
+    os_frame_mat = OSWindowPropertyFrameAndDivider(os_model)
     os_frame_mat.setName(material.identifier)
     if material._display_name is not None:
         os_frame_mat.setDisplayName(material.display_name)
@@ -227,38 +230,38 @@ def frame_material_to_openstudio(material, model):
     return os_frame_mat
 
 
-def material_to_openstudio(material, model):
+def material_to_openstudio(material, os_model):
     """Convert any Honeybee energy material into an OpenStudio object.
 
     Args:
         material: A honeybee-energy Python object of a material layer.
-        model: The OpenStudio Model object to which the Room will be added.
+        os_model: The OpenStudio Model object to which the Room will be added.
 
     Returns:
         An OpenStudio object for the material.
     """
     if isinstance(material, EnergyMaterial):
-        return opaque_material_to_openstudio(material, model)
+        return opaque_material_to_openstudio(material, os_model)
     elif isinstance(material, EnergyMaterialNoMass):
-        return opaque_no_mass_material_to_openstudio(material, model)
+        return opaque_no_mass_material_to_openstudio(material, os_model)
     elif isinstance(material, EnergyMaterialVegetation):
-        return vegetation_material_to_openstudio(material, model)
+        return vegetation_material_to_openstudio(material, os_model)
     elif isinstance(material, EnergyWindowMaterialGlazing):
-        return glazing_material_to_openstudio(material, model)
+        return glazing_material_to_openstudio(material, os_model)
     elif isinstance(material, EnergyWindowMaterialSimpleGlazSys):
-        return simple_glazing_sys_material_to_openstudio(material, model)
+        return simple_glazing_sys_material_to_openstudio(material, os_model)
     elif isinstance(material, EnergyWindowMaterialGas):
-        return gas_material_to_openstudio(material, model)
+        return gas_material_to_openstudio(material, os_model)
     elif isinstance(material, EnergyWindowMaterialGasMixture):
-        return gas_mixture_material_to_openstudio(material, model)
+        return gas_mixture_material_to_openstudio(material, os_model)
     elif isinstance(material, EnergyWindowMaterialGasCustom):
-        return gas_custom_material_to_openstudio(material, model)
+        return gas_custom_material_to_openstudio(material, os_model)
     elif isinstance(material, EnergyWindowFrame):
-        return frame_material_to_openstudio(material, model)
+        return frame_material_to_openstudio(material, os_model)
     elif isinstance(material, EnergyWindowMaterialShade):
-        return shade_material_to_openstudio(material, model)
+        return shade_material_to_openstudio(material, os_model)
     elif isinstance(material, EnergyWindowMaterialBlind):
-        return blind_material_to_openstudio(material, model)
+        return blind_material_to_openstudio(material, os_model)
     else:
         raise ValueError(
             '{} is not a recognized Energy Material type'.format(type(material)))

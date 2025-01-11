@@ -1,5 +1,7 @@
 # coding=utf-8
 """Methods to write to OpenStudio."""
+from __future__ import division
+
 from ladybug_geometry.geometry3d import Face3D
 from honeybee.typing import clean_ep_string
 from honeybee.altnumber import autocalculate
@@ -35,24 +37,24 @@ def face_3d_to_openstudio(face_3d):
     return os_vertices
 
 
-def shade_mesh_to_openstudio(shade_mesh, model):
+def shade_mesh_to_openstudio(shade_mesh, os_model):
     """Create OpenStudio objects from a ShadeMesh.
 
     Args:
         shade_mesh: A honeybee ShadeMesh for which OpenStudio objects will be returned.
-        model: The OpenStudio Model object to which the ShadeMesh will be added.
+        os_model: The OpenStudio Model object to which the ShadeMesh will be added.
 
     Returns:
         A list of OpenStudio ShadingSurface objects.
     """
     # loop through the mesh faces and create individual shade objects
     os_shades = []
-    os_shd_group = OSShadingSurfaceGroup(model)
+    os_shd_group = OSShadingSurfaceGroup(os_model)
     os_shd_group.setName(shade_mesh.identifier)
     for i, shade in enumerate(shade_mesh.geometry.face_vertices):
         shade_face = Face3D(shade)
         os_vertices = face_3d_to_openstudio(shade_face)
-        os_shade = OSShadingSurface(os_vertices, model)
+        os_shade = OSShadingSurface(os_vertices, os_model)
         os_shade.setName('{}_{}'.format(shade_mesh.identifier, i))
         os_shade.setShadingSurfaceGroup(os_shd_group)
         os_shades.append(os_shade)
@@ -61,54 +63,54 @@ def shade_mesh_to_openstudio(shade_mesh, model):
             os_shade.setDisplayName(shade_mesh.display_name)
     construction = shade_mesh.properties.energy.construction
     if not construction.is_default:
-        os_construction = model.getMaterialByName(construction.identifier)
+        os_construction = os_model.getMaterialByName(construction.identifier)
         if os_construction.is_initialized():
             for os_shade in os_shades:
                 os_shade.setConstruction(os_construction)
     trans_sched = shade_mesh.properties.energy.transmittance_schedule
     if trans_sched is not None:
-        os_schedule = model.getScheduleByName(trans_sched.identifier)
+        os_schedule = os_model.getScheduleByName(trans_sched.identifier)
         if os_schedule.is_initialized():
             for os_shade in os_shades:
                 os_shade.setTransmittanceSchedule(os_schedule)
     return os_shades
 
 
-def shade_to_openstudio(shade, model):
+def shade_to_openstudio(shade, os_model):
     """Create an OpenStudio object from a Shade.
 
     Args:
         shade: A honeybee Shade for which an OpenStudio object will be returned.
-        model: The OpenStudio Model object to which the Shade will be added.
+        os_model: The OpenStudio Model object to which the Shade will be added.
 
     Returns:
         An OpenStudio ShadingSurface object.
     """
     os_vertices = face_3d_to_openstudio(shade.geometry)
-    os_shade = OSShadingSurface(os_vertices, model)
+    os_shade = OSShadingSurface(os_vertices, os_model)
     os_shade.setName(shade.identifier)
     if shade._display_name is not None:
         os_shade.setDisplayName(shade.display_name)
     construction = shade.properties.energy.construction
     if not construction.is_default:
-        os_construction = model.getMaterialByName(construction.identifier)
+        os_construction = os_model.getMaterialByName(construction.identifier)
         if os_construction.is_initialized():
             os_shade.setConstruction(os_construction)
     trans_sched = shade.properties.energy.transmittance_schedule
     if trans_sched is not None:
-        os_schedule = model.getScheduleByName(trans_sched.identifier)
+        os_schedule = os_model.getScheduleByName(trans_sched.identifier)
         if os_schedule.is_initialized():
             os_shade.setTransmittanceSchedule(os_schedule)
     # TODO: add the translation of PVProperties
     return os_shade
 
 
-def door_to_openstudio(door, model):
+def door_to_openstudio(door, os_model):
     """Create an OpenStudio object from a Door.
 
     Args:
         door: A honeybee Door for which an OpenStudio object will be returned.
-        model: The OpenStudio Model object to which the Door will be added.
+        os_model: The OpenStudio Model object to which the Door will be added.
 
     Returns:
         An OpenStudio SubSurface object if the Door has a parent. An OpenStudio
@@ -118,7 +120,7 @@ def door_to_openstudio(door, model):
     os_vertices = face_3d_to_openstudio(door.geometry)
     # translate the geometry to either a SubSurface or a ShadingSurface
     if door.has_parent:
-        os_door = OSSubSurface(os_vertices, model)
+        os_door = OSSubSurface(os_vertices, os_model)
         if door.is_glass:
             dr_type = 'GlassDoor'
         else:
@@ -127,9 +129,9 @@ def door_to_openstudio(door, model):
                 isinstance(par.type, (RoofCeiling, Floor)) else 'Door'
         os_door.setSubSurfaceType(dr_type)
     else:
-        os_door = OSShadingSurface(os_vertices, model)
+        os_door = OSShadingSurface(os_vertices, os_model)
         for shd in door._outdoor_shades:
-            shade_to_openstudio(shd, model)
+            shade_to_openstudio(shd, os_model)
 
     # set the object name and return it
     os_door.setName(door.identifier)
@@ -138,12 +140,12 @@ def door_to_openstudio(door, model):
     return os_door
 
 
-def aperture_to_openstudio(aperture, model):
+def aperture_to_openstudio(aperture, os_model):
     """Create an OpenStudio object from an Aperture.
 
     Args:
         aperture: A honeybee Aperture for which an OpenStudio object will be returned.
-        model: The OpenStudio Model object to which the Aperture will be added.
+        os_model: The OpenStudio Model object to which the Aperture will be added.
 
     Returns:
         An OpenStudio SubSurface object if the Aperture has a parent. An OpenStudio
@@ -153,7 +155,7 @@ def aperture_to_openstudio(aperture, model):
     os_vertices = face_3d_to_openstudio(aperture.geometry)
     # translate the geometry to either a SubSurface or a ShadingSurface
     if aperture.has_parent:
-        os_aperture = OSSubSurface(os_vertices, model)
+        os_aperture = OSSubSurface(os_vertices, os_model)
         if aperture.is_operable:
             ap_type = 'OperableWindow'
         else:
@@ -162,9 +164,9 @@ def aperture_to_openstudio(aperture, model):
                 isinstance(par.type, (RoofCeiling, Floor)) else 'FixedWindow'
         os_aperture.setSubSurfaceType(ap_type)
     else:
-        os_aperture = OSShadingSurface(os_vertices, model)
+        os_aperture = OSShadingSurface(os_vertices, os_model)
         for shd in aperture._outdoor_shades:
-            shade_to_openstudio(shd, model)
+            shade_to_openstudio(shd, os_model)
 
     # set the object name and return it
     os_aperture.setName(aperture.identifier)
@@ -173,14 +175,14 @@ def aperture_to_openstudio(aperture, model):
     return os_aperture
 
 
-def face_to_openstudio(face, model, adj_map=None):
+def face_to_openstudio(face, os_model, adj_map=None):
     """Create an OpenStudio object from a Face.
 
     This method also adds all Apertures, Doors, and Shades assigned to the Face.
 
     Args:
         face: A honeybee Face for which an OpenStudio object will be returned.
-        model: The OpenStudio Model object to which the Face will be added.
+        os_model: The OpenStudio Model object to which the Face will be added.
         adj_map: An optional dictionary with keys for 'faces' and 'sub_faces'
             that will have the space Surfaces and SubSurfaces added to it
             such that adjacencies can be assigned after running this method.
@@ -193,7 +195,7 @@ def face_to_openstudio(face, model, adj_map=None):
     if face.has_parent:
         # create the Surface
         os_vertices = face_3d_to_openstudio(face.geometry)
-        os_face = OSSurface(os_vertices, model)
+        os_face = OSSurface(os_vertices, os_model)
 
         # select the correct face type
         if isinstance(face.type, AirBoundary):
@@ -223,7 +225,7 @@ def face_to_openstudio(face, model, adj_map=None):
             if fbc.view_factor != autocalculate:
                 os_face.setViewFactortoGround(fbc.view_factor)
         elif isinstance(fbc, OtherSideTemperature):
-            srf_prop = OSSurfacePropertyOtherSideCoefficients(model)
+            srf_prop = OSSurfacePropertyOtherSideCoefficients(os_model)
             srf_prop.setName('{}_OtherTemp'.format(face.identifier))
             htc = fbc.heat_transfer_coefficient
             os_face.setCombinedConvectiveRadiativeFilmCoefficient(htc)
@@ -240,12 +242,12 @@ def face_to_openstudio(face, model, adj_map=None):
         sub_faces = {}
         for ap in face.apertures:
             if len(ap.geometry) <= 4:  # ignore apertures to be triangulated
-                os_ap = aperture_to_openstudio(ap, model)
+                os_ap = aperture_to_openstudio(ap, os_model)
                 os_ap.setSurface(os_face)
                 sub_faces[ap.identifier] = os_ap
         for dr in face.doors:
             if len(dr.geometry) <= 4:  # ignore doors to be triangulated
-                os_dr = door_to_openstudio(dr, model)
+                os_dr = door_to_openstudio(dr, os_model)
                 os_dr.setSurface(os_face)
                 sub_faces[dr.identifier] = os_dr
 
@@ -255,13 +257,13 @@ def face_to_openstudio(face, model, adj_map=None):
             adj_map['sub_faces'].update(sub_faces)
     else:
         os_vertices = face_3d_to_openstudio(face.punched_geometry)
-        os_face = OSShadingSurface(os_vertices, model)
+        os_face = OSShadingSurface(os_vertices, os_model)
         for ap in face.apertures:
-            aperture_to_openstudio(ap.duplicate(), model)
+            aperture_to_openstudio(ap.duplicate(), os_model)
         for dr in face.doors:
-            door_to_openstudio(dr.duplicate(), model)
+            door_to_openstudio(dr.duplicate(), os_model)
         for shd in face._outdoor_shades:
-            shade_to_openstudio(shd, model)
+            shade_to_openstudio(shd, os_model)
 
     # set the object name and return it
     os_face.setName(face.identifier)
@@ -270,12 +272,12 @@ def face_to_openstudio(face, model, adj_map=None):
     return os_face
 
 
-def room_to_openstudio(room, model, adj_map=None):
+def room_to_openstudio(room, os_model, adj_map=None):
     """Create OpenStudio objects from a Room.
 
     Args:
         room: A honeybee Room for which an OpenStudio object will be returned.
-        model: The OpenStudio Model object to which the Room will be added.
+        os_model: The OpenStudio Model object to which the Room will be added.
         adj_map: An optional dictionary with keys for 'faces' and 'sub_faces'
             that will have the space Surfaces and SubSurfaces added to it
             such that adjacencies can be assigned after running this method.
@@ -284,7 +286,7 @@ def room_to_openstudio(room, model, adj_map=None):
         An OpenStudio Space object for the Room.
     """
     # create the space
-    os_space = OSSpace(model)
+    os_space = OSSpace(os_model)
     os_space.setName('{}_Space'.format(room.identifier))
     if room._display_name is not None:
         os_space.setDisplayName(room.display_name)
@@ -293,7 +295,7 @@ def room_to_openstudio(room, model, adj_map=None):
 
     # assign all of the faces to the room
     for face in room.faces:
-        os_face = face_to_openstudio(face, model, adj_map)
+        os_face = face_to_openstudio(face, os_model, adj_map)
         os_face.setSpace(os_space)
 
     # add any assigned shades to a group for the room
@@ -306,12 +308,12 @@ def room_to_openstudio(room, model, adj_map=None):
         for dr in face.doors:
             child_shades.extend(dr._outdoor_shades)
     if len(child_shades) != 0:
-        os_shd_group = OSShadingSurfaceGroup(model)
+        os_shd_group = OSShadingSurfaceGroup(os_model)
         os_shd_group.setName('{} Shades'.format(room.identifier))
         os_shd_group.setSpace(os_space)
         os_shd_group.setShadingSurfaceType('Space')
         for shd in child_shades:
-            os_shade = shade_to_openstudio(shd, model)
+            os_shade = shade_to_openstudio(shd, os_model)
             os_shade.setShadingSurfaceGroup(os_shd_group)
 
     return os_space
