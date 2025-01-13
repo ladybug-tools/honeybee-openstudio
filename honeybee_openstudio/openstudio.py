@@ -5,6 +5,19 @@ import os
 from honeybee_energy.config import folders as hbe_folders
 
 
+def _openstudio_date_cpython(os_model, month, day):
+    """Create an OpenStudio Date object."""
+    year_desc = os_model.getYearDescription()
+    return year_desc.makeDate(month, day)
+
+
+def _openstudio_date_ironpython(os_model, month, day):
+    """Get the YearDescription object from a Model."""
+    model_year = os_model.calendarYear()
+    model_year = model_year.get() if model_year.is_initialized() else 2009
+    return openstudio.Date(openstudio.MonthOfYear(month), day, model_year)
+
+
 if (sys.version_info >= (3, 0)):  # we are in cPython and can import normally
     import openstudio
     # load all of the classes used by this package
@@ -31,6 +44,8 @@ if (sys.version_info >= (3, 0)):  # we are in cPython and can import normally
     OSDoubleVector = openstudio.DoubleVector
     OSTime = openstudio.Time
     OSTimeSeries = openstudio.TimeSeries
+    OSVector = openstudio.Vector
+    openstudio_date = _openstudio_date_cpython
     # material classes
     OSMasslessOpaqueMaterial = openstudio.model.MasslessOpaqueMaterial
     OSStandardOpaqueMaterial = openstudio.model.StandardOpaqueMaterial
@@ -103,6 +118,8 @@ else:  # we are in IronPython and we must import the .NET bindings
     OSDoubleVector = openstudio.DoubleVector
     OSTime = openstudio.Time
     OSTimeSeries = openstudio.TimeSeries
+    OSVector = openstudio.Vector
+    openstudio_date = _openstudio_date_ironpython
     # material classes
     OSMasslessOpaqueMaterial = openstudio.MasslessOpaqueMaterial
     OSStandardOpaqueMaterial = openstudio.StandardOpaqueMaterial
@@ -116,7 +133,7 @@ else:  # we are in IronPython and we must import the .NET bindings
     OSWindowPropertyFrameAndDivider = openstudio.WindowPropertyFrameAndDivider
     # constructions classes
     OSConstruction = openstudio.Construction
-    OSMaterialVector = openstudio.model.MaterialVector
+    OSMaterialVector = openstudio.MaterialVector
     OSShadingControl = openstudio.ShadingControl
     OSConstructionAirBoundary = openstudio.ConstructionAirBoundary
     OSZoneMixing = openstudio.ZoneMixing

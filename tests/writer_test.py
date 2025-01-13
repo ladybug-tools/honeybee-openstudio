@@ -1,6 +1,4 @@
 """Test the translators for geometry to OpenStudio."""
-import openstudio
-
 from ladybug_geometry.geometry3d import Point3D, Vector3D, Mesh3D
 
 from honeybee.model import Model
@@ -11,6 +9,7 @@ from honeybee.door import Door
 from honeybee.shade import Shade
 from honeybee.shademesh import ShadeMesh
 
+from honeybee_openstudio.openstudio import OSModel
 from honeybee_openstudio.writer import shade_mesh_to_openstudio, shade_to_openstudio, \
     door_to_openstudio, aperture_to_openstudio, face_to_openstudio, room_to_openstudio, \
     model_to_openstudio
@@ -18,7 +17,7 @@ from honeybee_openstudio.writer import shade_mesh_to_openstudio, shade_to_openst
 
 def test_shade_writer():
     """Test the basic functionality of the Shade writer."""
-    os_model = openstudio.model.Model()
+    os_model = OSModel()
     rect_verts = [[0, 0, 3], [1, 0, 3], [1, 1, 3], [0, 1, 3]]
     shade = Shade.from_vertices('overhang', rect_verts)
 
@@ -36,7 +35,7 @@ def test_shade_writer():
 
 def test_shade_mesh_writer():
     """Test the basic functionality of the ShadeMesh OpenStudio writer."""
-    os_model = openstudio.model.Model()
+    os_model = OSModel()
     pts = (Point3D(0, 0, 4), Point3D(0, 2, 4), Point3D(2, 2, 4),
            Point3D(2, 0, 4), Point3D(4, 0, 4))
     mesh = Mesh3D(pts, [(0, 1, 2, 3), (2, 3, 4)])
@@ -63,7 +62,7 @@ def test_shade_mesh_writer():
 
 def test_aperture_writer():
     """Test the basic functionality of the Aperture OpenStudio writer."""
-    os_model = openstudio.model.Model()
+    os_model = OSModel()
     vertices_parent_wall = [[0, 0, 0], [0, 10, 0], [0, 10, 3], [0, 0, 3]]
     vertices_wall = [[0, 1, 1], [0, 3, 1], [0, 3, 2.5], [0, 1, 2.5]]
     vertices_parent_roof = [[10, 0, 3], [10, 10, 3], [0, 10, 3], [0, 0, 3]]
@@ -104,7 +103,7 @@ def test_aperture_writer():
 
 def test_door_writer():
     """Test the basic functionality of the Door OpenStudio writer."""
-    os_model = openstudio.model.Model()
+    os_model = OSModel()
     vertices_parent_wall = [[0, 0, 0], [0, 10, 0], [0, 10, 3], [0, 0, 3]]
     vertices_wall = [[0, 1, 0.1], [0, 2, 0.1], [0, 2, 2.8], [0, 1, 2.8]]
     vertices_parent_roof = [[10, 0, 3], [10, 10, 3], [0, 10, 3], [0, 0, 3]]
@@ -145,7 +144,7 @@ def test_door_writer():
 
 def test_face_writer():
     """Test the basic functionality of the Face OpenStudio writer."""
-    os_model = openstudio.model.Model()
+    os_model = OSModel()
     wall_pts = [[0, 0, 0], [10, 0, 0], [10, 0, 10], [0, 0, 10]]
     roof_pts = [[0, 0, 3], [10, 0, 3], [10, 10, 3], [0, 10, 3]]
     floor_pts = [[0, 0, 0], [0, 10, 0], [10, 10, 0], [10, 0, 0]]
@@ -204,7 +203,7 @@ def test_face_writer():
 
 def test_room_writer():
     """Test the basic functionality of the Room OpenStudio writer."""
-    os_model = openstudio.model.Model()
+    os_model = OSModel()
     room = Room.from_box('Tiny_House', 15, 30, 10)
     south_face = room[3]
     south_face.apertures_by_ratio(0.4, 0.01)
