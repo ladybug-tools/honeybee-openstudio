@@ -439,6 +439,7 @@ def model_to_openstudio(
         building.setName(clean_ep_string(model.display_name))
     else:
         building.setName(model.identifier)
+    os_model.setDayofWeekforStartDay('Sunday')  # this avoids lots of warnings
 
     # TODO: translate all of the schedules
 

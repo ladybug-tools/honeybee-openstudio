@@ -11,7 +11,7 @@ from honeybee_energy.schedule.fixedinterval import ScheduleFixedInterval
 
 from honeybee_openstudio.openstudio import OSScheduleTypeLimits, OSScheduleRuleset, \
     OSScheduleRule, OSScheduleDay, OSScheduleFixedInterval, OSExternalFile, \
-    OSScheduleFile, OSDoubleVector, OSTime, OSTimeSeries
+    OSScheduleFile, OSVector, OSTime, OSTimeSeries, openstudio_date
 
 
 def schedule_type_limits_to_openstudio(type_limit, os_model):
@@ -26,6 +26,7 @@ def schedule_type_limits_to_openstudio(type_limit, os_model):
         os_type_limit.setUpperLimitValue(type_limit.upper_limit)
     os_type_limit.setNumericType(type_limit.numeric_type)
     os_type_limit.setUnitType(type_limit.unit_type)
+    return os_type_limit
 
 
 def schedule_day_to_openstudio(schedule_day, os_model):
@@ -61,7 +62,7 @@ def schedule_ruleset_to_openstudio(schedule, os_model):
             os_sch_ruleset.setScheduleTypeLimits(os_type_limit)
     # loop through day schedules and create openstudio schedule day objects
     day_schs = {}
-    def_day = schedule.default_day_schedule.identifier
+    def_day = schedule.default_day_schedule
     for day_sch in schedule.day_schedules:
         if day_sch.identifier != def_day.identifier:
             os_day_sch = schedule_day_to_openstudio(day_sch, os_model)
@@ -69,7 +70,7 @@ def schedule_ruleset_to_openstudio(schedule, os_model):
                 os_day_sch.setScheduleTypeLimits(os_type_limit)
             day_schs[day_sch.identifier] = os_day_sch
     # assign default day schedule
-    os_def_day_sch = os_sch_ruleset.defaultDaySchedule
+    os_def_day_sch = os_sch_ruleset.defaultDaySchedule()
     if os_type_limit is not None:
         os_def_day_sch.setScheduleTypeLimits(os_type_limit)
     os_def_day_sch.setName(def_day.identifier)
@@ -104,16 +105,16 @@ def schedule_ruleset_to_openstudio(schedule, os_model):
         os_rule.setApplyThursday(rule.apply_thursday)
         os_rule.setApplyFriday(rule.apply_friday)
         os_rule.setApplySaturday(rule.apply_saturday)
-        year_description = os_model.getYearDescription()
-        start_date = year_description.makeDate(rule.start_date.month, rule.start_date.day)
-        end_date = year_description.makeDate(rule.end_date.month, rule.end_date.day)
+        start_date = openstudio_date(os_model, rule.start_date.month, rule.start_date.day)
+        end_date = openstudio_date(os_model, rule.end_date.month, rule.end_date.day)
         os_rule.setStartDate(start_date)
         os_rule.setEndDate(end_date)
         schedule_rule_day = day_schs[rule.schedule_day.identifier]
-        values_day = schedule_rule_day.values
-        times_day = schedule_rule_day.times
+        values_day = schedule_rule_day.values()
+        times_day = schedule_rule_day.times()
         for tim, val in zip(times_day, values_day):
-            os_rule.daySchedule.addValue(tim, val)
+            rule_day = os_rule.daySchedule()
+            rule_day.addValue(tim, val)
         os_sch_ruleset.setScheduleRuleIndex(os_rule, i)
     return os_sch_ruleset
 
@@ -143,10 +144,12 @@ def schedule_fixed_interval_to_openstudio(schedule, os_model):
     os_fi_sch.setIntervalLength(interval_length)
     os_interval_length = OSTime(0, 0, interval_length)
     # assign the values as a timeseries
-    year_description = os_model.getYearDescription()
-    start_date = year_description.makeDate(1, 1)
+    start_date = openstudio_date(os_model, 1, 1)
     all_values = [float(val) for val in schedule.values_at_timestep(schedule.timestep)]
-    timeseries = OSTimeSeries(start_date, os_interval_length, OSDoubleVector(all_values), '')
+    series_values = OSVector(len(all_values))
+    for i, val in enumerate(all_values):
+        series_values[i] = val
+    timeseries = OSTimeSeries(start_date, os_interval_length, series_values, '')
     os_fi_sch.setTimeSeries(timeseries)
     return os_fi_sch
 
