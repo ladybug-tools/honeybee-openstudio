@@ -1,5 +1,8 @@
 """Test the translators for schedules to OpenStudio."""
+import os
+
 from ladybug.dt import Date, Time
+from honeybee.config import folders
 from honeybee.altnumber import no_limit
 
 from honeybee_energy.schedule.day import ScheduleDay
@@ -116,3 +119,19 @@ def test_schedule_fixedinterval_to_openstudio():
     assert str(os_schedule.name()) == 'Custom Transmittance'
     os_schedule_str = str(os_schedule)
     assert os_schedule_str.startswith('OS:Schedule:FixedInterval,')
+
+
+def test_schedule_fixedinterval_to_openstudio_file():
+    """Test the ScheduleFixedInterval translation to_openstudio as a CSV file."""
+    os_model = OSModel()
+    os_model.setDayofWeekforStartDay('Sunday')  # this avoids lots of warnings
+
+    trans_sched = ScheduleFixedInterval(
+        'Custom Transmittance', [x / 8760 for x in range(8760)],
+        schedule_types.fractional)
+    csv_dir = os.path.join(folders.default_simulation_folder, 'csv_sch')
+
+    os_schedule = schedule_to_openstudio(trans_sched, os_model, csv_dir)
+    assert str(os_schedule.name()) == 'Custom Transmittance'
+    os_schedule_str = str(os_schedule)
+    assert os_schedule_str.startswith('OS:Schedule:File,')
