@@ -10,6 +10,7 @@ from honeybee_energy.construction.shade import ShadeConstruction
 from honeybee_energy.construction.air import AirBoundaryConstruction
 from honeybee_energy.lib.constructions import air_boundary
 
+from honeybee_openstudio.material import material_to_openstudio
 from honeybee_openstudio.openstudio import OSConstruction, OSMaterialVector, \
     OSShadingControl, OSConstructionAirBoundary, OSZoneMixing, \
     OSStandardOpaqueMaterial, OSStandardGlazing
@@ -37,21 +38,23 @@ def standard_construction_to_openstudio(construction, os_model):
 def window_shade_construction_to_openstudio(construction, os_model):
     """Convert Honeybee WindowConstructionShade to OpenStudio Constructions."""
     # create the unshaded construction
-    standard_construction_to_openstudio(construction.window_construction)
+    standard_construction_to_openstudio(construction.window_construction, os_model)
     # create the shaded construction
     os_shaded_con = OSConstruction(os_model)
     os_shaded_con.setName(construction.identifier)
     if construction._display_name is not None:
         os_shaded_con.setDisplayName(construction.display_name)
     os_materials = OSMaterialVector()
-    for mat_id in construction.layers:
-        material = os_model.getMaterialByName(mat_id)
+    for mat in construction.materials:
+        material = os_model.getMaterialByName(mat.identifier)
         if material.is_initialized():
             os_material = material.get()
-            try:
-                os_materials.append(os_material)
-            except AttributeError:  # using OpenStudio .NET bindings
-                os_materials.Add(os_material)
+        else:  # it's a custom gap material that has not been added yet
+            os_material = material_to_openstudio(mat, os_model)
+        try:
+            os_materials.append(os_material)
+        except AttributeError:  # using OpenStudio .NET bindings
+            os_materials.Add(os_material)
     os_shaded_con.setLayers(os_materials)
     return os_shaded_con
 
