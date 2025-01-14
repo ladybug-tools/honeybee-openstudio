@@ -1,6 +1,8 @@
 """Test the translators for geometry to OpenStudio."""
-from ladybug_geometry.geometry3d import Point3D, Vector3D, Mesh3D
+import sys
+import os
 
+from ladybug_geometry.geometry3d import Point3D, Vector3D, Mesh3D
 from honeybee.model import Model
 from honeybee.room import Room
 from honeybee.face import Face
@@ -215,13 +217,20 @@ def test_room_writer():
     assert str(os_room.name()) == 'Tiny_House_Space'
 
     spaces = os_model.getSpaces()
-    assert len(spaces) == 1
     faces = os_model.getSurfaces()
-    assert len(faces) == 6
     sub_faces = os_model.getSubSurfaces()
-    assert len(sub_faces) == 1
     shades = os_model.getShadingSurfaces()
-    assert len(shades) == 1
+
+    if (sys.version_info >= (3, 0)):  # we are in cPython
+        assert len(spaces) == 1
+        assert len(faces) == 6
+        assert len(sub_faces) == 1
+        assert len(shades) == 1
+    else:
+        assert spaces.Count == 1
+        assert faces.Count == 6
+        assert sub_faces.Count == 1
+        assert shades.Count == 1
 
 
 def test_model_writer():
@@ -241,20 +250,32 @@ def test_model_writer():
 
     os_model = model_to_openstudio(model)
     spaces = os_model.getSpaces()
-    assert len(spaces) == 1
     faces = os_model.getSurfaces()
-    assert len(faces) == 6
     sub_faces = os_model.getSubSurfaces()
-    assert len(sub_faces) == 1
     shades = os_model.getShadingSurfaces()
-    assert len(shades) == 3
+
+    if (sys.version_info >= (3, 0)):  # we are in cPython
+        assert len(spaces) == 1
+        assert len(faces) == 6
+        assert len(sub_faces) == 1
+        assert len(shades) == 3
+    else:
+        assert spaces.Count == 1
+        assert faces.Count == 6
+        assert sub_faces.Count == 1
+        assert shades.Count == 3
 
 
 def test_model_writer_from_standard_hbjson():
     """Test translating a HBJSON to an OpenStudio string."""
-    standard_test = './tests/assets/2023_rac_advanced_sample_project.hbjson'
+    standard_test = 'assets/2023_rac_advanced_sample_project.hbjson'
+    standard_test = os.path.join(os.path.dirname(__file__), standard_test)
     model = Model.from_file(standard_test)
 
     os_model = model_to_openstudio(model)
     spaces = os_model.getSpaces()
-    assert len(spaces) == 102
+
+    if (sys.version_info >= (3, 0)):  # we are in cPython
+        assert len(spaces) == 102
+    else:
+        assert spaces.Count == 102

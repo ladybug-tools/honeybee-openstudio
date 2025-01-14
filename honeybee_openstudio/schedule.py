@@ -183,12 +183,14 @@ def schedule_fixed_interval_to_openstudio_file(
     file_path = os.path.join(schedule_directory, file_name)
     # write the data into the file
     write_to_file(file_path, ',\n'.join(sched_data), True)
+    full_path = os.path.abspath(file_path)
     # get the external file which points to the schedule csv file
-    os_external_file = OSExternalFile.getExternalFile(os_model, file_name)
-    os_external_file = os_external_file.get()
+    os_external_file = OSExternalFile.getExternalFile(os_model, full_path, False)
+    if os_external_file.is_initialized():
+        os_external_file = os_external_file.get()
     # create the schedule file
     column = 2 if include_datetimes else 1
-    os_sch_file = OSScheduleFile.new(os_external_file, column, 0)
+    os_sch_file = OSScheduleFile(os_external_file, column, 0)
     os_sch_file.setName(schedule.identifier)
     if schedule._display_name is not None:
         os_sch_file.setDisplayName(schedule.display_name)
