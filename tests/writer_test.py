@@ -1,3 +1,4 @@
+# coding=utf-8
 """Test the translators for geometry to OpenStudio."""
 import sys
 import os

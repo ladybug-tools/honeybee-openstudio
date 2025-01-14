@@ -1,3 +1,4 @@
+# coding=utf-8
 """Test the translators for materials to OpenStudio."""
 from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialNoMass, \
     EnergyMaterialVegetation
