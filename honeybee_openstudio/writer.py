@@ -13,6 +13,8 @@ from honeybee_energy.lib.constructionsets import generic_construction_set
 from honeybee_openstudio.openstudio import OSModel, OSPoint3dVector, OSPoint3d, \
     OSShadingSurfaceGroup, OSShadingSurface, OSSubSurface, OSSurface, OSSpace, \
     OSThermalZone, OSBuildingStory, OSSurfacePropertyOtherSideCoefficients
+from honeybee_openstudio.schedule import schedule_type_limits_to_openstudio, \
+    schedule_to_openstudio
 from honeybee_openstudio.material import material_to_openstudio
 from honeybee_openstudio.construction import construction_to_openstudio, \
     air_mixing_to_openstudio
@@ -441,7 +443,25 @@ def model_to_openstudio(
         building.setName(model.identifier)
     os_model.setDayofWeekforStartDay('Sunday')  # this avoids lots of warnings
 
-    # TODO: translate all of the schedules
+    # write all of the schedules and type limits
+    schedules, type_limits = [], []
+    always_on_included = False
+    all_scheds = model.properties.energy.schedules + \
+        model.properties.energy.orphaned_trans_schedules
+    for sched in all_scheds:
+        if sched.identifier == 'Always On':
+            always_on_included = True
+        schedules.append(sched)
+        t_lim = sched.schedule_type_limit
+        if t_lim is not None and not _instance_in_array(t_lim, type_limits):
+            type_limits.append(t_lim)
+    if not always_on_included:
+        always_schedule = model.properties.energy._always_on_schedule()
+        schedules.append(always_schedule)
+    for stl in type_limits:
+        schedule_type_limits_to_openstudio(stl, os_model)
+    for sch in schedules:
+        schedule_to_openstudio(sch, os_model)
 
     # write all of the materials and constructions
     materials, constructions, dynamic_cons = [], [], []
@@ -591,3 +611,17 @@ def model_to_openstudio(
 
     # return the Model object
     return os_model
+
+
+def _instance_in_array(object_instance, object_array):
+    """Check if a specific object instance is already in an array.
+
+    This can be much faster than  `if object_instance in object_array`
+    when you expect to be testing a lot of the same instance of an object for
+    inclusion in an array since the builtin method uses an == operator to
+    test inclusion.
+    """
+    for val in object_array:
+        if val is object_instance:
+            return True
+    return False
