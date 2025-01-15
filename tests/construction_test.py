@@ -10,6 +10,7 @@ from honeybee_energy.material.shade import EnergyWindowMaterialShade, \
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.construction.window import WindowConstruction
 from honeybee_energy.construction.windowshade import WindowConstructionShade
+from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 from honeybee_energy.construction.shade import ShadeConstruction
 from honeybee_energy.construction.air import AirBoundaryConstruction
 from honeybee_energy.schedule.ruleset import ScheduleRuleset
@@ -294,6 +295,48 @@ def test_window_construction_ec_to_openstudio():
         assert len(materials) == 3
     else:
         assert materials.Count == 3
+
+
+def test_window_construction_dynamic_to_openstudio():
+    """Test the translation of WindowConstructionDynamic to OpenStudio."""
+    os_model = OSModel()
+    lowe_glass = EnergyWindowMaterialGlazing(
+        'Low-e Glass', 0.00318, 0.4517, 0.359, 0.714, 0.207,
+        0, 0.84, 0.046578, 1.0)
+    clear_glass = EnergyWindowMaterialGlazing(
+        'Clear Glass', 0.005715, 0.770675, 0.07, 0.8836, 0.0804,
+        0, 0.84, 0.84, 1.0)
+    gap = EnergyWindowMaterialGas('air gap', thickness=0.03)
+    tint_glass = EnergyWindowMaterialGlazing(
+        'Tinted Low-e Glass', 0.00318, 0.09, 0.359, 0.16, 0.207,
+        0, 0.84, 0.046578, 1.0)
+    window_constr_off = WindowConstruction(
+        'Double Low-E Clear', [lowe_glass, gap, clear_glass])
+    window_constr_on = WindowConstruction(
+        'Double Low-E Tint', [lowe_glass, gap, tint_glass])
+    sched = ScheduleRuleset.from_daily_values(
+        'NighSched', [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0, 1, 1, 1])
+    double_low_e_ec = WindowConstructionDynamic(
+        'Double Low-E EC', [window_constr_on, window_constr_off], sched)
+
+    material_to_openstudio(lowe_glass, os_model)
+    material_to_openstudio(clear_glass, os_model)
+    material_to_openstudio(gap, os_model)
+    material_to_openstudio(tint_glass, os_model)
+    schedule_to_openstudio(sched, os_model)
+
+    os_constructions = construction_to_openstudio(double_low_e_ec, os_model)
+    assert len(os_constructions) == 2
+    for os_construction in os_constructions:
+        assert str(os_construction.name()).startswith('Double Low-E')
+        os_construction_str = str(os_construction)
+        assert os_construction_str.startswith('OS:Construction,')
+        materials = os_construction.layers()
+        if (sys.version_info >= (3, 0)):  # we are in cPython
+            assert len(materials) == 3
+        else:
+            assert materials.Count == 3
 
 
 def test_shade_construction_to_openstudio():

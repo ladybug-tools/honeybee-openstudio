@@ -1,6 +1,7 @@
 # coding=utf-8
 """OpenStudio construction translators."""
 from __future__ import division
+import re
 
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.construction.window import WindowConstruction
@@ -13,7 +14,10 @@ from honeybee_energy.lib.constructions import air_boundary
 from honeybee_openstudio.material import material_to_openstudio
 from honeybee_openstudio.openstudio import OSConstruction, OSMaterialVector, \
     OSShadingControl, OSConstructionAirBoundary, OSZoneMixing, \
-    OSStandardOpaqueMaterial, OSStandardGlazing
+    OSStandardOpaqueMaterial, OSStandardGlazing, \
+    OSOutputVariable, OSEnergyManagementSystemProgram, \
+    OSEnergyManagementSystemSensor, OSEnergyManagementSystemActuator, \
+    OSEnergyManagementSystemConstructionIndexVariable
 
 
 def standard_construction_to_openstudio(construction, os_model):
@@ -88,6 +92,84 @@ def window_shading_control_to_openstudio(construction, os_model):
     if construction.setpoint is not None:
         os_shade_control.setSetpoint(construction.setpoint)
     return os_shade_control
+
+
+def window_dynamic_construction_to_openstudio(construction, os_model):
+    """Convert Honeybee WindowConstructionDynamic to OpenStudio Constructions."""
+    # write all states of the window constructions into the model
+    os_constructions = []
+    for i, con in enumerate(construction.constructions):
+        con_dup = con.duplicate()
+        con_dup.identifier = '{}State{}'.format(con.identifier, i)
+        os_con = standard_construction_to_openstudio(con, os_model)
+        os_constructions.append(os_con)
+        os_con_i = OSEnergyManagementSystemConstructionIndexVariable(os_model, os_con)
+        state_id = 'State{}{}'.format(i, re.sub('[^A-Za-z0-9]', '', con.identifier))
+        os_con_i.setName(state_id)
+    # set up the EMS sensor for the schedule value
+    sensor_id = 'Sensor{}'.format(re.sub('[^A-Za-z0-9]', '', construction.identifier))
+    schedule_id = construction.schedule.identifier
+    state_sch = os_model.getScheduleByName(schedule_id)
+    if state_sch.is_initialized():
+        sch_var = OSOutputVariable('Schedule Value', os_model)
+        sch_var.setReportingFrequency('Timestep')
+        sch_var.setKeyValue(schedule_id)
+        sch_sens = OSEnergyManagementSystemSensor(os_model, sch_var)
+        sch_sens.setName(sensor_id)
+    return os_constructions
+
+
+def window_dynamic_ems_program_to_openstudio(construction, sub_face_ids, os_model):
+    """Convert WindowConstructionDynamic to OpenStudio EnergyManagementSystemProgram.
+
+    Args:
+        construction: A honeybee-energy WindowConstructionDynamic for which an
+            EnergyManagementSystemProgram will be written.
+        sub_face_ids: A list of sub-face identifiers for all of the Apertures
+            and Doors that have the dynamic construction assigned to them.
+        os_model: The OpenStudio Model to which the zone mixing is being added.
+    """
+    # get all of the sub-faces of the model and create actuators
+    sub_face_ids = set(sub_face_ids)
+    all_os_sub_faces = os_model.getSubSurfaces()
+    os_sub_faces = []
+    for os_sf in all_os_sub_faces:
+        if os_sf.nameString() in sub_face_ids:
+            os_sub_faces.append(os_sf)
+    # create the actuators
+    actuator_ids = []
+    for i, os_sf in enumerate(os_sub_faces):
+        window_act = OSEnergyManagementSystemActuator(os_sf, 'Surface', 'Construction State')
+        ap_id = os_sf.nameString()
+        act_id = 'Actuator{}{}'.format(i, re.sub('[^A-Za-z0-9]', '', ap_id))
+        window_act.setName(act_id)
+        actuator_ids.append(act_id)
+    # get the lines of the EMS program add each construction state to the program
+    ems_program = []
+    sensor_id = 'Sensor{}'.format(re.sub('[^A-Za-z0-9]', '', construction.identifier))
+    max_state_count = len(construction.constructions) - 1
+    for i, con in enumerate(construction.constructions):
+        # determine which conditional operator to use
+        cond_op = 'IF' if i == 0 else 'ELSEIF'
+        # add the conditional statement
+        state_count = i + 1
+        if i == max_state_count:
+            cond_stmt = 'ELSE'
+        else:
+            cond_stmt = '{} ({} < {})'.format(cond_op, sensor_id, state_count)
+        ems_program.append(cond_stmt)
+        # loop through the actuators and set the appropriate window state
+        state_id = 'State{}{}'.format(i, re.sub('[^A-Za-z0-9]', '', con.identifier))
+        for act_name in actuator_ids:
+            ems_program.append('SET {} = {}'.format(act_name, state_id))
+    ems_program.append('ENDIF')
+    # create the EMS Program object
+    os_ems_prog = OSEnergyManagementSystemProgram(os_model)
+    pid = 'StateChange{}'.format(re.sub('[^A-Za-z0-9]', '', construction.identifier))
+    os_ems_prog.setName(pid)
+    for line in ems_program:
+        os_ems_prog.addLine(line)
+    return os_ems_prog
 
 
 def air_construction_to_openstudio(construction, os_model):
@@ -168,9 +250,7 @@ def construction_to_openstudio(construction, os_model):
     elif isinstance(construction, WindowConstructionShade):
         return window_shade_construction_to_openstudio(construction, os_model)
     elif isinstance(construction, WindowConstructionDynamic):
-        # TODO: implement dynamic window constructions
-        raise NotImplementedError(
-            'WindowConstructionDynamic to OpenStudio not implemented.')
+        return window_dynamic_construction_to_openstudio(construction, os_model)
     elif isinstance(construction, ShadeConstruction):
         return shade_construction_to_openstudio(construction, os_model)
     elif isinstance(construction, AirBoundaryConstruction):
