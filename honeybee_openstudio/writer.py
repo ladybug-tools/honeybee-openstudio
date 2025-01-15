@@ -8,16 +8,19 @@ from honeybee.altnumber import autocalculate
 from honeybee.facetype import RoofCeiling, Floor, AirBoundary
 from honeybee.boundarycondition import Outdoors, Ground, Surface
 from honeybee_energy.boundarycondition import Adiabatic, OtherSideTemperature
+from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 from honeybee_energy.lib.constructionsets import generic_construction_set
 
 from honeybee_openstudio.openstudio import OSModel, OSPoint3dVector, OSPoint3d, \
     OSShadingSurfaceGroup, OSShadingSurface, OSSubSurface, OSSurface, OSSpace, \
-    OSThermalZone, OSBuildingStory, OSSurfacePropertyOtherSideCoefficients
+    OSThermalZone, OSBuildingStory, OSSurfacePropertyOtherSideCoefficients, \
+    OSEnergyManagementSystemProgramCallingManager
 from honeybee_openstudio.schedule import schedule_type_limits_to_openstudio, \
     schedule_to_openstudio
 from honeybee_openstudio.material import material_to_openstudio
 from honeybee_openstudio.construction import construction_to_openstudio, \
-    air_mixing_to_openstudio, window_shading_control_to_openstudio
+    air_mixing_to_openstudio, window_shading_control_to_openstudio, \
+    window_dynamic_ems_program_to_openstudio
 from honeybee_openstudio.constructionset import construction_set_to_openstudio
 
 
@@ -65,7 +68,7 @@ def shade_mesh_to_openstudio(shade_mesh, os_model):
         for os_shade in os_shades:
             os_shade.setDisplayName(shade_mesh.display_name)
     construction = shade_mesh.properties.energy.construction
-    if shade.properties.energy.is_construction_set_on_object and \
+    if shade_mesh.properties.energy.is_construction_set_on_object and \
             not construction.is_default:
         os_construction = os_model.getConstructionByName(construction.identifier)
         if os_construction.is_initialized():
@@ -139,7 +142,7 @@ def door_to_openstudio(door, os_model):
             if construction.has_shade:
                 constr_id = construction.window_construction.identifier
             elif construction.is_dynamic:
-                constr_id = construction.constructions[0].identifier
+                constr_id = '{}State0'.format(construction.constructions[0].identifier)
             else:
                 constr_id = construction.identifier
             os_construction = os_model.getConstructionByName(constr_id)
@@ -198,7 +201,7 @@ def aperture_to_openstudio(aperture, os_model):
             if construction.has_shade:
                 constr_id = construction.window_construction.identifier
             elif construction.is_dynamic:
-                constr_id = construction.constructions[0].identifier
+                constr_id = '{}State0'.format(construction.constructions[0].identifier)
             else:
                 constr_id = construction.identifier
             os_construction = os_model.getConstructionByName(constr_id)
@@ -530,7 +533,7 @@ def model_to_openstudio(
     for stl in type_limits:
         schedule_type_limits_to_openstudio(stl, os_model)
     for sch in schedules:
-        schedule_to_openstudio(sch, os_model)
+        schedule_to_openstudio(sch, os_model, schedule_directory)
 
     # write all of the materials, constructions, and construction sets
     materials, constructions, dynamic_cons = [], [], []
@@ -681,6 +684,28 @@ def model_to_openstudio(
         shade_to_openstudio(shade, os_model)
     for shade_mesh in model.shade_meshes:
         shade_mesh_to_openstudio(shade_mesh, os_model)
+
+    # write any EMS programs for dynamic constructions
+    if len(dynamic_cons) != 0:
+        # create the program calling manager
+        os_prog_manager = OSEnergyManagementSystemProgramCallingManager(os_model)
+        os_prog_manager.setName('Dynamic_Window_Constructions')
+        os_prog_manager.setCallingPoint('BeginTimestepBeforePredictor')
+        # get all of the sub-faces with the dynamic construction
+        dyn_dict = {}
+        for room in model.rooms:
+            for face in room.faces:
+                for sf in face.sub_faces:
+                    con = sf.properties.energy.construction
+                    if isinstance(con, WindowConstructionDynamic):
+                        try:
+                            dyn_dict[con.identifier].append(sf.identifier)
+                        except KeyError:
+                            dyn_dict[con.identifier] = [sf.identifier]
+        for con in dynamic_cons:
+            ems_program = window_dynamic_ems_program_to_openstudio(
+                con, dyn_dict[con.identifier], os_model)
+            os_prog_manager.addProgram(ems_program)
 
     # return the Model object
     return os_model

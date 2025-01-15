@@ -68,6 +68,7 @@ if (sys.version_info >= (3, 0)):  # we are in cPython and can import normally
     OSDefaultSurfaceConstructions = openstudio.model.DefaultSurfaceConstructions
     OSDefaultSubSurfaceConstructions = openstudio.model.DefaultSubSurfaceConstructions
     # ems classes
+    OSOutputVariable = openstudio.model.OutputVariable
     OSEnergyManagementSystemProgram = openstudio.model.EnergyManagementSystemProgram
     OSEnergyManagementSystemProgramCallingManager = \
         openstudio.model.EnergyManagementSystemProgramCallingManager
@@ -146,6 +147,7 @@ else:  # we are in IronPython and we must import the .NET bindings
     OSDefaultSurfaceConstructions = openstudio.DefaultSurfaceConstructions
     OSDefaultSubSurfaceConstructions = openstudio.DefaultSubSurfaceConstructions
     # ems classes
+    OSOutputVariable = openstudio.OutputVariable
     OSEnergyManagementSystemProgram = openstudio.EnergyManagementSystemProgram
     OSEnergyManagementSystemProgramCallingManager = \
         openstudio.EnergyManagementSystemProgramCallingManager

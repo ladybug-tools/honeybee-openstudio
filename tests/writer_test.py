@@ -16,6 +16,11 @@ from honeybee_openstudio.openstudio import OSModel
 from honeybee_openstudio.writer import shade_mesh_to_openstudio, shade_to_openstudio, \
     door_to_openstudio, aperture_to_openstudio, face_to_openstudio, room_to_openstudio, \
     model_to_openstudio
+from honeybee_energy.material.glazing import EnergyWindowMaterialGlazing
+from honeybee_energy.material.gas import EnergyWindowMaterialGas
+from honeybee_energy.construction.window import WindowConstruction
+from honeybee_energy.construction.dynamic import WindowConstructionDynamic
+from honeybee_energy.schedule.ruleset import ScheduleRuleset
 
 
 def test_shade_writer():
@@ -267,6 +272,51 @@ def test_model_writer():
         assert shades.Count == 3
 
 
+def test_model_writer_dynamic_constructions():
+    """Test the functionality of the Model OpenStudio writer with dynamic constructions."""
+    room = Room.from_box('Tiny_House_Zone', 5, 10, 3)
+    south_face = room[3]
+    south_face.apertures_by_ratio(0.4, 0.01)
+    south_face.apertures[0].overhang(0.5, indoor=False)
+    south_face.apertures[0].overhang(0.5, indoor=True)
+    south_face.apertures[0].move_shades(Vector3D(0, 0, -0.5))
+    north_face = room[1]
+    north_face.apertures_by_ratio(0.4, 0.01)
+    roof = room[-1]
+    roof.apertures_by_ratio(0.1, 0.01)
+
+    lowe_glass = EnergyWindowMaterialGlazing(
+        'Low-e Glass', 0.00318, 0.4517, 0.359, 0.714, 0.207,
+        0, 0.84, 0.046578, 1.0)
+    clear_glass = EnergyWindowMaterialGlazing(
+        'Clear Glass', 0.005715, 0.770675, 0.07, 0.8836, 0.0804,
+        0, 0.84, 0.84, 1.0)
+    gap = EnergyWindowMaterialGas('air gap', thickness=0.03)
+    tint_glass = EnergyWindowMaterialGlazing(
+        'Tinted Low-e Glass', 0.00318, 0.09, 0.359, 0.16, 0.207,
+        0, 0.84, 0.046578, 1.0)
+    window_constr_off = WindowConstruction(
+        'Double Low-E Clear', [lowe_glass, gap, clear_glass])
+    window_constr_on = WindowConstruction(
+        'Double Low-E Tint', [lowe_glass, gap, tint_glass])
+    sched = ScheduleRuleset.from_daily_values(
+        'NighSched', [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0, 1, 1, 1])
+    double_low_e_ec = WindowConstructionDynamic(
+        'Double Low-E EC', [window_constr_on, window_constr_off], sched)
+    for skylight in roof.apertures:
+        skylight.properties.energy.construction = double_low_e_ec
+
+    model = Model('Tiny_House', [room])
+
+    os_model = model_to_openstudio(model)
+    ems_progs = os_model.getEnergyManagementSystemPrograms()
+    if (sys.version_info >= (3, 0)):  # we are in cPython
+        assert len(ems_progs) == 1
+    else:
+        assert ems_progs.Count == 1
+
+
 def test_model_writer_from_standard_hbjson():
     """Test translating a HBJSON to an OpenStudio string."""
     standard_test = 'assets/2023_rac_advanced_sample_project.hbjson'
@@ -280,3 +330,18 @@ def test_model_writer_from_standard_hbjson():
         assert len(spaces) == 102
     else:
         assert spaces.Count == 102
+
+
+def test_model_writer_from_complete_hbjson():
+    """Test the translation of a Model with programs, constructions and HVAC to OSM."""
+    standard_test = 'assets/sample_lab_building.hbjson'
+    standard_test = os.path.join(os.path.dirname(__file__), standard_test)
+    model = Model.from_file(standard_test)
+
+    os_model = model_to_openstudio(model)
+    spaces = os_model.getSpaces()
+
+    if (sys.version_info >= (3, 0)):  # we are in cPython
+        assert len(spaces) == 100
+    else:
+        assert spaces.Count == 100

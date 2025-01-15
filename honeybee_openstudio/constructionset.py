@@ -39,7 +39,7 @@ def _glazing_construction(construction, os_model):
     elif isinstance(construction, WindowConstructionShade):
         construction_id = construction.window_construction.identifier
     elif isinstance(construction, WindowConstructionDynamic):
-        construction_id = construction.constructions[0].identifier
+        construction_id = '{}State0'.format(construction.constructions[0].identifier)
     else:
         construction_id = construction.identifier
     constr_ref = os_model.getConstructionByName(construction_id)
