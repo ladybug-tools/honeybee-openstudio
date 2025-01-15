@@ -63,6 +63,10 @@ if (sys.version_info >= (3, 0)):  # we are in cPython and can import normally
     OSShadingControl = openstudio.model.ShadingControl
     OSConstructionAirBoundary = openstudio.model.ConstructionAirBoundary
     OSZoneMixing = openstudio.model.ZoneMixing
+    # construction set classes
+    OSDefaultConstructionSet = openstudio.model.DefaultConstructionSet
+    OSDefaultSurfaceConstructions = openstudio.model.DefaultSurfaceConstructions
+    OSDefaultSubSurfaceConstructions = openstudio.model.DefaultSubSurfaceConstructions
     # ems classes
     OSEnergyManagementSystemProgram = openstudio.model.EnergyManagementSystemProgram
     OSEnergyManagementSystemProgramCallingManager = \
@@ -137,6 +141,10 @@ else:  # we are in IronPython and we must import the .NET bindings
     OSShadingControl = openstudio.ShadingControl
     OSConstructionAirBoundary = openstudio.ConstructionAirBoundary
     OSZoneMixing = openstudio.ZoneMixing
+    # construction set classes
+    OSDefaultConstructionSet = openstudio.DefaultConstructionSet
+    OSDefaultSurfaceConstructions = openstudio.DefaultSurfaceConstructions
+    OSDefaultSubSurfaceConstructions = openstudio.DefaultSubSurfaceConstructions
     # ems classes
     OSEnergyManagementSystemProgram = openstudio.EnergyManagementSystemProgram
     OSEnergyManagementSystemProgramCallingManager = \
