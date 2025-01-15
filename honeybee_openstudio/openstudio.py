@@ -67,6 +67,21 @@ if (sys.version_info >= (3, 0)):  # we are in cPython and can import normally
     OSDefaultConstructionSet = openstudio.model.DefaultConstructionSet
     OSDefaultSurfaceConstructions = openstudio.model.DefaultSurfaceConstructions
     OSDefaultSubSurfaceConstructions = openstudio.model.DefaultSubSurfaceConstructions
+    # loads classes
+    OSPeopleDefinition = openstudio.model.PeopleDefinition
+    OSPeople = openstudio.model.People
+    OSLightsDefinition = openstudio.model.LightsDefinition
+    OSLights = openstudio.model.Lights
+    OSElectricEquipmentDefinition = openstudio.model.ElectricEquipmentDefinition
+    OSElectricEquipment = openstudio.model.ElectricEquipment
+    OSGasEquipmentDefinition = openstudio.model.GasEquipmentDefinition
+    OSGasEquipment = openstudio.model.GasEquipment
+    OSOtherEquipmentDefinition = openstudio.model.OtherEquipmentDefinition
+    OSOtherEquipment = openstudio.model.OtherEquipment
+    OSSpaceInfiltrationDesignFlowRate = openstudio.model.SpaceInfiltrationDesignFlowRate
+    OSDesignSpecificationOutdoorAir = openstudio.model.DesignSpecificationOutdoorAir
+    OSThermostatSetpointDualSetpoint = openstudio.model.ThermostatSetpointDualSetpoint
+    OSZoneControlHumidistat = openstudio.model.ZoneControlHumidistat
     # ems classes
     OSOutputVariable = openstudio.model.OutputVariable
     OSEnergyManagementSystemProgram = openstudio.model.EnergyManagementSystemProgram
@@ -146,6 +161,21 @@ else:  # we are in IronPython and we must import the .NET bindings
     OSDefaultConstructionSet = openstudio.DefaultConstructionSet
     OSDefaultSurfaceConstructions = openstudio.DefaultSurfaceConstructions
     OSDefaultSubSurfaceConstructions = openstudio.DefaultSubSurfaceConstructions
+    # loads classes
+    OSPeopleDefinition = openstudio.PeopleDefinition
+    OSPeople = openstudio.People
+    OSLightsDefinition = openstudio.LightsDefinition
+    OSLights = openstudio.Lights
+    OSElectricEquipmentDefinition = openstudio.ElectricEquipmentDefinition
+    OSElectricEquipment = openstudio.ElectricEquipment
+    OSGasEquipmentDefinition = openstudio.GasEquipmentDefinition
+    OSGasEquipment = openstudio.GasEquipment
+    OSOtherEquipmentDefinition = openstudio.OtherEquipmentDefinition
+    OSOtherEquipment = openstudio.OtherEquipment
+    OSSpaceInfiltrationDesignFlowRate = openstudio.SpaceInfiltrationDesignFlowRate
+    OSDesignSpecificationOutdoorAir = openstudio.DesignSpecificationOutdoorAir
+    OSThermostatSetpointDualSetpoint = openstudio.ThermostatSetpointDualSetpoint
+    OSZoneControlHumidistat = openstudio.ZoneControlHumidistat
     # ems classes
     OSOutputVariable = openstudio.OutputVariable
     OSEnergyManagementSystemProgram = openstudio.EnergyManagementSystemProgram
