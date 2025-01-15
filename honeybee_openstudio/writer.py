@@ -7,7 +7,7 @@ from honeybee.typing import clean_ep_string
 from honeybee.altnumber import autocalculate
 from honeybee.facetype import RoofCeiling, Floor, AirBoundary
 from honeybee.boundarycondition import Outdoors, Ground, Surface
-from honeybee_energy.boundarycondition import OtherSideTemperature
+from honeybee_energy.boundarycondition import Adiabatic, OtherSideTemperature
 from honeybee_energy.lib.constructionsets import generic_construction_set
 
 from honeybee_openstudio.openstudio import OSModel, OSPoint3dVector, OSPoint3d, \
@@ -17,7 +17,7 @@ from honeybee_openstudio.schedule import schedule_type_limits_to_openstudio, \
     schedule_to_openstudio
 from honeybee_openstudio.material import material_to_openstudio
 from honeybee_openstudio.construction import construction_to_openstudio, \
-    air_mixing_to_openstudio
+    air_mixing_to_openstudio, window_shading_control_to_openstudio
 from honeybee_openstudio.constructionset import construction_set_to_openstudio
 
 
@@ -65,8 +65,9 @@ def shade_mesh_to_openstudio(shade_mesh, os_model):
         for os_shade in os_shades:
             os_shade.setDisplayName(shade_mesh.display_name)
     construction = shade_mesh.properties.energy.construction
-    if not construction.is_default:
-        os_construction = os_model.getMaterialByName(construction.identifier)
+    if shade.properties.energy.is_construction_set_on_object and \
+            not construction.is_default:
+        os_construction = os_model.getConstructionByName(construction.identifier)
         if os_construction.is_initialized():
             for os_shade in os_shades:
                 os_shade.setConstruction(os_construction)
@@ -95,8 +96,9 @@ def shade_to_openstudio(shade, os_model):
     if shade._display_name is not None:
         os_shade.setDisplayName(shade.display_name)
     construction = shade.properties.energy.construction
-    if not construction.is_default:
-        os_construction = os_model.getMaterialByName(construction.identifier)
+    if shade.properties.energy.is_construction_set_on_object and \
+            not construction.is_default:
+        os_construction = os_model.getConstructionByName(construction.identifier)
         if os_construction.is_initialized():
             os_shade.setConstruction(os_construction)
     trans_sched = shade.properties.energy.transmittance_schedule
@@ -131,8 +133,30 @@ def door_to_openstudio(door, os_model):
             dr_type = 'OverheadDoor' if isinstance(par.boundary_condition, Outdoors) and \
                 isinstance(par.type, (RoofCeiling, Floor)) else 'Door'
         os_door.setSubSurfaceType(dr_type)
-        # TODO: Assign the construction if it's hard set
-        # TODO: Assign the frame property if the window construction has one
+        # assign the construction if it's hard set
+        construction = door.properties.energy.construction
+        if door.properties.energy.is_construction_set_on_object:
+            if construction.has_shade:
+                constr_id = construction.window_construction.identifier
+            elif construction.is_dynamic:
+                constr_id = construction.constructions[0].identifier
+            else:
+                constr_id = construction.identifier
+            os_construction = os_model.getConstructionByName(constr_id)
+            if os_construction.is_initialized():
+                os_construction = os_construction.get()
+                os_door.setConstruction(os_construction)
+        # assign the frame property if the window construction has one
+        if construction.has_frame:
+            frame_id = construction.frame.identifier
+            frame = os_model.getWindowPropertyFrameAndDividerByName(frame_id)
+            if frame.is_initialized():
+                os_frame = frame.get()
+                os_door.setWindowPropertyFrameAndDivider(os_frame)
+        # create the WindowShadingControl object if it is needed
+        if construction.has_shade:
+            shd_prop_str = window_shading_control_to_openstudio(construction, os_model)
+            os_door.setShadingControl(shd_prop_str)
     else:
         os_door = OSShadingSurface(os_vertices, os_model)
         for shd in door._outdoor_shades:
@@ -168,8 +192,30 @@ def aperture_to_openstudio(aperture, os_model):
             ap_type = 'Skylight' if isinstance(par.boundary_condition, Outdoors) and \
                 isinstance(par.type, (RoofCeiling, Floor)) else 'FixedWindow'
         os_aperture.setSubSurfaceType(ap_type)
-        # TODO: Assign the construction if it's hard set
-        # TODO: Assign the frame property if the window construction has one
+        # assign the construction if it's hard set
+        construction = aperture.properties.energy.construction
+        if aperture.properties.energy.is_construction_set_on_object:
+            if construction.has_shade:
+                constr_id = construction.window_construction.identifier
+            elif construction.is_dynamic:
+                constr_id = construction.constructions[0].identifier
+            else:
+                constr_id = construction.identifier
+            os_construction = os_model.getConstructionByName(constr_id)
+            if os_construction.is_initialized():
+                os_construction = os_construction.get()
+                os_aperture.setConstruction(os_construction)
+        # assign the frame property if the window construction has one
+        if construction.has_frame:
+            frame_id = construction.frame.identifier
+            frame = os_model.getWindowPropertyFrameAndDividerByName(frame_id)
+            if frame.is_initialized():
+                os_frame = frame.get()
+                os_aperture.setWindowPropertyFrameAndDivider(os_frame)
+        # create the WindowShadingControl object if it is needed
+        if construction.has_shade:
+            shd_prop_str = window_shading_control_to_openstudio(construction, os_model)
+            os_aperture.setShadingControl(shd_prop_str)
     else:
         os_aperture = OSShadingSurface(os_vertices, os_model)
         for shd in aperture._outdoor_shades:
@@ -245,7 +291,15 @@ def face_to_openstudio(face, os_model, adj_map=None):
                 srf_prop.setExternalDryBulbTemperatureCoefficient(0)
             os_face.setSurfacePropertyOtherSideCoefficients(srf_prop)
 
-        # TODO: Assign the construction if it's hard set, Adiabatic, or an AirBoundary
+        # assign the construction if it's hard set, an AirBoundary, or Adiabatic
+        if face.properties.energy.is_construction_set_on_object or \
+                isinstance(face.type, AirBoundary) or \
+                isinstance(face.boundary_condition, (Adiabatic, OtherSideTemperature)):
+            construction_id = face.properties.energy.construction.identifier
+            os_construction = os_model.getConstructionByName(construction_id)
+            if os_construction.is_initialized():
+                os_construction = os_construction.get()
+                os_face.setConstruction(os_construction)
 
         # create the sub-faces
         sub_faces = {}
@@ -301,6 +355,14 @@ def room_to_openstudio(room, os_model, adj_map=None):
         os_space.setDisplayName(room.display_name)
     if room.exclude_floor_area:
         os_space.setPartofTotalFloorArea(False)
+
+    # assign the construction set if specified
+    if room.properties.energy._construction_set is not None:
+        con_set_id = room.properties.energy.construction_set.identifier
+        os_con_set = os_model.getDefaultConstructionSetByName(con_set_id)
+        if os_con_set.is_initialized():
+            os_con_set = os_con_set.get()
+            os_space.setDefaultConstructionSet(os_con_set)
 
     # assign all of the faces to the room
     for face in room.faces:
