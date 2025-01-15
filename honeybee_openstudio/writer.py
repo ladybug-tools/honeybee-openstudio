@@ -18,6 +18,7 @@ from honeybee_openstudio.schedule import schedule_type_limits_to_openstudio, \
 from honeybee_openstudio.material import material_to_openstudio
 from honeybee_openstudio.construction import construction_to_openstudio, \
     air_mixing_to_openstudio
+from honeybee_openstudio.constructionset import construction_set_to_openstudio
 
 
 def face_3d_to_openstudio(face_3d):
@@ -130,6 +131,8 @@ def door_to_openstudio(door, os_model):
             dr_type = 'OverheadDoor' if isinstance(par.boundary_condition, Outdoors) and \
                 isinstance(par.type, (RoofCeiling, Floor)) else 'Door'
         os_door.setSubSurfaceType(dr_type)
+        # TODO: Assign the construction if it's hard set
+        # TODO: Assign the frame property if the window construction has one
     else:
         os_door = OSShadingSurface(os_vertices, os_model)
         for shd in door._outdoor_shades:
@@ -165,6 +168,8 @@ def aperture_to_openstudio(aperture, os_model):
             ap_type = 'Skylight' if isinstance(par.boundary_condition, Outdoors) and \
                 isinstance(par.type, (RoofCeiling, Floor)) else 'FixedWindow'
         os_aperture.setSubSurfaceType(ap_type)
+        # TODO: Assign the construction if it's hard set
+        # TODO: Assign the frame property if the window construction has one
     else:
         os_aperture = OSShadingSurface(os_vertices, os_model)
         for shd in aperture._outdoor_shades:
@@ -239,6 +244,8 @@ def face_to_openstudio(face, os_model, adj_map=None):
                 srf_prop.setConstantTemperatureCoefficient(1)
                 srf_prop.setExternalDryBulbTemperatureCoefficient(0)
             os_face.setSurfacePropertyOtherSideCoefficients(srf_prop)
+
+        # TODO: Assign the construction if it's hard set, Adiabatic, or an AirBoundary
 
         # create the sub-faces
         sub_faces = {}
@@ -436,11 +443,11 @@ def model_to_openstudio(
 
     # create the OpenStudio model object and setup the Building
     os_model = OSModel() if seed_model is None else seed_model
-    building = os_model.getBuilding()
+    os_building = os_model.getBuilding()
     if model._display_name is not None:
-        building.setName(clean_ep_string(model.display_name))
+        os_building.setName(clean_ep_string(model.display_name))
     else:
-        building.setName(model.identifier)
+        os_building.setName(model.identifier)
     os_model.setDayofWeekforStartDay('Sunday')  # this avoids lots of warnings
 
     # write all of the schedules and type limits
@@ -463,7 +470,7 @@ def model_to_openstudio(
     for sch in schedules:
         schedule_to_openstudio(sch, os_model)
 
-    # write all of the materials and constructions
+    # write all of the materials, constructions, and construction sets
     materials, constructions, dynamic_cons = [], [], []
     all_constrs = model.properties.energy.constructions + \
         generic_construction_set.constructions_unique
@@ -489,8 +496,12 @@ def model_to_openstudio(
         material_to_openstudio(mat, os_model)
     for constr in constructions:
         construction_to_openstudio(constr, os_model)
+    os_generic_c_set = construction_set_to_openstudio(generic_construction_set, os_model)
+    os_building.setDefaultConstructionSet(os_generic_c_set)
+    for con_set in model.properties.energy.construction_sets:
+        construction_set_to_openstudio(con_set, os_model)
 
-    # TODO: translate all of the construction sets and programs
+    # TODO: translate all of the programs
 
     # create all of the spaces
     space_map, story_map = {}, {}
