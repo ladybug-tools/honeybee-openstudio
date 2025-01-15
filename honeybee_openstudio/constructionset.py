@@ -1,6 +1,7 @@
 # coding=utf-8
 """OpenStudio ConstructionSet translator."""
 from __future__ import division
+from honeybee_energy.construction.windowshade import WindowConstructionShade
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 
 from honeybee_openstudio.openstudio import OSDefaultConstructionSet, \
@@ -35,9 +36,12 @@ def _glazing_construction(construction, os_model):
     """Get an OpenStudio window construction with a check for dynamic constructions."""
     if construction is None:
         return None
-    construction_id = construction.identifier \
-        if not isinstance(construction, WindowConstructionDynamic) \
-        else construction.constructions[0].identifier
+    elif isinstance(construction, WindowConstructionShade):
+        construction_id = construction.window_construction.identifier
+    elif isinstance(construction, WindowConstructionDynamic):
+        construction_id = construction.constructions[0].identifier
+    else:
+        construction_id = construction.identifier
     constr_ref = os_model.getConstructionByName(construction_id)
     if constr_ref.is_initialized():
         os_construction = constr_ref.get()
