@@ -71,6 +71,7 @@ def schedule_ruleset_to_openstudio(schedule, os_model):
             day_schs[day_sch.identifier] = os_day_sch
     # assign default day schedule
     os_def_day_sch = os_sch_ruleset.defaultDaySchedule()
+    day_schs[def_day.identifier] = os_def_day_sch
     if os_type_limit is not None:
         os_def_day_sch.setScheduleTypeLimits(os_type_limit)
     os_def_day_sch.setName(def_day.identifier)
