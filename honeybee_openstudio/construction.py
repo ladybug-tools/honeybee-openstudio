@@ -119,27 +119,22 @@ def window_dynamic_construction_to_openstudio(construction, os_model):
     return os_constructions
 
 
-def window_dynamic_ems_program_to_openstudio(construction, sub_face_ids, os_model):
+def window_dynamic_ems_program_to_openstudio(construction, os_sub_faces, os_model):
     """Convert WindowConstructionDynamic to OpenStudio EnergyManagementSystemProgram.
 
     Args:
         construction: A honeybee-energy WindowConstructionDynamic for which an
             EnergyManagementSystemProgram will be written.
-        sub_face_ids: A list of sub-face identifiers for all of the Apertures
+        os_sub_faces: A list of OpenStudio SubSurface objects for all of the Apertures
             and Doors that have the dynamic construction assigned to them.
-        os_model: The OpenStudio Model to which the zone mixing is being added.
+        os_model: The OpenStudio Model to which the dynamic window construction
+            is being added.
     """
-    # get all of the sub-faces of the model and create actuators
-    sub_face_ids = set(sub_face_ids)
-    all_os_sub_faces = os_model.getSubSurfaces()
-    os_sub_faces = []
-    for os_sf in all_os_sub_faces:
-        if os_sf.nameString() in sub_face_ids:
-            os_sub_faces.append(os_sf)
     # create the actuators
     actuator_ids = []
     for i, os_sf in enumerate(os_sub_faces):
-        window_act = OSEnergyManagementSystemActuator(os_sf, 'Surface', 'Construction State')
+        window_act = OSEnergyManagementSystemActuator(
+            os_sf, 'Surface', 'Construction State')
         ap_id = os_sf.nameString()
         act_id = 'Actuator{}{}'.format(i, re.sub('[^A-Za-z0-9]', '', ap_id))
         window_act.setName(act_id)

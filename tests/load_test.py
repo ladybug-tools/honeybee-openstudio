@@ -1,11 +1,12 @@
 # coding=utf-8
 """Test the translators for loads to OpenStudio."""
 from ladybug.dt import Time
-
+from honeybee.room import Room
 from honeybee_energy.load.people import People
 from honeybee_energy.load.lighting import Lighting
 from honeybee_energy.load.equipment import ElectricEquipment, GasEquipment
 from honeybee_energy.load.process import Process
+from honeybee_energy.load.hotwater import ServiceHotWater
 from honeybee_energy.load.infiltration import Infiltration
 from honeybee_energy.load.ventilation import Ventilation
 from honeybee_energy.load.setpoint import Setpoint
@@ -19,7 +20,8 @@ from honeybee_openstudio.openstudio import OSModel
 from honeybee_openstudio.schedule import schedule_to_openstudio
 from honeybee_openstudio.load import people_to_openstudio, lighting_to_openstudio, \
     electric_equipment_to_openstudio, gas_equipment_to_openstudio, \
-    process_to_openstudio, infiltration_to_openstudio, ventilation_to_openstudio, \
+    process_to_openstudio, hot_water_to_openstudio, \
+    infiltration_to_openstudio, ventilation_to_openstudio, \
     setpoint_to_openstudio_thermostat, setpoint_to_openstudio_humidistat
 
 
@@ -120,6 +122,25 @@ def test_process_to_openstudio():
     assert str(os_equipment.name()) == 'Wood Burning Fireplace'
     os_equipment_str = str(os_equipment)
     assert os_equipment_str.startswith('OS:OtherEquipment,')
+
+
+def test_hot_water_to_openstudio():
+    """Test the translation of ServiceHotWater to OpenStudio."""
+    os_model = OSModel()
+    os_model.setDayofWeekforStartDay('Sunday')  # this avoids lots of warnings
+    room = Room.from_box('Office_Restroom', 5, 10, 3)
+    simple_office = ScheduleDay('Simple Weekday', [0, 1, 0],
+                                [Time(0, 0), Time(9, 0), Time(17, 0)])
+    schedule = ScheduleRuleset('Office Water Use', simple_office,
+                               None, schedule_types.fractional)
+    shw = ServiceHotWater.from_watts_per_area('Office Hot Water', 10, schedule)
+
+    schedule_to_openstudio(schedule, os_model)
+
+    os_water_equip = hot_water_to_openstudio(shw, room, os_model)
+    assert 'Office Hot Water' in str(os_water_equip.name())
+    os_equipment_str = str(os_water_equip)
+    assert os_equipment_str.startswith('OS:WaterUse:Equipment,')
 
 
 def test_infiltration_to_openstudio():

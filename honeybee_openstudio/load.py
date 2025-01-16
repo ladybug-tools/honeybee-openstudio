@@ -6,9 +6,23 @@ from honeybee.altnumber import autocalculate
 
 from honeybee_openstudio.openstudio import OSPeopleDefinition, OSPeople, \
     OSLightsDefinition, OSLights, OSElectricEquipmentDefinition, OSElectricEquipment, \
-    OSGasEquipmentDefinition, OSGasEquipment, OSSpaceInfiltrationDesignFlowRate, \
-    OSOtherEquipmentDefinition, OSOtherEquipment, OSDesignSpecificationOutdoorAir, \
-    OSThermostatSetpointDualSetpoint, OSZoneControlHumidistat
+    OSGasEquipmentDefinition, OSGasEquipment, OSOtherEquipmentDefinition, \
+    OSOtherEquipment, OSWaterUseEquipmentDefinition, OSWaterUseEquipment, \
+    OSWaterUseConnections, OSSpaceInfiltrationDesignFlowRate, \
+    OSDesignSpecificationOutdoorAir, \
+    OSThermostatSetpointDualSetpoint, OSZoneControlHumidistat, OSScheduleRuleset
+
+
+def _create_constant_schedule(schedule_name, schedule_value, os_model):
+    """Utility function for creating a schedule with a single value."""
+    # check if a constant schedule already exists and, if not, create it
+    exist_schedule = os_model.getScheduleByName(schedule_name)
+    if exist_schedule.is_initialized():  # return the existing schedule
+        return exist_schedule.get()
+    else:  # create the schedule
+        os_sch = OSScheduleRuleset(os_model, schedule_value)
+        os_sch.setName(schedule_name)
+        return os_sch
 
 
 def people_to_openstudio(people, os_model):
@@ -125,6 +139,58 @@ def process_to_openstudio(process, os_model):
     os_equip.setFuelType(process.fuel_type)
     os_equip.setEndUseSubcategory(process.end_use_category)
     return os_equip
+
+
+def hot_water_to_openstudio(hot_water, room, os_model):
+    """Convert Honeybee ServiceHotWater to OpenStudio WaterUseEquipment.
+
+    Args:
+        hot_water: The Honeybee-energy ServiceHotWater object to be translated
+            to OpenStudio.
+        room: The Honeybee Room object to which the ServiceHotWater is assigned.
+            This is required in order to compute the total flow rate from the
+            floor area.
+        os_model: The OpenStudio Model to which the WaterUseEquipment object
+            will be added.
+    """
+    # create water use equipment + connection and set identifier
+    os_shw_def = OSWaterUseEquipmentDefinition(os_model)
+    os_shw = OSWaterUseEquipment(os_shw_def)
+    u_id = '{}..{}'.format(hot_water.identifier, room.identifier)
+    os_shw_def.setName(u_id)
+    os_shw.setName(u_id)
+    if hot_water._display_name is not None:
+        os_shw_def.setDisplayName(hot_water.display_name)
+        os_shw.setDisplayName(hot_water.display_name)
+    # assign the flow of water
+    total_flow = (hot_water.flow_per_area / 3600000.) * room.floor_area
+    os_shw_def.setPeakFlowRate(total_flow)
+    os_shw_def.setEndUseSubcategory('General')
+    # assign schedule
+    shw_schedule = os_model.getScheduleByName(hot_water.schedule.identifier)
+    if shw_schedule.is_initialized():
+        shw_schedule = shw_schedule.get()
+        os_shw.setFlowRateFractionSchedule(shw_schedule)
+    # assign the hot water temperature
+    target_temp = hot_water.target_temperature
+    target_sch_name = '{}C Hot Water'.format(target_temp)
+    target_water_sch = _create_constant_schedule(target_sch_name, target_temp, os_model)
+    os_shw_def.setTargetTemperatureSchedule(target_water_sch)
+    # create the hot water connection with same temperature as target temperature
+    os_shw_conn = OSWaterUseConnections(os_model)
+    os_shw_conn.addWaterUseEquipment(os_shw)
+    os_shw_conn.setHotWaterSupplyTemperatureSchedule(target_water_sch)
+    # assign sensible fraction if it exists
+    sens_fract = round(hot_water.sensible_fraction)
+    sens_sch_name = '{} Hot Water Sensible Fraction'.format(sens_fract)
+    sens_fract_sch = _create_constant_schedule(sens_sch_name, sens_fract, os_model)
+    os_shw_def.setSensibleFractionSchedule(sens_fract_sch)
+    # assign latent fraction if it exists
+    lat_fract = round(hot_water.latent_fraction, 3)
+    lat_sch_name = '{} Hot Water Latent Fraction'.format(hot_water.latent_fraction)
+    lat_fract_sch = _create_constant_schedule(lat_sch_name, lat_fract, os_model)
+    os_shw_def.setLatentFractionSchedule(lat_fract_sch)
+    return os_shw
 
 
 def infiltration_to_openstudio(infiltration, os_model):
