@@ -698,10 +698,11 @@ def model_to_openstudio(
                 for sf in face.sub_faces:
                     con = sf.properties.energy.construction
                     if isinstance(con, WindowConstructionDynamic):
+                        os_sf = adj_map['sub_faces'][sf.identifier]
                         try:
-                            dyn_dict[con.identifier].append(sf.identifier)
+                            dyn_dict[con.identifier].append(os_sf)
                         except KeyError:
-                            dyn_dict[con.identifier] = [sf.identifier]
+                            dyn_dict[con.identifier] = [os_sf]
         for con in dynamic_cons:
             ems_program = window_dynamic_ems_program_to_openstudio(
                 con, dyn_dict[con.identifier], os_model)
