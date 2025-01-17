@@ -92,6 +92,7 @@ OSDefaultConstructionSet = os_model_namespace.DefaultConstructionSet
 OSDefaultSurfaceConstructions = os_model_namespace.DefaultSurfaceConstructions
 OSDefaultSubSurfaceConstructions = os_model_namespace.DefaultSubSurfaceConstructions
 # loads classes
+OSSpaceType = os_model_namespace.SpaceType
 OSPeopleDefinition = os_model_namespace.PeopleDefinition
 OSPeople = os_model_namespace.People
 OSLightsDefinition = os_model_namespace.LightsDefinition

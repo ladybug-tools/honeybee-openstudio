@@ -9,8 +9,8 @@ from honeybee_openstudio.openstudio import OSPeopleDefinition, OSPeople, \
     OSGasEquipmentDefinition, OSGasEquipment, OSOtherEquipmentDefinition, \
     OSOtherEquipment, OSWaterUseEquipmentDefinition, OSWaterUseEquipment, \
     OSWaterUseConnections, OSSpaceInfiltrationDesignFlowRate, \
-    OSDesignSpecificationOutdoorAir, \
-    OSThermostatSetpointDualSetpoint, OSZoneControlHumidistat, OSScheduleRuleset
+    OSDesignSpecificationOutdoorAir, OSThermostatSetpointDualSetpoint, \
+    OSZoneControlHumidistat, OSScheduleRuleset
 
 
 def _create_constant_schedule(schedule_name, schedule_value, os_model):
