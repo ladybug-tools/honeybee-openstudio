@@ -138,9 +138,10 @@ def test_hot_water_to_openstudio():
     schedule_to_openstudio(schedule, os_model)
 
     os_water_equip = hot_water_to_openstudio(shw, room, os_model)
-    assert 'Office Hot Water' in str(os_water_equip.name())
+    assert str(os_water_equip.name()) == \
+        '{}..{}'.format(shw.identifier, room.identifier)
     os_equipment_str = str(os_water_equip)
-    assert os_equipment_str.startswith('OS:WaterUse:Equipment,')
+    assert os_equipment_str.startswith('OS:WaterUse:Connections,')
 
 
 def test_infiltration_to_openstudio():

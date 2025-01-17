@@ -109,6 +109,14 @@ OSSpaceInfiltrationDesignFlowRate = os_model_namespace.SpaceInfiltrationDesignFl
 OSDesignSpecificationOutdoorAir = os_model_namespace.DesignSpecificationOutdoorAir
 OSThermostatSetpointDualSetpoint = os_model_namespace.ThermostatSetpointDualSetpoint
 OSZoneControlHumidistat = os_model_namespace.ZoneControlHumidistat
+# shw System classes
+OSPlantLoop = os_model_namespace.PlantLoop
+OSSetpointManagerScheduled = os_model_namespace.SetpointManagerScheduled
+OSPumpConstantSpeed = os_model_namespace.PumpConstantSpeed
+OSWaterHeaterMixed = os_model_namespace.WaterHeaterMixed
+OSCoilWaterHeatingAirToWaterHeatPump = os_model_namespace.CoilWaterHeatingAirToWaterHeatPump
+OSFanOnOff = os_model_namespace.FanOnOff
+OSWaterHeaterHeatPump = os_model_namespace.WaterHeaterHeatPump
 # ems classes
 OSOutputVariable = os_model_namespace.OutputVariable
 OSEnergyManagementSystemProgram = os_model_namespace.EnergyManagementSystemProgram
