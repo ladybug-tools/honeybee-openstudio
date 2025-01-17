@@ -142,7 +142,7 @@ def process_to_openstudio(process, os_model):
 
 
 def hot_water_to_openstudio(hot_water, room, os_model):
-    """Convert Honeybee ServiceHotWater to OpenStudio WaterUseEquipment.
+    """Convert Honeybee ServiceHotWater to OpenStudio WaterUseConnections.
 
     Args:
         hot_water: The Honeybee-energy ServiceHotWater object to be translated
@@ -150,18 +150,22 @@ def hot_water_to_openstudio(hot_water, room, os_model):
         room: The Honeybee Room object to which the ServiceHotWater is assigned.
             This is required in order to compute the total flow rate from the
             floor area.
-        os_model: The OpenStudio Model to which the WaterUseEquipment object
-            will be added.
+        os_model: The OpenStudio Model to which the WaterUseEquipment and
+            WaterUseConnections objects will be added.
     """
     # create water use equipment + connection and set identifier
     os_shw_def = OSWaterUseEquipmentDefinition(os_model)
     os_shw = OSWaterUseEquipment(os_shw_def)
+    os_shw_conn = OSWaterUseConnections(os_model)
+    os_shw_conn.addWaterUseEquipment(os_shw)
     u_id = '{}..{}'.format(hot_water.identifier, room.identifier)
     os_shw_def.setName(u_id)
     os_shw.setName(u_id)
+    os_shw_conn.setName(u_id)
     if hot_water._display_name is not None:
         os_shw_def.setDisplayName(hot_water.display_name)
         os_shw.setDisplayName(hot_water.display_name)
+        os_shw_conn.setDisplayName(hot_water.display_name)
     # assign the flow of water
     total_flow = (hot_water.flow_per_area / 3600000.) * room.floor_area
     os_shw_def.setPeakFlowRate(total_flow)
@@ -171,15 +175,6 @@ def hot_water_to_openstudio(hot_water, room, os_model):
     if shw_schedule.is_initialized():
         shw_schedule = shw_schedule.get()
         os_shw.setFlowRateFractionSchedule(shw_schedule)
-    # assign the hot water temperature
-    target_temp = hot_water.target_temperature
-    target_sch_name = '{}C Hot Water'.format(target_temp)
-    target_water_sch = _create_constant_schedule(target_sch_name, target_temp, os_model)
-    os_shw_def.setTargetTemperatureSchedule(target_water_sch)
-    # create the hot water connection with same temperature as target temperature
-    os_shw_conn = OSWaterUseConnections(os_model)
-    os_shw_conn.addWaterUseEquipment(os_shw)
-    os_shw_conn.setHotWaterSupplyTemperatureSchedule(target_water_sch)
     # assign sensible fraction if it exists
     sens_fract = round(hot_water.sensible_fraction)
     sens_sch_name = '{} Hot Water Sensible Fraction'.format(sens_fract)
@@ -190,7 +185,14 @@ def hot_water_to_openstudio(hot_water, room, os_model):
     lat_sch_name = '{} Hot Water Latent Fraction'.format(hot_water.latent_fraction)
     lat_fract_sch = _create_constant_schedule(lat_sch_name, lat_fract, os_model)
     os_shw_def.setLatentFractionSchedule(lat_fract_sch)
-    return os_shw
+    # assign the hot water temperature
+    target_temp = round(hot_water.target_temperature, 3)
+    target_sch_name = '{}C Hot Water'.format(target_temp)
+    target_water_sch = _create_constant_schedule(target_sch_name, target_temp, os_model)
+    os_shw_def.setTargetTemperatureSchedule(target_water_sch)
+    # create the hot water connection with same temperature as target temperature
+    os_shw_conn.setHotWaterSupplyTemperatureSchedule(target_water_sch)
+    return os_shw_conn
 
 
 def infiltration_to_openstudio(infiltration, os_model):

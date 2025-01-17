@@ -22,6 +22,8 @@ from honeybee_openstudio.construction import construction_to_openstudio, \
     air_mixing_to_openstudio, window_shading_control_to_openstudio, \
     window_dynamic_ems_program_to_openstudio
 from honeybee_openstudio.constructionset import construction_set_to_openstudio
+from honeybee_openstudio.load import hot_water_to_openstudio
+from honeybee_openstudio.shw import shw_system_to_openstudio
 
 
 def face_3d_to_openstudio(face_3d):
@@ -673,17 +675,30 @@ def model_to_openstudio(
                             'Face "{}" is an Air Boundary but lacks a Surface boundary '
                             'condition.\n{}'.format(face.full_id, e))
 
-    # add the orphaned objects
-    for face in model.orphaned_faces:
-        face_to_openstudio(face, os_model)
-    for aperture in model.orphaned_apertures:
-        aperture_to_openstudio(aperture, os_model)
-    for door in model.orphaned_doors:
-        door_to_openstudio(door, os_model)
-    for shade in model.orphaned_shades:
-        shade_to_openstudio(shade, os_model)
-    for shade_mesh in model.shade_meshes:
-        shade_mesh_to_openstudio(shade_mesh, os_model)
+    # write service hot water and any SHW systems
+    shw_sys_dict = {}
+    for room in model.rooms:
+        hot_water = room.properties.energy.service_hot_water
+        if hot_water is not None and hot_water.flow_per_area != 0:
+            os_shw_conn = hot_water_to_openstudio(hot_water, room, os_model)
+            total_flow = (hot_water.flow_per_area / 3600000.) * room.floor_area
+            water_temp = hot_water.target_temperature
+            shw_sys = room.properties.energy.shw
+            shw_sys_id = shw_sys.identifier \
+                if shw_sys is not None else 'Default_District_SHW'
+            try:  # try to add the hot water to the existing system
+                shw_sys_props = shw_sys_dict[shw_sys_id]
+                shw_sys_props[1].append(os_shw_conn)
+                shw_sys_props[2] += total_flow
+                if water_temp > shw_sys_props[3]:
+                    shw_sys_props[3] = water_temp
+            except KeyError:  # first time that the SHW system is encountered
+                shw_sys_props = [shw_sys, [os_shw_conn], total_flow, water_temp]
+                shw_sys_dict[shw_sys_id] = shw_sys_props
+    if len(shw_sys_dict) != 0:
+        for shw_sys_props in shw_sys_dict.values():
+            shw_sys, os_shw_conns, total_flow, w_temp = shw_sys_props
+            shw_system_to_openstudio(shw_sys, os_shw_conns, total_flow, w_temp, os_model)
 
     # write any EMS programs for dynamic constructions
     if len(dynamic_cons) != 0:
@@ -707,6 +722,18 @@ def model_to_openstudio(
             ems_program = window_dynamic_ems_program_to_openstudio(
                 con, dyn_dict[con.identifier], os_model)
             os_prog_manager.addProgram(ems_program)
+
+    # add the orphaned objects
+    for face in model.orphaned_faces:
+        face_to_openstudio(face, os_model)
+    for aperture in model.orphaned_apertures:
+        aperture_to_openstudio(aperture, os_model)
+    for door in model.orphaned_doors:
+        door_to_openstudio(door, os_model)
+    for shade in model.orphaned_shades:
+        shade_to_openstudio(shade, os_model)
+    for shade_mesh in model.shade_meshes:
+        shade_mesh_to_openstudio(shade_mesh, os_model)
 
     # return the Model object
     return os_model
