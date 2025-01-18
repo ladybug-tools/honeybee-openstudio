@@ -22,7 +22,11 @@ from honeybee_openstudio.construction import construction_to_openstudio, \
     air_mixing_to_openstudio, window_shading_control_to_openstudio, \
     window_dynamic_ems_program_to_openstudio
 from honeybee_openstudio.constructionset import construction_set_to_openstudio
-from honeybee_openstudio.load import hot_water_to_openstudio
+from honeybee_openstudio.load import people_to_openstudio, lighting_to_openstudio, \
+    electric_equipment_to_openstudio, gas_equipment_to_openstudio, \
+    hot_water_to_openstudio, infiltration_to_openstudio, ventilation_to_openstudio, \
+    setpoint_to_openstudio_thermostat, setpoint_to_openstudio_humidistat
+from honeybee_openstudio.programtype import program_type_to_openstudio
 from honeybee_openstudio.shw import shw_system_to_openstudio
 
 
@@ -340,7 +344,7 @@ def face_to_openstudio(face, os_model, adj_map=None):
     return os_face
 
 
-def room_to_openstudio(room, os_model, adj_map=None):
+def room_to_openstudio(room, os_model, adj_map=None, include_infiltration=True):
     """Create OpenStudio objects from a Room.
 
     Args:
@@ -349,6 +353,10 @@ def room_to_openstudio(room, os_model, adj_map=None):
         adj_map: An optional dictionary with keys for 'faces' and 'sub_faces'
             that will have the space Surfaces and SubSurfaces added to it
             such that adjacencies can be assigned after running this method.
+        include_infiltration: Boolean for whether or not infiltration will be included
+            in the translation of the Room. It may be desirable to set this
+            to False if the building airflow is being modeled with the EnergyPlus
+            AirFlowNetwork. (Default: True).
 
     Returns:
         An OpenStudio Space object for the Room.
@@ -368,6 +376,51 @@ def room_to_openstudio(room, os_model, adj_map=None):
         if os_con_set.is_initialized():
             os_con_set = os_con_set.get()
             os_space.setDefaultConstructionSet(os_con_set)
+
+    # assign the program type if specified
+    overridden_loads = room.properties.energy.has_overridden_space_loads
+    if not overridden_loads and room.properties.energy._program_type is not None:
+        # assign loads using the OpenStudio SpaceType
+        space_type_id = room.properties.energy.program_type.identifier
+        os_space_type = os_model.getSpaceTypeByName(space_type_id)
+        if os_space_type.is_initialized():
+            space_type_object = os_space_type.get()
+            os_space.setSpaceType(space_type_object)
+    elif overridden_loads:
+        # assign loads directly to the space
+        if room.properties.energy.people is not None:
+            people = room.properties.energy.people.duplicate()
+            people.identifier = '{}..{}'.format(people.identifier, room.identifier)
+            os_people = people_to_openstudio(room.properties.energy.people, os_model)
+            os_people.setSpace(os_space)
+        if room.properties.energy.lighting is not None:
+            lighting = room.properties.energy.lighting.duplicate()
+            lighting.identifier = '{}..{}'.format(lighting.identifier, room.identifier)
+            os_lights = lighting_to_openstudio(lighting, os_model)
+            os_lights.setSpace(os_space)
+        # assign electric equipment
+        if room.properties.energy.electric_equipment is not None:
+            equipment = room.properties.energy.electric_equipment.duplicate()
+            equipment.identifier = '{}..{}'.format(equipment.identifier, room.identifier)
+            os_equip = electric_equipment_to_openstudio(equipment, os_model)
+            os_equip.setSpace(os_space)
+        if room.properties.energy.gas_equipment is not None:
+            equipment = room.properties.energy.gas_equipment.duplicate()
+            equipment.identifier = '{}..{}'.format(equipment.identifier, room.identifier)
+            os_equip = gas_equipment_to_openstudio(equipment, os_model)
+            os_equip.setSpace(os_space)
+        # assign infiltration
+        if room.properties.energy.infiltration is not None and include_infiltration:
+            infilt = room.properties.energy.infiltration.duplicate()
+            infilt.identifier = '{}..{}'.format(infilt.identifier, room.identifier)
+            os_inf = infiltration_to_openstudio(infilt, os_model)
+            os_inf.setSpace(os_space)
+        # assign ventilation
+        if room.properties.energy.ventilation is not None:
+            vent = room.properties.energy.ventilation.duplicate()
+            vent.identifier = '{}..{}'.format(vent.identifier, room.identifier)
+            os_vent = ventilation_to_openstudio(vent, os_model)
+            os_space.setDesignSpecificationOutdoorAir(os_vent)
 
     # assign all of the faces to the room
     for face in room.faces:
@@ -568,7 +621,9 @@ def model_to_openstudio(
     for con_set in model.properties.energy.construction_sets:
         construction_set_to_openstudio(con_set, os_model)
 
-    # TODO: translate all of the programs
+    # translate all of the programs
+    for program in model.properties.energy.program_types:
+        program_type_to_openstudio(program, os_model)
 
     # create all of the spaces
     space_map, story_map = {}, {}
@@ -593,7 +648,14 @@ def model_to_openstudio(
             os_zone.setMultiplier(room.multiplier)
         os_zone.setCeilingHeight(room.geometry.max.z - room.geometry.min.z)
         os_zone.setVolume(room.volume)
-        # TODO: assign the setpoint and the ventilation objects
+        room.properties.energy.ventilation = None  # TODO: remove once I understand
+        if room.properties.energy.setpoint is not None:
+            set_pt = room.properties.energy.setpoint
+            therm = setpoint_to_openstudio_thermostat(set_pt, os_model, room.identifier)
+            os_zone.setThermostatSetpointDualSetpoint(therm)
+            humid = setpoint_to_openstudio_humidistat(set_pt, os_model, room.identifier)
+            if humid is not None:
+                os_zone.setZoneControlHumidistat(humid)
     for zone_id, zone_data in zone_dict.items():
         rooms, z_prop, set_pt, vent = zone_data
         mult, ceil_hgt, vol, _, _ = z_prop
@@ -603,11 +665,17 @@ def model_to_openstudio(
             os_space = space_map[room.identifier]
             os_space.setThermalZone(os_zone)
             zone_map[room.identifier] = os_zone
+            room.properties.energy.ventilation = None  # TODO: remove once I understand
         if mult != 1:
             os_zone.setMultiplier(mult)
         os_zone.setCeilingHeight(ceil_hgt)
         os_zone.setVolume(vol)
-        # TODO: assign the setpoint and the ventilation objects
+        if set_pt is not None:
+            therm = setpoint_to_openstudio_thermostat(set_pt, os_model, zone_id)
+            os_zone.setThermostatSetpointDualSetpoint(therm)
+            humid = setpoint_to_openstudio_humidistat(set_pt, os_model, zone_id)
+            if humid is not None:
+                os_zone.setZoneControlHumidistat(humid)
 
     # triangulate any apertures or doors with more than 4 vertices
     tri_apertures, _ = model.triangulated_apertures()

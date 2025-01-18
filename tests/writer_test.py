@@ -317,6 +317,24 @@ def test_model_writer_dynamic_constructions():
         assert ems_progs.Count == 1
 
 
+def test_model_writer_from_hbjson_with_zones():
+    """Test translating a HBJSON to an OpenStudio string."""
+    standard_test = 'assets/single_family_with_zones.hbjson'
+    standard_test = os.path.join(os.path.dirname(__file__), standard_test)
+    model = Model.from_file(standard_test)
+
+    os_model = model_to_openstudio(model)
+    spaces = os_model.getSpaces()
+    zones = os_model.getThermalZones()
+
+    if (sys.version_info >= (3, 0)):  # we are in cPython
+        assert len(spaces) == 7
+        assert len(zones) == 4
+    else:
+        assert spaces.Count == 7
+        assert zones.Count == 4
+
+
 def test_model_writer_from_standard_hbjson():
     """Test translating a HBJSON to an OpenStudio string."""
     standard_test = 'assets/2023_rac_advanced_sample_project.hbjson'

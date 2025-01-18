@@ -237,11 +237,14 @@ def ventilation_to_openstudio(ventilation, os_model):
     return os_vent
 
 
-def setpoint_to_openstudio_thermostat(setpoint, os_model):
+def setpoint_to_openstudio_thermostat(setpoint, os_model, zone_identifier=None):
     """Convert Honeybee Setpoint to OpenStudio ThermostatSetpointDualSetpoint."""
     # create thermostat OpenStudio object and set identifier
     os_thermostat = OSThermostatSetpointDualSetpoint(os_model)
-    os_thermostat.setName(setpoint.identifier)
+    if zone_identifier:
+        os_thermostat.setName('{}..{}'.format(setpoint.identifier, zone_identifier))
+    else:
+        os_thermostat.setName(setpoint.identifier)
     if setpoint._display_name is not None:
         os_thermostat.setDisplayName(setpoint.display_name)
     # assign heating schedule
@@ -261,12 +264,15 @@ def setpoint_to_openstudio_thermostat(setpoint, os_model):
     return os_thermostat
 
 
-def setpoint_to_openstudio_humidistat(setpoint, os_model):
+def setpoint_to_openstudio_humidistat(setpoint, os_model, zone_identifier=None):
     """Convert Honeybee Setpoint to OpenStudio ZoneControlHumidistat."""
     # create a humidistat if specified
     if setpoint.humidifying_schedule is not None:
         os_humidistat = OSZoneControlHumidistat(os_model)
-        os_humidistat.setName(setpoint.identifier)
+        if zone_identifier:
+            os_humidistat.setName('{}..{}'.format(setpoint.identifier, zone_identifier))
+        else:
+            os_humidistat.setName(setpoint.identifier)
         if setpoint._display_name is not None:
             os_humidistat.setDisplayName(setpoint.display_name)
         # assign heating schedule

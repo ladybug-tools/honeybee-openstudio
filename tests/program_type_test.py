@@ -7,7 +7,7 @@ from honeybee_openstudio.schedule import schedule_to_openstudio
 from honeybee_openstudio.programtype import program_type_to_openstudio
 
 
-def test_people_to_openstudio():
+def test_program_type_to_openstudio():
     """Test the translation of People to OpenStudio."""
     os_model = OSModel()
     os_model.setDayofWeekforStartDay('Sunday')  # this avoids lots of warnings
