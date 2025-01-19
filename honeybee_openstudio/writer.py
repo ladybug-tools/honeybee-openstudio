@@ -9,6 +9,7 @@ from honeybee.facetype import RoofCeiling, Floor, AirBoundary
 from honeybee.boundarycondition import Outdoors, Ground, Surface
 from honeybee_energy.boundarycondition import Adiabatic, OtherSideTemperature
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
+from honeybee_energy.hvac.idealair import IdealAirSystem
 from honeybee_energy.lib.constructionsets import generic_construction_set
 
 from honeybee_openstudio.openstudio import OSModel, OSPoint3dVector, OSPoint3d, \
@@ -28,6 +29,7 @@ from honeybee_openstudio.load import people_to_openstudio, lighting_to_openstudi
     setpoint_to_openstudio_thermostat, setpoint_to_openstudio_humidistat
 from honeybee_openstudio.programtype import program_type_to_openstudio
 from honeybee_openstudio.shw import shw_system_to_openstudio
+from honeybee_openstudio.hvac.idealair import ideal_air_system_to_openstudio
 
 
 def face_3d_to_openstudio(face_3d):
@@ -388,38 +390,40 @@ def room_to_openstudio(room, os_model, adj_map=None, include_infiltration=True):
             os_space.setSpaceType(space_type_object)
     elif overridden_loads:
         # assign loads directly to the space
-        if room.properties.energy.people is not None:
-            people = room.properties.energy.people.duplicate()
-            people.identifier = '{}..{}'.format(people.identifier, room.identifier)
-            os_people = people_to_openstudio(room.properties.energy.people, os_model)
+        people = room.properties.energy.people
+        if people is not None:
+            os_people = people_to_openstudio(people, os_model)
+            os_people.setName('{}..{}'.format(people.identifier, room.identifier))
             os_people.setSpace(os_space)
-        if room.properties.energy.lighting is not None:
-            lighting = room.properties.energy.lighting.duplicate()
-            lighting.identifier = '{}..{}'.format(lighting.identifier, room.identifier)
+        lighting = room.properties.energy.lighting
+        if lighting is not None:
             os_lights = lighting_to_openstudio(lighting, os_model)
+            os_lights.setName('{}..{}'.format(lighting.identifier, room.identifier))
             os_lights.setSpace(os_space)
-        # assign electric equipment
-        if room.properties.energy.electric_equipment is not None:
-            equipment = room.properties.energy.electric_equipment.duplicate()
-            equipment.identifier = '{}..{}'.format(equipment.identifier, room.identifier)
+        equipment = room.properties.energy.electric_equipment
+        if equipment is not None:
             os_equip = electric_equipment_to_openstudio(equipment, os_model)
+            os_equip.setName('{}..{}'.format(equipment.identifier, room.identifier))
             os_equip.setSpace(os_space)
-        if room.properties.energy.gas_equipment is not None:
-            equipment = room.properties.energy.gas_equipment.duplicate()
-            equipment.identifier = '{}..{}'.format(equipment.identifier, room.identifier)
+        equipment = room.properties.energy.gas_equipment
+        if equipment is not None:
             os_equip = gas_equipment_to_openstudio(equipment, os_model)
+            os_equip.setName('{}..{}'.format(equipment.identifier, room.identifier))
             os_equip.setSpace(os_space)
-        # assign infiltration
-        if room.properties.energy.infiltration is not None and include_infiltration:
-            infilt = room.properties.energy.infiltration.duplicate()
-            infilt.identifier = '{}..{}'.format(infilt.identifier, room.identifier)
+        infilt = room.properties.energy.infiltration
+        if infilt is not None and include_infiltration:
             os_inf = infiltration_to_openstudio(infilt, os_model)
+            os_inf.setName('{}..{}'.format(infilt.identifier, room.identifier))
             os_inf.setSpace(os_space)
-        # assign ventilation
-        if room.properties.energy.ventilation is not None:
-            vent = room.properties.energy.ventilation.duplicate()
-            vent.identifier = '{}..{}'.format(vent.identifier, room.identifier)
-            os_vent = ventilation_to_openstudio(vent, os_model)
+    # assign the ventilation and catch the case that the SpaceType one is not correct
+    if overridden_loads or room.properties.energy._ventilation is not None:
+        vent = room.properties.energy.ventilation
+        if vent is not None:
+            os_vent = os_model.getDesignSpecificationOutdoorAirByName(vent.identifier)
+            if os_vent.is_initialized():
+                os_vent = os_vent.get()
+            else:
+                os_vent = ventilation_to_openstudio(vent, os_model)
             os_space.setDesignSpecificationOutdoorAir(os_vent)
 
     # assign all of the faces to the room
@@ -648,7 +652,6 @@ def model_to_openstudio(
             os_zone.setMultiplier(room.multiplier)
         os_zone.setCeilingHeight(room.geometry.max.z - room.geometry.min.z)
         os_zone.setVolume(room.volume)
-        room.properties.energy.ventilation = None  # TODO: remove once I understand
         if room.properties.energy.setpoint is not None:
             set_pt = room.properties.energy.setpoint
             therm = setpoint_to_openstudio_thermostat(set_pt, os_model, room.identifier)
@@ -665,7 +668,6 @@ def model_to_openstudio(
             os_space = space_map[room.identifier]
             os_space.setThermalZone(os_zone)
             zone_map[room.identifier] = os_zone
-            room.properties.energy.ventilation = None  # TODO: remove once I understand
         if mult != 1:
             os_zone.setMultiplier(mult)
         os_zone.setCeilingHeight(ceil_hgt)
@@ -742,6 +744,22 @@ def model_to_openstudio(
                         raise ValueError(
                             'Face "{}" is an Air Boundary but lacks a Surface boundary '
                             'condition.\n{}'.format(face.full_id, e))
+
+    # assign HVAC systems to all of the rooms
+    zone_rooms = {room.zone: room for room in single_zones}
+    for zone_id, zone_data in zone_dict.items():
+        for room in zone_data[0]:
+            if room.properties.energy.hvac is not None:
+                zone_rooms[zone_id] = room
+                break
+    for zone_id, room in zone_rooms.items():
+        hvac = room.properties.energy.hvac
+        if isinstance(hvac, IdealAirSystem):
+            os_hvac = ideal_air_system_to_openstudio(hvac, os_model, room)
+            if room.identifier != zone_id:
+                os_hvac.setName('{} Ideal Loads Air System'.format(zone_id))
+            os_zone = zone_map[room.identifier]
+            os_hvac.addToThermalZone(os_zone)
 
     # write service hot water and any SHW systems
     shw_sys_dict = {}

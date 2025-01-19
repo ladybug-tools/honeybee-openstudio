@@ -118,6 +118,8 @@ OSWaterHeaterMixed = os_model_namespace.WaterHeaterMixed
 OSCoilWaterHeatingAirToWaterHeatPump = os_model_namespace.CoilWaterHeatingAirToWaterHeatPump
 OSFanOnOff = os_model_namespace.FanOnOff
 OSWaterHeaterHeatPump = os_model_namespace.WaterHeaterHeatPump
+# HVAC classes
+OSZoneHVACIdealLoadsAirSystem = os_model_namespace.ZoneHVACIdealLoadsAirSystem
 # ems classes
 OSOutputVariable = os_model_namespace.OutputVariable
 OSEnergyManagementSystemProgram = os_model_namespace.EnergyManagementSystemProgram

@@ -19,7 +19,7 @@ def test_model_to_osm_cli():
     os.remove(out_file)
 
 
-def test_model_to_osm_cli_all_properties(): 
+def test_model_to_osm_cli_all_properties():
     """Test the translation of a Model with programs, constructions and HVAC to OSM."""
     runner = CliRunner()
     input_hb_model = './tests/assets/sample_lab_building.hbjson'
