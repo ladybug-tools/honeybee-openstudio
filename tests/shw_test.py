@@ -1,7 +1,5 @@
 # coding=utf-8
 """Test the translators for SHW Systems to OpenStudio."""
-import sys
-
 from ladybug.dt import Time
 from honeybee.model import Model
 from honeybee.room import Room
@@ -11,6 +9,7 @@ from honeybee_energy.schedule.day import ScheduleDay
 from honeybee_energy.schedule.ruleset import ScheduleRuleset
 import honeybee_energy.lib.scheduletypelimits as schedule_types
 
+from honeybee_openstudio.openstudio import os_vector_len
 from honeybee_openstudio.writer import model_to_openstudio
 
 
@@ -28,12 +27,8 @@ def test_model_default_shw():
     os_model = model_to_openstudio(model)
     shw_loops = os_model.getPlantLoops()
     water_heaters = os_model.getWaterHeaterMixeds()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(shw_loops) == 1
-        assert len(water_heaters) == 1
-    else:
-        assert shw_loops.Count == 1
-        assert water_heaters.Count == 1
+    assert os_vector_len(shw_loops) == 1
+    assert os_vector_len(water_heaters) == 1
 
 
 def test_model_gas_shw():
@@ -52,12 +47,8 @@ def test_model_gas_shw():
     os_model = model_to_openstudio(model)
     shw_loops = os_model.getPlantLoops()
     water_heaters = os_model.getWaterHeaterMixeds()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(shw_loops) == 1
-        assert len(water_heaters) == 1
-    else:
-        assert shw_loops.Count == 1
-        assert water_heaters.Count == 1
+    assert os_vector_len(shw_loops) == 1
+    assert os_vector_len(water_heaters) == 1
 
 
 def test_model_electric_tankless_shw():
@@ -76,12 +67,8 @@ def test_model_electric_tankless_shw():
     os_model = model_to_openstudio(model)
     shw_loops = os_model.getPlantLoops()
     water_heaters = os_model.getWaterHeaterMixeds()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(shw_loops) == 1
-        assert len(water_heaters) == 1
-    else:
-        assert shw_loops.Count == 1
-        assert water_heaters.Count == 1
+    assert os_vector_len(shw_loops) == 1
+    assert os_vector_len(water_heaters) == 1
 
 
 def test_model_heat_pump_shw():
@@ -102,11 +89,6 @@ def test_model_heat_pump_shw():
     shw_loops = os_model.getPlantLoops()
     water_heaters = os_model.getWaterHeaterMixeds()
     heat_pumps = os_model.getWaterHeaterHeatPumps()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(shw_loops) == 1
-        assert len(water_heaters) == 1
-        assert len(heat_pumps) == 1
-    else:
-        assert shw_loops.Count == 1
-        assert water_heaters.Count == 1
-        assert heat_pumps.Count == 1
+    assert os_vector_len(shw_loops) == 1
+    assert os_vector_len(water_heaters) == 1
+    assert os_vector_len(heat_pumps) == 1

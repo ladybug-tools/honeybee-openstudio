@@ -1,6 +1,5 @@
 # coding=utf-8
 """Test the translators for geometry to OpenStudio."""
-import sys
 import os
 
 from ladybug_geometry.geometry3d import Point3D, Vector3D, Mesh3D
@@ -12,7 +11,7 @@ from honeybee.door import Door
 from honeybee.shade import Shade
 from honeybee.shademesh import ShadeMesh
 
-from honeybee_openstudio.openstudio import OSModel
+from honeybee_openstudio.openstudio import OSModel, os_vector_len
 from honeybee_openstudio.writer import shade_mesh_to_openstudio, shade_to_openstudio, \
     door_to_openstudio, aperture_to_openstudio, face_to_openstudio, room_to_openstudio, \
     model_to_openstudio
@@ -226,17 +225,10 @@ def test_room_writer():
     faces = os_model.getSurfaces()
     sub_faces = os_model.getSubSurfaces()
     shades = os_model.getShadingSurfaces()
-
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(spaces) == 1
-        assert len(faces) == 6
-        assert len(sub_faces) == 1
-        assert len(shades) == 1
-    else:
-        assert spaces.Count == 1
-        assert faces.Count == 6
-        assert sub_faces.Count == 1
-        assert shades.Count == 1
+    assert os_vector_len(spaces) == 1
+    assert os_vector_len(faces) == 6
+    assert os_vector_len(sub_faces) == 1
+    assert os_vector_len(shades) == 1
 
 
 def test_model_writer():
@@ -260,16 +252,10 @@ def test_model_writer():
     sub_faces = os_model.getSubSurfaces()
     shades = os_model.getShadingSurfaces()
 
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(spaces) == 1
-        assert len(faces) == 6
-        assert len(sub_faces) == 1
-        assert len(shades) == 3
-    else:
-        assert spaces.Count == 1
-        assert faces.Count == 6
-        assert sub_faces.Count == 1
-        assert shades.Count == 3
+    assert os_vector_len(spaces) == 1
+    assert os_vector_len(faces) == 6
+    assert os_vector_len(sub_faces) == 1
+    assert os_vector_len(shades) == 3
 
 
 def test_model_writer_dynamic_constructions():
@@ -311,10 +297,7 @@ def test_model_writer_dynamic_constructions():
 
     os_model = model_to_openstudio(model)
     ems_progs = os_model.getEnergyManagementSystemPrograms()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(ems_progs) == 1
-    else:
-        assert ems_progs.Count == 1
+    assert os_vector_len(ems_progs) == 1
 
 
 def test_model_writer_from_hbjson_with_zones():
@@ -327,12 +310,8 @@ def test_model_writer_from_hbjson_with_zones():
     spaces = os_model.getSpaces()
     zones = os_model.getThermalZones()
 
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(spaces) == 7
-        assert len(zones) == 4
-    else:
-        assert spaces.Count == 7
-        assert zones.Count == 4
+    assert os_vector_len(spaces) == 7
+    assert os_vector_len(zones) == 4
 
 
 def test_model_writer_from_standard_hbjson():
@@ -343,11 +322,7 @@ def test_model_writer_from_standard_hbjson():
 
     os_model = model_to_openstudio(model)
     spaces = os_model.getSpaces()
-
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(spaces) == 102
-    else:
-        assert spaces.Count == 102
+    assert os_vector_len(spaces) == 102
 
 
 def test_model_writer_from_complete_hbjson():
@@ -358,8 +333,4 @@ def test_model_writer_from_complete_hbjson():
 
     os_model = model_to_openstudio(model)
     spaces = os_model.getSpaces()
-
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(spaces) == 100
-    else:
-        assert spaces.Count == 100
+    assert os_vector_len(spaces) == 100
