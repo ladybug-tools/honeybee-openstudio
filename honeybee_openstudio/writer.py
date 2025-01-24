@@ -1,5 +1,5 @@
 # coding=utf-8
-"""Methods to write to OpenStudio."""
+"""Methods to write Honeybee Models to OpenStudio."""
 from __future__ import division
 
 from ladybug_geometry.geometry3d import Face3D
@@ -782,6 +782,7 @@ def model_to_openstudio(
                 shw_sys_props = [shw_sys, [os_shw_conn], total_flow, water_temp]
                 shw_sys_dict[shw_sys_id] = shw_sys_props
     if len(shw_sys_dict) != 0:
+        # add all of the SHW Systems to the model 
         for shw_sys_props in shw_sys_dict.values():
             shw_sys, os_shw_conns, total_flow, w_temp = shw_sys_props
             shw_system_to_openstudio(shw_sys, os_shw_conns, total_flow, w_temp, os_model)

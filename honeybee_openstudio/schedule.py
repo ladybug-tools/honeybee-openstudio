@@ -11,7 +11,7 @@ from honeybee_energy.schedule.fixedinterval import ScheduleFixedInterval
 
 from honeybee_openstudio.openstudio import OSScheduleTypeLimits, OSScheduleRuleset, \
     OSScheduleRule, OSScheduleDay, OSScheduleFixedInterval, OSExternalFile, \
-    OSScheduleFile, OSVector, OSTime, OSTimeSeries, openstudio_date
+    OSScheduleFile, OSVector, OSTime, OSTimeSeries
 
 
 def schedule_type_limits_to_openstudio(type_limit, os_model):
@@ -106,8 +106,8 @@ def schedule_ruleset_to_openstudio(schedule, os_model):
         os_rule.setApplyThursday(rule.apply_thursday)
         os_rule.setApplyFriday(rule.apply_friday)
         os_rule.setApplySaturday(rule.apply_saturday)
-        start_date = openstudio_date(os_model, rule.start_date.month, rule.start_date.day)
-        end_date = openstudio_date(os_model, rule.end_date.month, rule.end_date.day)
+        start_date = os_model.makeDate(rule.start_date.month, rule.start_date.day)
+        end_date = os_model.makeDate(rule.end_date.month, rule.end_date.day)
         os_rule.setStartDate(start_date)
         os_rule.setEndDate(end_date)
         schedule_rule_day = day_schs[rule.schedule_day.identifier]
@@ -145,7 +145,7 @@ def schedule_fixed_interval_to_openstudio(schedule, os_model):
     os_fi_sch.setIntervalLength(interval_length)
     os_interval_length = OSTime(0, 0, interval_length)
     # assign the values as a timeseries
-    start_date = openstudio_date(os_model, 1, 1)
+    start_date = os_model.makeDate(1, 1)
     all_values = [float(val) for val in schedule.values_at_timestep(schedule.timestep)]
     series_values = OSVector(len(all_values))
     for i, val in enumerate(all_values):

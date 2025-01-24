@@ -1,7 +1,5 @@
 # coding=utf-8
 """Test the translators for constructions to OpenStudio."""
-import sys
-
 from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialNoMass
 from honeybee_energy.material.glazing import EnergyWindowMaterialGlazing
 from honeybee_energy.material.gas import EnergyWindowMaterialGas
@@ -15,7 +13,7 @@ from honeybee_energy.construction.shade import ShadeConstruction
 from honeybee_energy.construction.air import AirBoundaryConstruction
 from honeybee_energy.schedule.ruleset import ScheduleRuleset
 
-from honeybee_openstudio.openstudio import OSModel
+from honeybee_openstudio.openstudio import OSModel, os_vector_len
 from honeybee_openstudio.schedule import schedule_to_openstudio
 from honeybee_openstudio.material import material_to_openstudio
 from honeybee_openstudio.construction import construction_to_openstudio
@@ -43,10 +41,7 @@ def test_opaque_construction_to_openstudio():
     assert os_construction_str.startswith('OS:Construction,')
 
     materials = os_construction.layers()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(materials) == 4
-    else:
-        assert materials.Count == 4
+    assert os_vector_len(materials) == 4
 
 
 def test_window_construction_to_openstudio():
@@ -73,20 +68,14 @@ def test_window_construction_to_openstudio():
     os_construction_str = str(os_construction)
     assert os_construction_str.startswith('OS:Construction,')
     materials = os_construction.layers()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(materials) == 3
-    else:
-        assert materials.Count == 3
+    assert os_vector_len(materials) == 3
 
     os_construction = construction_to_openstudio(triple_clear, os_model)
     assert str(os_construction.name()) == 'Triple Clear Window'
     os_construction_str = str(os_construction)
     assert os_construction_str.startswith('OS:Construction,')
     materials = os_construction.layers()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(materials) == 5
-    else:
-        assert materials.Count == 5
+    assert os_vector_len(materials) == 5
 
 
 def test_window_simple_construction_to_openstudio():
@@ -102,10 +91,7 @@ def test_window_simple_construction_to_openstudio():
     os_construction_str = str(os_construction)
     assert os_construction_str.startswith('OS:Construction,')
     materials = os_construction.layers()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(materials) == 1
-    else:
-        assert materials.Count == 1
+    assert os_vector_len(materials) == 1
 
 
 def test_window_construction_shade_to_openstudio():
@@ -146,30 +132,21 @@ def test_window_construction_shade_to_openstudio():
     os_construction_str = str(os_construction)
     assert os_construction_str.startswith('OS:Construction,')
     materials = os_construction.layers()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(materials) == 4
-    else:
-        assert materials.Count == 4
+    assert os_vector_len(materials) == 4
 
     os_construction = construction_to_openstudio(double_low_e_between_shade, os_model)
     assert str(os_construction.name()) == 'Double Low-E Between Shade'
     os_construction_str = str(os_construction)
     assert os_construction_str.startswith('OS:Construction,')
     materials = os_construction.layers()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(materials) == 5
-    else:
-        assert materials.Count == 5
+    assert os_vector_len(materials) == 5
 
     os_construction = construction_to_openstudio(double_ext_shade, os_model)
     assert str(os_construction.name()) == 'Double Outside Shade'
     os_construction_str = str(os_construction)
     assert os_construction_str.startswith('OS:Construction,')
     materials = os_construction.layers()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(materials) == 4
-    else:
-        assert materials.Count == 4
+    assert os_vector_len(materials) == 4
 
 
 def test_window_construction_blind_to_openstudio():
@@ -209,30 +186,21 @@ def test_window_construction_blind_to_openstudio():
     os_construction_str = str(os_construction)
     assert os_construction_str.startswith('OS:Construction,')
     materials = os_construction.layers()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(materials) == 4
-    else:
-        assert materials.Count == 4
+    assert os_vector_len(materials) == 4
 
     os_construction = construction_to_openstudio(double_low_e_between_shade, os_model)
     assert str(os_construction.name()) == 'Double Low-E Between Blind'
     os_construction_str = str(os_construction)
     assert os_construction_str.startswith('OS:Construction,')
     materials = os_construction.layers()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(materials) == 5
-    else:
-        assert materials.Count == 5
+    assert os_vector_len(materials) == 5
 
     os_construction = construction_to_openstudio(double_low_e_ext_shade, os_model)
     assert str(os_construction.name()) == 'Double Low-E Outside Blind'
     os_construction_str = str(os_construction)
     assert os_construction_str.startswith('OS:Construction,')
     materials = os_construction.layers()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(materials) == 4
-    else:
-        assert materials.Count == 4
+    assert os_vector_len(materials) == 4
 
 
 def test_window_construction_ec_to_openstudio():
@@ -271,30 +239,21 @@ def test_window_construction_ec_to_openstudio():
     os_construction_str = str(os_construction)
     assert os_construction_str.startswith('OS:Construction,')
     materials = os_construction.layers()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(materials) == 3
-    else:
-        assert materials.Count == 3
+    assert os_vector_len(materials) == 3
 
     os_construction = construction_to_openstudio(double_low_e_between_ec, os_model)
     assert str(os_construction.name()) == 'Double Low-E Between EC'
     os_construction_str = str(os_construction)
     assert os_construction_str.startswith('OS:Construction,')
     materials = os_construction.layers()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(materials) == 3
-    else:
-        assert materials.Count == 3
+    assert os_vector_len(materials) == 3
 
     os_construction = construction_to_openstudio(double_low_e_ext_ec, os_model)
     assert str(os_construction.name()) == 'Double Low-E Outside EC'
     os_construction_str = str(os_construction)
     assert os_construction_str.startswith('OS:Construction,')
     materials = os_construction.layers()
-    if (sys.version_info >= (3, 0)):  # we are in cPython
-        assert len(materials) == 3
-    else:
-        assert materials.Count == 3
+    assert os_vector_len(materials) == 3
 
 
 def test_window_construction_dynamic_to_openstudio():
@@ -333,10 +292,7 @@ def test_window_construction_dynamic_to_openstudio():
         os_construction_str = str(os_construction)
         assert os_construction_str.startswith('OS:Construction,')
         materials = os_construction.layers()
-        if (sys.version_info >= (3, 0)):  # we are in cPython
-            assert len(materials) == 3
-        else:
-            assert materials.Count == 3
+        assert os_vector_len(materials) == 3
 
 
 def test_shade_construction_to_openstudio():

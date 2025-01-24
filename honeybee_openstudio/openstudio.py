@@ -5,23 +5,28 @@ import os
 from honeybee_energy.config import folders as hbe_folders
 
 
-def _openstudio_date_cpython(os_model, month, day):
-    """Create an OpenStudio Date object."""
-    year_desc = os_model.getYearDescription()
-    return year_desc.makeDate(month, day)
+def _os_path_cpython(path_str):
+    return path_str
 
 
-def _openstudio_date_ironpython(os_model, month, day):
-    """Get the YearDescription object from a Model."""
-    model_year = os_model.calendarYear()
-    model_year = model_year.get() if model_year.is_initialized() else 2009
-    return openstudio.Date(openstudio.MonthOfYear(month), day, model_year)
+def _os_path_ironpython(path_str):
+    os_path_obj = openstudio.OpenStudioUtilitiesCore.toPath(path_str)
+    return openstudio.Path(os_path_obj)
+
+
+def _os_vector_len_cpython(vector):
+    return len(vector)
+
+
+def _os_vector_len_ironpython(vector):
+    return vector.Count
 
 
 if (sys.version_info >= (3, 0)):  # we are in cPython and can import normally
     import openstudio
     os_model_namespace = openstudio.model
-    openstudio_date = _openstudio_date_cpython
+    os_path = _os_path_cpython
+    os_vector_len = _os_vector_len_cpython
 else:  # we are in IronPython and we must import the .NET bindings
     try:  # first see if OpenStudio has already been loaded
         import OpenStudio as openstudio
@@ -44,7 +49,8 @@ else:  # we are in IronPython and we must import the .NET bindings
             sys.path.append(hbe_folders.openstudio_csharp_path)
         import OpenStudio as openstudio
     os_model_namespace = openstudio
-    openstudio_date = _openstudio_date_ironpython
+    os_path = _os_path_ironpython
+    os_vector_len = _os_vector_len_ironpython
 
 # load all of the classes used by this package
 # geometry classes
@@ -129,3 +135,9 @@ OSEnergyManagementSystemSensor = os_model_namespace.EnergyManagementSystemSensor
 OSEnergyManagementSystemActuator = os_model_namespace.EnergyManagementSystemActuator
 OSEnergyManagementSystemConstructionIndexVariable = \
     os_model_namespace.EnergyManagementSystemConstructionIndexVariable
+# simulation classes
+OSRunPeriodControlSpecialDays = os_model_namespace.RunPeriodControlSpecialDays
+OSMonthOfYear = openstudio.MonthOfYear
+OSOutputVariable = os_model_namespace.OutputVariable
+OSDesignDay = os_model_namespace.DesignDay
+OSEpwFile = openstudio.EpwFile
