@@ -116,6 +116,7 @@ OSSpaceInfiltrationDesignFlowRate = os_model_namespace.SpaceInfiltrationDesignFl
 OSDesignSpecificationOutdoorAir = os_model_namespace.DesignSpecificationOutdoorAir
 OSThermostatSetpointDualSetpoint = os_model_namespace.ThermostatSetpointDualSetpoint
 OSZoneControlHumidistat = os_model_namespace.ZoneControlHumidistat
+OSDaylightingControl = os_model_namespace.DaylightingControl
 # shw System classes
 OSPlantLoop = os_model_namespace.PlantLoop
 OSSetpointManagerScheduled = os_model_namespace.SetpointManagerScheduled

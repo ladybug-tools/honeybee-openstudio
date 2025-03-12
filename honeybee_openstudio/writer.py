@@ -25,8 +25,10 @@ from honeybee_openstudio.construction import construction_to_openstudio, \
 from honeybee_openstudio.constructionset import construction_set_to_openstudio
 from honeybee_openstudio.load import people_to_openstudio, lighting_to_openstudio, \
     electric_equipment_to_openstudio, gas_equipment_to_openstudio, \
-    hot_water_to_openstudio, infiltration_to_openstudio, ventilation_to_openstudio, \
-    setpoint_to_openstudio_thermostat, setpoint_to_openstudio_humidistat
+    hot_water_to_openstudio, process_to_openstudio, \
+    infiltration_to_openstudio, ventilation_to_openstudio, \
+    setpoint_to_openstudio_thermostat, setpoint_to_openstudio_humidistat, \
+    daylight_to_openstudio
 from honeybee_openstudio.programtype import program_type_to_openstudio
 from honeybee_openstudio.shw import shw_system_to_openstudio
 from honeybee_openstudio.hvac.idealair import ideal_air_system_to_openstudio
@@ -425,6 +427,17 @@ def room_to_openstudio(room, os_model, adj_map=None, include_infiltration=True):
             else:
                 os_vent = ventilation_to_openstudio(vent, os_model)
             os_space.setDesignSpecificationOutdoorAir(os_vent)
+    # assign all process loads
+    for process in room.properties.energy.process_loads:
+        os_process = process_to_openstudio(process, os_model)
+        os_process.setName('{}..{}'.format(process.identifier, room.identifier))
+        os_process.setSpace(os_space)
+    # assign the daylight control if it is specified
+    daylight = room.properties.energy.daylighting_control
+    if daylight is not None:
+        os_daylight = daylight_to_openstudio(daylight, os_model)
+        os_daylight.setName('{}_Daylighting'.format(room.identifier))
+        os_daylight.setSpace(os_space)
 
     # assign all of the faces to the room
     for face in room.faces:
@@ -659,6 +672,14 @@ def model_to_openstudio(
             humid = setpoint_to_openstudio_humidistat(set_pt, os_model, room.identifier)
             if humid is not None:
                 os_zone.setZoneControlHumidistat(humid)
+        daylight = room.properties.energy.daylighting_control
+        if daylight is not None:
+            dl_name = '{}_Daylighting'.format(room.identifier)
+            os_daylight = os_model.getDaylightingControlByName(dl_name)
+            if os_daylight.is_initialized():
+                os_zone.setPrimaryDaylightingControl(os_daylight)
+                os_zone.setFractionofZoneControlledbyPrimaryDaylightingControl(
+                    daylight.control_fraction)
     for zone_id, zone_data in zone_dict.items():
         rooms, z_prop, set_pt, vent = zone_data
         mult, ceil_hgt, vol, _, _ = z_prop

@@ -10,7 +10,7 @@ from honeybee_openstudio.openstudio import OSPeopleDefinition, OSPeople, \
     OSOtherEquipment, OSWaterUseEquipmentDefinition, OSWaterUseEquipment, \
     OSWaterUseConnections, OSSpaceInfiltrationDesignFlowRate, \
     OSDesignSpecificationOutdoorAir, OSThermostatSetpointDualSetpoint, \
-    OSZoneControlHumidistat, OSScheduleRuleset
+    OSZoneControlHumidistat, OSDaylightingControl, OSScheduleRuleset
 
 
 def _create_constant_schedule(schedule_name, schedule_value, os_model):
@@ -286,3 +286,24 @@ def setpoint_to_openstudio_humidistat(setpoint, os_model, zone_identifier=None):
             dehumid_sch = dehumid_sch.get()
             os_humidistat.setDehumidifyingRelativeHumiditySetpointSchedule(dehumid_sch)
         return os_humidistat
+
+
+def daylight_to_openstudio(daylight, os_model):
+    """Convert Honeybee DaylightingControl to OpenStudio DaylightingControl."""
+    # create daylighting control OpenStudio object and set identifier
+    os_daylight = OSDaylightingControl(os_model)
+    # assign the position of the sensor point
+    os_daylight.setPositionXCoordinate(daylight.sensor_position.x)
+    os_daylight.setPositionYCoordinate(daylight.sensor_position.y)
+    os_daylight.setPositionZCoordinate(daylight.sensor_position.z)
+    # set all of the other properties of the daylight control
+    os_daylight.setIlluminanceSetpoint(daylight.illuminance_setpoint)
+    os_daylight.setMinimumInputPowerFractionforContinuousDimmingControl(
+        daylight.min_power_input)
+    os_daylight.setMinimumLightOutputFractionforContinuousDimmingControl(
+        daylight.min_light_output)
+    if daylight.off_at_minimum:
+        os_daylight.setLightingControlType('Continuous/Off')
+    else:
+        os_daylight.setLightingControlType('Continuous')
+    return os_daylight
