@@ -1,5 +1,6 @@
 # coding=utf-8
 """Test the translators for loads to OpenStudio."""
+from ladybug_geometry.geometry3d import Point3D
 from ladybug.dt import Time
 from honeybee.room import Room
 from honeybee_energy.load.people import People
@@ -10,6 +11,7 @@ from honeybee_energy.load.hotwater import ServiceHotWater
 from honeybee_energy.load.infiltration import Infiltration
 from honeybee_energy.load.ventilation import Ventilation
 from honeybee_energy.load.setpoint import Setpoint
+from honeybee_energy.load.daylight import DaylightingControl
 from honeybee_energy.schedule.day import ScheduleDay
 from honeybee_energy.schedule.rule import ScheduleRule
 from honeybee_energy.schedule.ruleset import ScheduleRuleset
@@ -22,7 +24,8 @@ from honeybee_openstudio.load import people_to_openstudio, lighting_to_openstudi
     electric_equipment_to_openstudio, gas_equipment_to_openstudio, \
     process_to_openstudio, hot_water_to_openstudio, \
     infiltration_to_openstudio, ventilation_to_openstudio, \
-    setpoint_to_openstudio_thermostat, setpoint_to_openstudio_humidistat
+    setpoint_to_openstudio_thermostat, setpoint_to_openstudio_humidistat, \
+    daylight_to_openstudio
 
 
 def test_people_to_openstudio():
@@ -232,3 +235,14 @@ def test_setpoint_to_openstudio_humidity():
     assert str(os_humidistat.name()) == 'Office Setpoint'
     os_humidistat_str = str(os_humidistat)
     assert os_humidistat_str.startswith('OS:ZoneControl:Humidistat,')
+
+
+def test_daylight_to_openstudio():
+    """Test the translation of DaylightingControl to OpenStudio."""
+    os_model = OSModel()
+    position = Point3D(5, 5, 0.8)
+    daylight = DaylightingControl(position, 150)
+
+    os_daylight = daylight_to_openstudio(daylight, os_model)
+    os_daylight_str = str(os_daylight)
+    assert os_daylight_str.startswith('OS:Daylighting:Control,')
