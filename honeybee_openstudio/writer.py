@@ -23,6 +23,7 @@ from honeybee_openstudio.construction import construction_to_openstudio, \
     air_mixing_to_openstudio, window_shading_control_to_openstudio, \
     window_dynamic_ems_program_to_openstudio
 from honeybee_openstudio.constructionset import construction_set_to_openstudio
+from honeybee_openstudio.internalmass import internal_mass_to_openstudio
 from honeybee_openstudio.load import people_to_openstudio, lighting_to_openstudio, \
     electric_equipment_to_openstudio, gas_equipment_to_openstudio, \
     hot_water_to_openstudio, process_to_openstudio, \
@@ -438,6 +439,11 @@ def room_to_openstudio(room, os_model, adj_map=None, include_infiltration=True):
         os_daylight = daylight_to_openstudio(daylight, os_model)
         os_daylight.setName('{}_Daylighting'.format(room.identifier))
         os_daylight.setSpace(os_space)
+    # assign any internal mass definitions if specified
+    for mass in room.properties.energy.internal_masses:
+        os_mass = internal_mass_to_openstudio(mass, os_model)
+        os_mass.setName('{}::{}'.format(mass.identifier, room.identifier))
+        os_mass.setSpace(os_space)
 
     # assign all of the faces to the room
     for face in room.faces:

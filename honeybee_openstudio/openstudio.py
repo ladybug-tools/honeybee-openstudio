@@ -97,6 +97,9 @@ OSZoneMixing = os_model_namespace.ZoneMixing
 OSDefaultConstructionSet = os_model_namespace.DefaultConstructionSet
 OSDefaultSurfaceConstructions = os_model_namespace.DefaultSurfaceConstructions
 OSDefaultSubSurfaceConstructions = os_model_namespace.DefaultSubSurfaceConstructions
+# internal mass classes
+OSInternalMassDefinition = os_model_namespace.InternalMassDefinition
+OSInternalMass = os_model_namespace.InternalMass
 # loads classes
 OSSpaceType = os_model_namespace.SpaceType
 OSPeopleDefinition = os_model_namespace.PeopleDefinition
