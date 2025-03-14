@@ -31,6 +31,7 @@ from honeybee_openstudio.load import people_to_openstudio, lighting_to_openstudi
     setpoint_to_openstudio_thermostat, setpoint_to_openstudio_humidistat, \
     daylight_to_openstudio
 from honeybee_openstudio.programtype import program_type_to_openstudio
+from honeybee_openstudio.ventcool import ventilation_fan_to_openstudio
 from honeybee_openstudio.shw import shw_system_to_openstudio
 from honeybee_openstudio.hvac.idealair import ideal_air_system_to_openstudio
 
@@ -756,10 +757,11 @@ def model_to_openstudio(
                         adj_os_sub_face = adj_map['sub_faces'][adj_id]
                         base_os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
 
-    # if simple ventilation is being used, add air mixing objects
+    # if simple ventilation is being used
     vent_sim_control = model.properties.energy.ventilation_simulation_control
     if vent_sim_control.vent_control_type == 'SingleZone':
         for room in model.rooms:
+            # add simple add air mixing objects
             for face in room.faces:
                 if isinstance(face.type, AirBoundary):  # write the air mixing objects
                     try:
@@ -771,6 +773,12 @@ def model_to_openstudio(
                         raise ValueError(
                             'Face "{}" is an Air Boundary but lacks a Surface boundary '
                             'condition.\n{}'.format(face.full_id, e))
+    # write any ventilation fan definitions
+    for room in model.rooms:
+        for fan in room.properties.energy.fans:
+            os_fan = ventilation_fan_to_openstudio(fan, os_model)
+            os_fan.setName('{}..{}'.format(fan.identifier, room.identifier))
+            os_fan.addToThermalZone(zone_map[room.identifier])
 
     # assign HVAC systems to all of the rooms
     zone_rooms = {room.zone: room for room in single_zones}
