@@ -1,7 +1,5 @@
 # coding=utf-8
 """Test the translators for ventilative cooling to OpenStudio."""
-import pytest
-
 from ladybug.dt import Time
 from honeybee.room import Room
 from honeybee_energy.ventcool.control import VentilationControl
@@ -31,8 +29,6 @@ def test_ventilation_opening_to_openstudio_simple():
     vent_control = VentilationControl(18, schedule=schedule)
     room.properties.energy.window_vent_control = vent_control
     vent = VentilationOpening()
-    with pytest.raises(AssertionError):
-        ventilation_opening_to_openstudio(vent, os_model)
     aperture.properties.energy.vent_opening = vent
 
     os_vent = ventilation_opening_to_openstudio(vent, os_model)

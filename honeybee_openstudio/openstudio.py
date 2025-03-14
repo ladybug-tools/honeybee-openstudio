@@ -146,6 +146,10 @@ OSEnergyManagementSystemSensor = os_model_namespace.EnergyManagementSystemSensor
 OSEnergyManagementSystemActuator = os_model_namespace.EnergyManagementSystemActuator
 OSEnergyManagementSystemConstructionIndexVariable = \
     os_model_namespace.EnergyManagementSystemConstructionIndexVariable
+# generator classes
+OSGeneratorPVWatts = os_model_namespace.GeneratorPVWatts
+OSElectricLoadCenterDistribution = os_model_namespace.ElectricLoadCenterDistribution
+OSElectricLoadCenterInverterPVWatts = os_model_namespace.ElectricLoadCenterInverterPVWatts
 # simulation classes
 OSRunPeriodControlSpecialDays = os_model_namespace.RunPeriodControlSpecialDays
 OSMonthOfYear = openstudio.MonthOfYear

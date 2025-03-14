@@ -34,6 +34,8 @@ from honeybee_openstudio.programtype import program_type_to_openstudio
 from honeybee_openstudio.ventcool import ventilation_fan_to_openstudio
 from honeybee_openstudio.shw import shw_system_to_openstudio
 from honeybee_openstudio.hvac.idealair import ideal_air_system_to_openstudio
+from honeybee_openstudio.generator import pv_properties_to_openstudio, \
+    electric_load_center_to_openstudio
 
 
 def face_3d_to_openstudio(face_3d):
@@ -70,6 +72,7 @@ def shade_mesh_to_openstudio(shade_mesh, os_model):
     os_shd_group = OSShadingSurfaceGroup(os_model)
     os_shd_group.setName(shade_mesh.identifier)
     for i, shade in enumerate(shade_mesh.geometry.face_vertices):
+        # create the shade object with the geometry
         shade_face = Face3D(shade)
         os_vertices = face_3d_to_openstudio(shade_face)
         os_shade = OSShadingSurface(os_vertices, os_model)
@@ -79,6 +82,7 @@ def shade_mesh_to_openstudio(shade_mesh, os_model):
     if shade_mesh._display_name is not None:
         for os_shade in os_shades:
             os_shade.setDisplayName(shade_mesh.display_name)
+    # assign the construction and transmittance
     construction = shade_mesh.properties.energy.construction
     if shade_mesh.properties.energy.is_construction_set_on_object and \
             not construction.is_default:
@@ -105,11 +109,13 @@ def shade_to_openstudio(shade, os_model):
     Returns:
         An OpenStudio ShadingSurface object.
     """
+    # create the shade object with the geometry
     os_vertices = face_3d_to_openstudio(shade.geometry)
     os_shade = OSShadingSurface(os_vertices, os_model)
     os_shade.setName(shade.identifier)
     if shade._display_name is not None:
         os_shade.setDisplayName(shade.display_name)
+    # assign the construction and transmittance
     construction = shade.properties.energy.construction
     if shade.properties.energy.is_construction_set_on_object and \
             not construction.is_default:
@@ -121,7 +127,10 @@ def shade_to_openstudio(shade, os_model):
         os_schedule = os_model.getScheduleByName(trans_sched.identifier)
         if os_schedule.is_initialized():
             os_shade.setTransmittanceSchedule(os_schedule)
-    # TODO: add the translation of PVProperties
+    # add the PVProperties if they exist
+    pv_prop = shade.properties.energy.pv_properties
+    if pv_prop is not None:
+        pv_properties_to_openstudio(pv_prop, os_shade, os_model)
     return os_shade
 
 
@@ -817,7 +826,7 @@ def model_to_openstudio(
                 shw_sys_props = [shw_sys, [os_shw_conn], total_flow, water_temp]
                 shw_sys_dict[shw_sys_id] = shw_sys_props
     if len(shw_sys_dict) != 0:
-        # add all of the SHW Systems to the model 
+        # add all of the SHW Systems to the model
         for shw_sys_props in shw_sys_dict.values():
             shw_sys, os_shw_conns, total_flow, w_temp = shw_sys_props
             shw_system_to_openstudio(shw_sys, os_shw_conns, total_flow, w_temp, os_model)
@@ -844,6 +853,12 @@ def model_to_openstudio(
             ems_program = window_dynamic_ems_program_to_openstudio(
                 con, dyn_dict[con.identifier], os_model)
             os_prog_manager.addProgram(ems_program)
+
+    # write the electric load center is any generator objects are in the model
+    os_pv_gens = os_model.getGeneratorPVWattss()
+    if len(os_pv_gens) != 0:
+        load_center = model.properties.energy.electric_load_center
+        electric_load_center_to_openstudio(load_center, os_pv_gens, os_model)
 
     # add the orphaned objects
     for face in model.orphaned_faces:
