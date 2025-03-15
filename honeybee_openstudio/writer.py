@@ -31,7 +31,11 @@ from honeybee_openstudio.load import people_to_openstudio, lighting_to_openstudi
     setpoint_to_openstudio_thermostat, setpoint_to_openstudio_humidistat, \
     daylight_to_openstudio
 from honeybee_openstudio.programtype import program_type_to_openstudio
-from honeybee_openstudio.ventcool import ventilation_fan_to_openstudio
+from honeybee_openstudio.ventcool import ventilation_opening_to_openstudio, \
+    ventilation_fan_to_openstudio, ventilation_sim_control_to_openstudio, \
+    afn_crack_to_openstudio, ventilation_opening_to_openstudio_afn, \
+    ventilation_control_to_openstudio_afn, zone_temperature_sensor, \
+    outdoor_temperature_sensor, ventilation_control_program_manager
 from honeybee_openstudio.shw import shw_system_to_openstudio
 from honeybee_openstudio.hvac.idealair import ideal_air_system_to_openstudio
 from honeybee_openstudio.generator import pv_properties_to_openstudio, \
@@ -594,6 +598,10 @@ def model_to_openstudio(
     # resolve the properties across zones
     single_zones, zone_dict = model.properties.energy.resolve_zones()
 
+    # make note of how the airflow will be modeled across the building
+    vent_sim_control = model.properties.energy.ventilation_simulation_control
+    use_simple_vent = True if vent_sim_control == 'SingleZone' else False
+
     # create the OpenStudio model object and setup the Building
     os_model = OSModel() if seed_model is None else seed_model
     os_building = os_model.getBuilding()
@@ -656,13 +664,13 @@ def model_to_openstudio(
 
     # translate all of the programs
     for program in model.properties.energy.program_types:
-        program_type_to_openstudio(program, os_model)
+        program_type_to_openstudio(program, os_model, use_simple_vent)
 
-    # create all of the spaces
+    # create all of the spaces with all of their geometry
     space_map, story_map = {}, {}
     adj_map = {'faces': {}, 'sub_faces': {}}
     for room in model.rooms:
-        os_space = room_to_openstudio(room, os_model, adj_map)
+        os_space = room_to_openstudio(room, os_model, adj_map, use_simple_vent)
         space_map[room.identifier] = os_space
         try:
             story_map[room.story].append(os_space)
@@ -767,10 +775,8 @@ def model_to_openstudio(
                         base_os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
 
     # if simple ventilation is being used
-    vent_sim_control = model.properties.energy.ventilation_simulation_control
-    if vent_sim_control.vent_control_type == 'SingleZone':
-        for room in model.rooms:
-            # add simple add air mixing objects
+    if use_simple_vent:
+        for room in model.rooms:  # add simple add air mixing and window ventilation
             for face in room.faces:
                 if isinstance(face.type, AirBoundary):  # write the air mixing objects
                     try:
@@ -782,6 +788,62 @@ def model_to_openstudio(
                         raise ValueError(
                             'Face "{}" is an Air Boundary but lacks a Surface boundary '
                             'condition.\n{}'.format(face.full_id, e))
+                # add simple window ventilation objects where applicable
+                if isinstance(face.boundary_condition, Outdoors):
+                    for sub_f in face.sub_faces:
+                        vent_open = sub_f.properties.energy.vent_opening
+                        if vent_open is not None:
+                            ventilation_opening_to_openstudio(vent_open, os_model)
+    else:  # we are using the AFN!
+        # create the AFN reference crack for the model and make an outdoor sensor
+        vent_sim_ctrl = model.properties.energy.ventilation_simulation_control
+        os_ref_crack = ventilation_sim_control_to_openstudio(vent_sim_ctrl, os_model)
+        prog_manager = ventilation_control_program_manager(os_model)  # EMS manager
+        outdoor_temperature_sensor(os_model)  # add an EMS sensor for outdoor temperature
+        #  loop though the geometry and assign all AFN properties
+        zone_air_nodes = {}  # track EMS zone air temperature sensors
+        set_by_adj = set()  # track the objects with properties set by adjacency
+        for room in model.rooms:  # write an AirflowNetworkZone object in for the Room
+            os_zone = zone_map[room.identifier]
+            os_afn_room_node = os_zone.getAirflowNetworkZone()
+            os_afn_room_node.setVentilationControlMode('NoVent')
+            operable_sub_fs = []  # collect the sub-face objects for the EMS
+            opening_factors = []  # collect the maximum opening factors for the EMS
+            for face in room.faces:  # write AFN crack infiltration for the Face
+                if face.identifier not in set_by_adj:
+                    vent_crack = face.properties.energy.vent_crack
+                    if vent_crack is not None:
+                        os_crack = afn_crack_to_openstudio(
+                            vent_crack, os_model, os_ref_crack)
+                        os_face = adj_map['faces'][face.identifier]
+                        os_face.getAirflowNetworkSurface(os_crack)
+                        if isinstance(face.boundary_condition, Surface):
+                            adj_id = face.boundary_condition.boundary_condition_object
+                            set_by_adj.add(adj_id)
+                    for sub_f in face.sub_faces:  # write AFN openings for each sub-face
+                        vent_open = sub_f.properties.energy.vent_opening
+                        if vent_open is not None:
+                            os_opening, op_fac = ventilation_opening_to_openstudio_afn(
+                                vent_open, os_model, os_ref_crack)
+                            os_sub_f = adj_map['sub_faces'][sub_f.identifier]
+                            os_afn_sf = os_sub_f.getAirflowNetworkSurface(os_opening)
+                            if op_fac is not None:
+                                os_afn_sf.setWindowDoorOpeningFactorOrCrackFactor(op_fac)
+                                operable_sub_fs.append(os_sub_f)
+                                opening_factors.append(op_fac)
+            # translate the Room's VentilationControl to an EMS program
+            vent_control = room.properties.energy.window_vent_control
+            if vent_control is not None:
+                try:
+                    zone_node = zone_air_nodes[os_zone.nameString()]
+                except KeyError:
+                    zone_node = zone_temperature_sensor(os_zone)
+                    zone_air_nodes[os_zone.nameString()] = zone_node
+                os_ems_program = ventilation_control_to_openstudio_afn(
+                    vent_control, opening_factors, operable_sub_fs,
+                    zone_node, os_model, room.identifier)
+                prog_manager.addProgram(os_ems_program)
+
     # write any ventilation fan definitions
     for room in model.rooms:
         for fan in room.properties.energy.fans:
