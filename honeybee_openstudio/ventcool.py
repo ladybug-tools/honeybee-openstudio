@@ -201,6 +201,7 @@ def ventilation_opening_to_openstudio_afn(opening, os_model, os_reference_crack=
         # create the simple opening object for the Aperture or Door using default values
         os_opening = OSAirflowNetworkSimpleOpening(
           os_model, flow_coeff, flow_exponent, two_way_thresh, discharge_coeff)
+    os_opening.setName('{}_Opening'.format(opening.parent.identifier))
     return os_opening, opening_factor
 
 
@@ -294,7 +295,7 @@ def zone_temperature_sensor(os_zone, os_model):
     in_var.setReportingFrequency('Timestep')
     in_var.setKeyValue(os_zone_name)
     in_air_sensor = OSEnergyManagementSystemSensor(os_model, in_var)
-    sensor_id = 'Sensor{}'.format(re.sub('[^A-Za-z0-9]', '', os_zone_name.identifier))
+    sensor_id = 'Sensor{}'.format(re.sub('[^A-Za-z0-9]', '', os_zone_name))
     in_air_sensor.setName(sensor_id)
     return in_air_sensor
 

@@ -815,6 +815,7 @@ def model_to_openstudio(
                     if vent_crack is not None:
                         os_crack = afn_crack_to_openstudio(
                             vent_crack, os_model, os_ref_crack)
+                        os_crack.setName('{}_Crack'.format(face.identifier))
                         os_face = adj_map['faces'][face.identifier]
                         os_face.getAirflowNetworkSurface(os_crack)
                         if isinstance(face.boundary_condition, Surface):
@@ -837,7 +838,7 @@ def model_to_openstudio(
                 try:
                     zone_node = zone_air_nodes[os_zone.nameString()]
                 except KeyError:
-                    zone_node = zone_temperature_sensor(os_zone)
+                    zone_node = zone_temperature_sensor(os_zone, os_model)
                     zone_air_nodes[os_zone.nameString()] = zone_node
                 os_ems_program = ventilation_control_to_openstudio_afn(
                     vent_control, opening_factors, operable_sub_fs,
