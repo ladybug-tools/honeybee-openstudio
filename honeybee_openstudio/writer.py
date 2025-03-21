@@ -152,7 +152,7 @@ def door_to_openstudio(door, os_model):
     # convert the base geometry to OpenStudio
     os_vertices = face_3d_to_openstudio(door.geometry)
     # translate the geometry to either a SubSurface or a ShadingSurface
-    if door.has_parent:
+    if door.has_parent:  # translate the geometry as SubSurface
         os_door = OSSubSurface(os_vertices, os_model)
         if door.is_glass:
             dr_type = 'GlassDoor'
@@ -185,8 +185,20 @@ def door_to_openstudio(door, os_model):
         if construction.has_shade:
             shd_prop_str = window_shading_control_to_openstudio(construction, os_model)
             os_door.setShadingControl(shd_prop_str)
-    else:
+    else:  # translate the geometry as ShadingSurface
         os_door = OSShadingSurface(os_vertices, os_model)
+        cns = door.properties.energy.construction
+        os_construction = os_model.getConstructionByName(cns.identifier)
+        if os_construction.is_initialized():
+            os_construction = os_construction.get()
+            os_door.setConstruction(os_construction)
+        if door.is_glass:
+            trans_sch = 'Constant %.3f Transmittance' % cns.solar_transmittance
+            os_schedule = os_model.getScheduleByName(trans_sch)
+            if os_schedule.is_initialized():
+                os_schedule = os_schedule.get()
+                os_door.setTransmittanceSchedule(os_schedule)
+        # translate any shades assigned to the Door
         for shd in door._outdoor_shades:
             shade_to_openstudio(shd, os_model)
 
@@ -211,7 +223,7 @@ def aperture_to_openstudio(aperture, os_model):
     # convert the base geometry to OpenStudio
     os_vertices = face_3d_to_openstudio(aperture.geometry)
     # translate the geometry to either a SubSurface or a ShadingSurface
-    if aperture.has_parent:
+    if aperture.has_parent:  # translate the geometry as SubSurface
         os_aperture = OSSubSurface(os_vertices, os_model)
         if aperture.is_operable:
             ap_type = 'OperableWindow'
@@ -244,8 +256,19 @@ def aperture_to_openstudio(aperture, os_model):
         if construction.has_shade:
             shd_prop_str = window_shading_control_to_openstudio(construction, os_model)
             os_aperture.setShadingControl(shd_prop_str)
-    else:
+    else:  # translate the geometry as ShadingSurface
         os_aperture = OSShadingSurface(os_vertices, os_model)
+        cns = aperture.properties.energy.construction
+        os_construction = os_model.getConstructionByName(cns.identifier)
+        if os_construction.is_initialized():
+            os_construction = os_construction.get()
+            os_aperture.setConstruction(os_construction)
+        trans_sch = 'Constant %.3f Transmittance' % cns.solar_transmittance
+        os_schedule = os_model.getScheduleByName(trans_sch)
+        if os_schedule.is_initialized():
+            os_schedule = os_schedule.get()
+            os_aperture.setTransmittanceSchedule(os_schedule)
+        # translate any shades assigned to the Aperture
         for shd in aperture._outdoor_shades:
             shade_to_openstudio(shd, os_model)
 

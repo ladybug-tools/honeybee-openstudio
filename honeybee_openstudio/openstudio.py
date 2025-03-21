@@ -24,7 +24,7 @@ def _os_vector_len_ironpython(vector):
 
 if (sys.version_info >= (3, 0)):  # we are in cPython and can import normally
     import openstudio
-    os_model_namespace = openstudio.model
+    openstudio_model = openstudio.model
     os_path = _os_path_cpython
     os_vector_len = _os_vector_len_cpython
 else:  # we are in IronPython and we must import the .NET bindings
@@ -48,111 +48,111 @@ else:  # we are in IronPython and we must import the .NET bindings
         if hbe_folders.openstudio_csharp_path not in sys.path:
             sys.path.append(hbe_folders.openstudio_csharp_path)
         import OpenStudio as openstudio
-    os_model_namespace = openstudio
+    openstudio_model = openstudio
     os_path = _os_path_ironpython
     os_vector_len = _os_vector_len_ironpython
 
 # load all of the classes used by this package
 # geometry classes
-OSModel = os_model_namespace.Model
+OSModel = openstudio_model.Model
 OSPoint3dVector = openstudio.Point3dVector
 OSPoint3d = openstudio.Point3d
-OSShadingSurfaceGroup = os_model_namespace.ShadingSurfaceGroup
-OSShadingSurface = os_model_namespace.ShadingSurface
-OSSubSurface = os_model_namespace.SubSurface
-OSSurface = os_model_namespace.Surface
-OSSpace = os_model_namespace.Space
-OSThermalZone = os_model_namespace.ThermalZone
-OSBuildingStory = os_model_namespace.BuildingStory
-OSSurfacePropertyOtherSideCoefficients = os_model_namespace.SurfacePropertyOtherSideCoefficients
+OSShadingSurfaceGroup = openstudio_model.ShadingSurfaceGroup
+OSShadingSurface = openstudio_model.ShadingSurface
+OSSubSurface = openstudio_model.SubSurface
+OSSurface = openstudio_model.Surface
+OSSpace = openstudio_model.Space
+OSThermalZone = openstudio_model.ThermalZone
+OSBuildingStory = openstudio_model.BuildingStory
+OSSurfacePropertyOtherSideCoefficients = openstudio_model.SurfacePropertyOtherSideCoefficients
 # schedule classes
-OSScheduleTypeLimits = os_model_namespace.ScheduleTypeLimits
-OSScheduleRuleset = os_model_namespace.ScheduleRuleset
-OSScheduleRule = os_model_namespace.ScheduleRule
-OSScheduleDay = os_model_namespace.ScheduleDay
-OSScheduleFixedInterval = os_model_namespace.ScheduleFixedInterval
-OSExternalFile = os_model_namespace.ExternalFile
-OSScheduleFile = os_model_namespace.ScheduleFile
+OSScheduleTypeLimits = openstudio_model.ScheduleTypeLimits
+OSScheduleRuleset = openstudio_model.ScheduleRuleset
+OSScheduleRule = openstudio_model.ScheduleRule
+OSScheduleDay = openstudio_model.ScheduleDay
+OSScheduleFixedInterval = openstudio_model.ScheduleFixedInterval
+OSExternalFile = openstudio_model.ExternalFile
+OSScheduleFile = openstudio_model.ScheduleFile
 OSTime = openstudio.Time
 OSTimeSeries = openstudio.TimeSeries
 OSVector = openstudio.Vector
 # material classes
-OSMasslessOpaqueMaterial = os_model_namespace.MasslessOpaqueMaterial
-OSStandardOpaqueMaterial = os_model_namespace.StandardOpaqueMaterial
-OSRoofVegetation = os_model_namespace.RoofVegetation
-OSSimpleGlazing = os_model_namespace.SimpleGlazing
-OSStandardGlazing = os_model_namespace.StandardGlazing
-OSGas = os_model_namespace.Gas
-OSGasMixture = os_model_namespace.GasMixture
-OSBlind = os_model_namespace.Blind
-OSShade = os_model_namespace.Shade
-OSWindowPropertyFrameAndDivider = os_model_namespace.WindowPropertyFrameAndDivider
+OSMasslessOpaqueMaterial = openstudio_model.MasslessOpaqueMaterial
+OSStandardOpaqueMaterial = openstudio_model.StandardOpaqueMaterial
+OSRoofVegetation = openstudio_model.RoofVegetation
+OSSimpleGlazing = openstudio_model.SimpleGlazing
+OSStandardGlazing = openstudio_model.StandardGlazing
+OSGas = openstudio_model.Gas
+OSGasMixture = openstudio_model.GasMixture
+OSBlind = openstudio_model.Blind
+OSShade = openstudio_model.Shade
+OSWindowPropertyFrameAndDivider = openstudio_model.WindowPropertyFrameAndDivider
 # constructions classes
-OSConstruction = os_model_namespace.Construction
-OSMaterialVector = os_model_namespace.MaterialVector
-OSShadingControl = os_model_namespace.ShadingControl
-OSConstructionAirBoundary = os_model_namespace.ConstructionAirBoundary
-OSZoneMixing = os_model_namespace.ZoneMixing
+OSConstruction = openstudio_model.Construction
+OSMaterialVector = openstudio_model.MaterialVector
+OSShadingControl = openstudio_model.ShadingControl
+OSConstructionAirBoundary = openstudio_model.ConstructionAirBoundary
+OSZoneMixing = openstudio_model.ZoneMixing
 # construction set classes
-OSDefaultConstructionSet = os_model_namespace.DefaultConstructionSet
-OSDefaultSurfaceConstructions = os_model_namespace.DefaultSurfaceConstructions
-OSDefaultSubSurfaceConstructions = os_model_namespace.DefaultSubSurfaceConstructions
+OSDefaultConstructionSet = openstudio_model.DefaultConstructionSet
+OSDefaultSurfaceConstructions = openstudio_model.DefaultSurfaceConstructions
+OSDefaultSubSurfaceConstructions = openstudio_model.DefaultSubSurfaceConstructions
 # internal mass classes
-OSInternalMassDefinition = os_model_namespace.InternalMassDefinition
-OSInternalMass = os_model_namespace.InternalMass
+OSInternalMassDefinition = openstudio_model.InternalMassDefinition
+OSInternalMass = openstudio_model.InternalMass
 # loads classes
-OSSpaceType = os_model_namespace.SpaceType
-OSPeopleDefinition = os_model_namespace.PeopleDefinition
-OSPeople = os_model_namespace.People
-OSLightsDefinition = os_model_namespace.LightsDefinition
-OSLights = os_model_namespace.Lights
-OSElectricEquipmentDefinition = os_model_namespace.ElectricEquipmentDefinition
-OSElectricEquipment = os_model_namespace.ElectricEquipment
-OSGasEquipmentDefinition = os_model_namespace.GasEquipmentDefinition
-OSGasEquipment = os_model_namespace.GasEquipment
-OSOtherEquipmentDefinition = os_model_namespace.OtherEquipmentDefinition
-OSOtherEquipment = os_model_namespace.OtherEquipment
-OSWaterUseEquipmentDefinition = os_model_namespace.WaterUseEquipmentDefinition
-OSWaterUseEquipment = os_model_namespace.WaterUseEquipment
-OSWaterUseConnections = os_model_namespace.WaterUseConnections
-OSSpaceInfiltrationDesignFlowRate = os_model_namespace.SpaceInfiltrationDesignFlowRate
-OSDesignSpecificationOutdoorAir = os_model_namespace.DesignSpecificationOutdoorAir
-OSThermostatSetpointDualSetpoint = os_model_namespace.ThermostatSetpointDualSetpoint
-OSZoneControlHumidistat = os_model_namespace.ZoneControlHumidistat
-OSDaylightingControl = os_model_namespace.DaylightingControl
+OSSpaceType = openstudio_model.SpaceType
+OSPeopleDefinition = openstudio_model.PeopleDefinition
+OSPeople = openstudio_model.People
+OSLightsDefinition = openstudio_model.LightsDefinition
+OSLights = openstudio_model.Lights
+OSElectricEquipmentDefinition = openstudio_model.ElectricEquipmentDefinition
+OSElectricEquipment = openstudio_model.ElectricEquipment
+OSGasEquipmentDefinition = openstudio_model.GasEquipmentDefinition
+OSGasEquipment = openstudio_model.GasEquipment
+OSOtherEquipmentDefinition = openstudio_model.OtherEquipmentDefinition
+OSOtherEquipment = openstudio_model.OtherEquipment
+OSWaterUseEquipmentDefinition = openstudio_model.WaterUseEquipmentDefinition
+OSWaterUseEquipment = openstudio_model.WaterUseEquipment
+OSWaterUseConnections = openstudio_model.WaterUseConnections
+OSSpaceInfiltrationDesignFlowRate = openstudio_model.SpaceInfiltrationDesignFlowRate
+OSDesignSpecificationOutdoorAir = openstudio_model.DesignSpecificationOutdoorAir
+OSThermostatSetpointDualSetpoint = openstudio_model.ThermostatSetpointDualSetpoint
+OSZoneControlHumidistat = openstudio_model.ZoneControlHumidistat
+OSDaylightingControl = openstudio_model.DaylightingControl
 # ventilative cooling and AFN classes
-OSZoneVentilationWindandStackOpenArea = os_model_namespace.ZoneVentilationWindandStackOpenArea
-OSZoneVentilationDesignFlowRate = os_model_namespace.ZoneVentilationDesignFlowRate
-OSAirflowNetworkReferenceCrackConditions = os_model_namespace.AirflowNetworkReferenceCrackConditions
-OSAirflowNetworkCrack = os_model_namespace.AirflowNetworkCrack
-OSAirflowNetworkSimpleOpening = os_model_namespace.AirflowNetworkSimpleOpening
-OSAirflowNetworkHorizontalOpening = os_model_namespace.AirflowNetworkHorizontalOpening
+OSZoneVentilationWindandStackOpenArea = openstudio_model.ZoneVentilationWindandStackOpenArea
+OSZoneVentilationDesignFlowRate = openstudio_model.ZoneVentilationDesignFlowRate
+OSAirflowNetworkReferenceCrackConditions = openstudio_model.AirflowNetworkReferenceCrackConditions
+OSAirflowNetworkCrack = openstudio_model.AirflowNetworkCrack
+OSAirflowNetworkSimpleOpening = openstudio_model.AirflowNetworkSimpleOpening
+OSAirflowNetworkHorizontalOpening = openstudio_model.AirflowNetworkHorizontalOpening
 # shw System classes
-OSPlantLoop = os_model_namespace.PlantLoop
-OSSetpointManagerScheduled = os_model_namespace.SetpointManagerScheduled
-OSPumpConstantSpeed = os_model_namespace.PumpConstantSpeed
-OSWaterHeaterMixed = os_model_namespace.WaterHeaterMixed
-OSCoilWaterHeatingAirToWaterHeatPump = os_model_namespace.CoilWaterHeatingAirToWaterHeatPump
-OSFanOnOff = os_model_namespace.FanOnOff
-OSWaterHeaterHeatPump = os_model_namespace.WaterHeaterHeatPump
+OSPlantLoop = openstudio_model.PlantLoop
+OSSetpointManagerScheduled = openstudio_model.SetpointManagerScheduled
+OSPumpConstantSpeed = openstudio_model.PumpConstantSpeed
+OSWaterHeaterMixed = openstudio_model.WaterHeaterMixed
+OSCoilWaterHeatingAirToWaterHeatPump = openstudio_model.CoilWaterHeatingAirToWaterHeatPump
+OSFanOnOff = openstudio_model.FanOnOff
+OSWaterHeaterHeatPump = openstudio_model.WaterHeaterHeatPump
 # HVAC classes
-OSZoneHVACIdealLoadsAirSystem = os_model_namespace.ZoneHVACIdealLoadsAirSystem
+OSZoneHVACIdealLoadsAirSystem = openstudio_model.ZoneHVACIdealLoadsAirSystem
 # ems classes
-OSOutputVariable = os_model_namespace.OutputVariable
-OSEnergyManagementSystemProgram = os_model_namespace.EnergyManagementSystemProgram
+OSOutputVariable = openstudio_model.OutputVariable
+OSEnergyManagementSystemProgram = openstudio_model.EnergyManagementSystemProgram
 OSEnergyManagementSystemProgramCallingManager = \
-    os_model_namespace.EnergyManagementSystemProgramCallingManager
-OSEnergyManagementSystemSensor = os_model_namespace.EnergyManagementSystemSensor
-OSEnergyManagementSystemActuator = os_model_namespace.EnergyManagementSystemActuator
+    openstudio_model.EnergyManagementSystemProgramCallingManager
+OSEnergyManagementSystemSensor = openstudio_model.EnergyManagementSystemSensor
+OSEnergyManagementSystemActuator = openstudio_model.EnergyManagementSystemActuator
 OSEnergyManagementSystemConstructionIndexVariable = \
-    os_model_namespace.EnergyManagementSystemConstructionIndexVariable
+    openstudio_model.EnergyManagementSystemConstructionIndexVariable
 # generator classes
-OSGeneratorPVWatts = os_model_namespace.GeneratorPVWatts
-OSElectricLoadCenterDistribution = os_model_namespace.ElectricLoadCenterDistribution
-OSElectricLoadCenterInverterPVWatts = os_model_namespace.ElectricLoadCenterInverterPVWatts
+OSGeneratorPVWatts = openstudio_model.GeneratorPVWatts
+OSElectricLoadCenterDistribution = openstudio_model.ElectricLoadCenterDistribution
+OSElectricLoadCenterInverterPVWatts = openstudio_model.ElectricLoadCenterInverterPVWatts
 # simulation classes
-OSRunPeriodControlSpecialDays = os_model_namespace.RunPeriodControlSpecialDays
+OSRunPeriodControlSpecialDays = openstudio_model.RunPeriodControlSpecialDays
 OSMonthOfYear = openstudio.MonthOfYear
-OSOutputVariable = os_model_namespace.OutputVariable
-OSDesignDay = os_model_namespace.DesignDay
+OSOutputVariable = openstudio_model.OutputVariable
+OSDesignDay = openstudio_model.DesignDay
 OSEpwFile = openstudio.EpwFile

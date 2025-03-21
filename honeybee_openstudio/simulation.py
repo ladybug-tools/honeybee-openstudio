@@ -9,7 +9,7 @@ from ladybug.designday import ASHRAEClearSky, ASHRAETau
 
 from honeybee_openstudio.openstudio import OSModel, OSOutputVariable, \
     OSDesignDay, OSEpwFile, OSRunPeriodControlSpecialDays, OSMonthOfYear, \
-    os_path, os_vector_len, os_model_namespace
+    os_path, os_vector_len, openstudio_model
 
 STANDARD_MAP = {
     'DOE_Ref_Pre_1980': 'DOE Ref Pre-1980',
@@ -39,7 +39,7 @@ def assign_epw_to_model(epw_file, os_model, set_climate_zone=False):
         'The file does not have .epw extension: {}'.format(epw_file)
     full_path = os.path.abspath(epw_file)
     os_epw = OSEpwFile(os_path(full_path))
-    os_model_namespace.WeatherFile.setWeatherFile(os_model, os_epw)
+    openstudio_model.WeatherFile.setWeatherFile(os_model, os_epw)
     # set the ASHRAE climate zone if requested
     if set_climate_zone:
         climate_zone_objs = os_model.getClimateZones()
