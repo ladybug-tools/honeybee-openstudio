@@ -22,7 +22,7 @@ def _os_vector_len_ironpython(vector):
     return vector.Count
 
 
-if (sys.version_info >= (3, 0)):  # we are in cPython and can import normally
+if sys.version_info >= (3, 0):  # we are in cPython and can import normally
     import openstudio
     openstudio_model = openstudio.model
     os_path = _os_path_cpython
