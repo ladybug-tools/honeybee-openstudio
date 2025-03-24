@@ -625,7 +625,7 @@ def model_to_openstudio(
     # make note of how the airflow will be modeled across the building
     vent_sim_control = model.properties.energy.ventilation_simulation_control
     use_simple_vent = True if vent_sim_control.vent_control_type == 'SingleZone' \
-        else False
+        or sys.version_info < (3, 0) else False  # AFN not supported in .NET
 
     # create the OpenStudio model object and setup the Building
     os_model = OSModel() if seed_model is None else seed_model
@@ -800,7 +800,7 @@ def model_to_openstudio(
                         base_os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
 
     # if simple ventilation is being used
-    if use_simple_vent or sys.version_info < (3, 0):  # AFN not supported in .NET
+    if use_simple_vent:
         for room in model.rooms:  # add simple add air mixing and window ventilation
             for face in room.faces:
                 if isinstance(face.type, AirBoundary):  # write the air mixing objects

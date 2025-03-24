@@ -1,7 +1,201 @@
+# coding=utf-8
 """Module taken from OpenStudio-standards.
 
-https://github.com/NREL/openstudio-standards/blob/master/lib/openstudio-standards/prototypes/common/objects/Prototype.hvac_systems.rb
+https://github.com/NREL/openstudio-standards/blob/master/
+lib/openstudio-standards/prototypes/common/objects/Prototype.hvac_systems.rb
 """
+from __future__ import division
+
+from ladybug.datatype.temperature import Temperature
+from ladybug.datatype.temperaturedelta import TemperatureDelta
+from ladybug.datatype.pressure import Pressure
+
+from honeybee_openstudio.openstudio import openstudio, openstudio_model
+from .schedule import create_constant_schedule_ruleset
+from .central_air_source_heat_pump import create_central_air_source_heat_pump
+from .boiler_hot_water import create_boiler_hot_water
+
+TEMPERATURE = Temperature()
+TEMP_DELTA = TemperatureDelta()
+PRESSURE = Pressure()
+
+
+def standard_design_sizing_temperatures():
+    """Get a dictionary of design sizing temperatures for lookups."""
+    dsgn_temps = {}
+    dsgn_temps['prehtg_dsgn_sup_air_temp_f'] = 45.0
+    dsgn_temps['preclg_dsgn_sup_air_temp_f'] = 55.0
+    dsgn_temps['htg_dsgn_sup_air_temp_f'] = 55.0
+    dsgn_temps['clg_dsgn_sup_air_temp_f'] = 55.0
+    dsgn_temps['zn_htg_dsgn_sup_air_temp_f'] = 104.0
+    dsgn_temps['zn_clg_dsgn_sup_air_temp_f'] = 55.0
+    dsgn_temps_c = {} 
+    for key, val in dsgn_temps.items():
+        dsgn_temps_c['{}_c'.format(key[:-2])] = TEMPERATURE.to_unit([val], 'C', 'F')[0]
+    dsgn_temps.update(dsgn_temps_c)
+    return dsgn_temps
+
+
+def model_add_hw_loop(
+        model, boiler_fuel_type, ambient_loop=None, system_name='Hot Water Loop',
+        dsgn_sup_wtr_temp=180.0, dsgn_sup_wtr_temp_delt=20.0, pump_spd_ctrl='Variable',
+        pump_tot_hd=None, boiler_draft_type=None, boiler_eff_curve_temp_eval_var=None,
+        boiler_lvg_temp_dsgn=None, boiler_out_temp_lmt=None,
+        boiler_max_plr=None, boiler_sizing_factor=None):
+    """Create a hot water loop with a boiler, district heat, or water-to-water heat pump.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object
+        boiler_fuel_type: [String] valid choices are Electricity, NaturalGas,
+            Propane, PropaneGas, FuelOilNo1, FuelOilNo2, DistrictHeating,
+            DistrictHeatingWater, DistrictHeatingSteam, HeatPump
+        ambient_loop: [OpenStudio::Model::PlantLoop] The condenser loop for the
+            heat pump. Only used when boiler_fuel_type is HeatPump.
+        system_name: [String] the name of the system. If None, it will be defaulted.
+        dsgn_sup_wtr_temp: [Double] design supply water temperature in degrees
+            Fahrenheit, default 180F.
+        dsgn_sup_wtr_temp_delt: [Double] design supply-return water temperature
+            difference in degrees Rankine, default 20R.
+        pump_spd_ctrl: [String] pump speed control type, Constant or Variable (default).
+        pump_tot_hd: [Double] pump head in ft H2O.
+        boiler_draft_type: [String] Boiler type Condensing, MechanicalNoncondensing,
+            Natural (default).
+        boiler_eff_curve_temp_eval_var: [String] LeavingBoiler or EnteringBoiler
+            temperature for the boiler efficiency curve.
+        boiler_lvg_temp_dsgn: [Double] boiler leaving design temperature in
+            degrees Fahrenheit.
+        boiler_out_temp_lmt: [Double] boiler outlet temperature limit in
+            degrees Fahrenheit.
+        boiler_max_plr: [Double] boiler maximum part load ratio.
+        boiler_sizing_factor: [Double] boiler oversizing factor.
+    
+    Returns:
+        [OpenStudio::Model::PlantLoop] the resulting hot water loop.
+    """
+    # create hot water loop
+    hot_water_loop = openstudio_model.PlantLoop(model)
+    if system_name is None:
+        hot_water_loop.setName('Hot Water Loop')
+    else:
+        hot_water_loop.setName(system_name)
+
+    # hot water loop sizing and controls
+    dsgn_sup_wtr_temp = 180.0 if dsgn_sup_wtr_temp is None else dsgn_sup_wtr_temp
+    dsgn_sup_wtr_temp_c = TEMPERATURE.to_unit([dsgn_sup_wtr_temp], 'C', 'F')[0]
+    dsgn_sup_wtr_temp_delt = 20.0 if dsgn_sup_wtr_temp_delt is None \
+        else dsgn_sup_wtr_temp_delt
+    dsgn_sup_wtr_temp_delt_k = TEMP_DELTA.to_unit([dsgn_sup_wtr_temp_delt], 'dC', 'dF')[0]
+
+    sizing_plant = hot_water_loop.sizingPlant()
+    sizing_plant.setLoopType('Heating')
+    sizing_plant.setDesignLoopExitTemperature(dsgn_sup_wtr_temp_c)
+    sizing_plant.setLoopDesignTemperatureDifference(dsgn_sup_wtr_temp_delt_k)
+    hot_water_loop.setMinimumLoopTemperature(10.0)
+    hw_temp_sch = create_constant_schedule_ruleset(
+        model, dsgn_sup_wtr_temp_c,
+        name='{} Temp - {}F'.format(hot_water_loop.nameString(), int(dsgn_sup_wtr_temp)),
+        schedule_type_limit='Temperature')
+    hw_stpt_manager = openstudio_model.SetpointManagerScheduled(model, hw_temp_sch)
+    hw_stpt_manager.setName('{} Setpoint Manager'.format(hot_water_loop.nameString()))
+    hw_stpt_manager.addToNode(hot_water_loop.supplyOutletNode)
+
+    # create hot water pump
+    if pump_spd_ctrl == 'Constant':
+        hw_pump = openstudio_model.PumpConstantSpeed(model)
+    elif pump_spd_ctrl == 'Variable':
+        hw_pump = openstudio_model.PumpVariableSpeed(model)
+    else:
+        hw_pump = openstudio_model.PumpVariableSpeed(model)
+    hw_pump.setName('{} Pump'.format(hot_water_loop.nameString()))
+    if pump_tot_hd is None:
+        pump_tot_hd_pa = PRESSURE.to_unit([60 * 12], 'Pa', 'inH2O')[0]
+    else:
+        pump_tot_hd_pa = PRESSURE.to_unit([pump_tot_hd * 12], 'Pa', 'inH2O')[0]
+    hw_pump.setRatedPumpHead(pump_tot_hd_pa)
+    hw_pump.setMotorEfficiency(0.9)
+    hw_pump.setPumpControlType('Intermittent')
+    hw_pump.addToNode(hot_water_loop.supplyInletNode())
+
+    # switch statement to handle district heating name change
+    if model.version() < openstudio.VersionString('3.7.0'):
+        if boiler_fuel_type == 'DistrictHeatingWater' or \
+                boiler_fuel_type == 'DistrictHeatingSteam':
+            boiler_fuel_type = 'DistrictHeating'
+    else:
+        if boiler_fuel_type == 'DistrictHeating':
+            boiler_fuel_type = 'DistrictHeatingWater'
+
+    # create boiler and add to loop
+    # District Heating
+    if boiler_fuel_type == 'DistrictHeating':
+        district_heat = openstudio_model.DistrictHeating(model)
+        district_heat.setName('{} District Heating'.format(hot_water_loop.nameString()))
+        district_heat.autosizeNominalCapacity()
+        hot_water_loop.addSupplyBranchForComponent(district_heat)
+    elif boiler_fuel_type == 'DistrictHeatingWater':
+        district_heat = openstudio_model.DistrictHeatingWater(model)
+        district_heat.setName('{} District Heating'.format(hot_water_loop.nameString()))
+        district_heat.autosizeNominalCapacity()
+        hot_water_loop.addSupplyBranchForComponent(district_heat)
+    elif boiler_fuel_type == 'DistrictHeatingSteam':
+        district_heat = openstudio_model.DistrictHeatingSteam(model)
+        district_heat.setName('{} District Heating'.format(hot_water_loop.nameString()))
+        district_heat.autosizeNominalCapacity()
+        hot_water_loop.addSupplyBranchForComponent(district_heat)
+    elif boiler_fuel_type in ('HeatPump', 'AmbientLoop'):
+        # Ambient Loop
+        water_to_water_hp = openstudio_model.HeatPumpWaterToWaterEquationFitHeating(model)
+        water_to_water_hp.setName(
+            '{} Water to Water Heat Pump'.format(hot_water_loop.nameString()))
+        hot_water_loop.addSupplyBranchForComponent(water_to_water_hp)
+        # Get or add an ambient loop
+        if ambient_loop is None:
+            ambient_loop = model_get_or_add_ambient_water_loop(model)
+        ambient_loop.addDemandBranchForComponent(water_to_water_hp)
+    elif boiler_fuel_type in ('AirSourceHeatPump', 'ASHP'):
+        # Central Air Source Heat Pump
+        create_central_air_source_heat_pump(model, hot_water_loop)
+      
+    elif boiler_fuel_type in ('Electricity', 'Gas', 'NaturalGas', 'Propane',
+                              'PropaneGas', 'FuelOilNo1', 'FuelOilNo2'):
+        # Boiler
+        lvg_temp_dsgn_f = dsgn_sup_wtr_temp if boiler_lvg_temp_dsgn is None \
+            else boiler_lvg_temp_dsgn
+        out_temp_lmt_f = 203.0 if boiler_out_temp_lmt is None else boiler_out_temp_lmt
+        create_boiler_hot_water(
+            model, hot_water_loop=hot_water_loop, fuel_type=boiler_fuel_type,
+            draft_type=boiler_draft_type, nominal_thermal_efficiency=0.78,
+            eff_curve_temp_eval_var=boiler_eff_curve_temp_eval_var,
+            lvg_temp_dsgn_f=lvg_temp_dsgn_f, out_temp_lmt_f=out_temp_lmt_f,
+            max_plr=boiler_max_plr, sizing_factor=boiler_sizing_factor)
+    else:
+        msg = 'Boiler fuel type {} is not valid, no boiler will be added.'.format(
+            boiler_fuel_type)
+        print(msg)
+
+    # add hot water loop pipes
+    supply_equipment_bypass_pipe = openstudio_model.PipeAdiabatic(model)
+    supply_equipment_bypass_pipe.setName(
+        '{} Supply Equipment Bypass'.format(hot_water_loop.nameString()))
+    hot_water_loop.addSupplyBranchForComponent(supply_equipment_bypass_pipe)
+
+    coil_bypass_pipe = openstudio_model.PipeAdiabatic(model)
+    coil_bypass_pipe.setName('{} Coil Bypass'.format(hot_water_loop.nameString()))
+    hot_water_loop.addDemandBranchForComponent(coil_bypass_pipe)
+
+    supply_outlet_pipe = openstudio_model.PipeAdiabatic(model)
+    supply_outlet_pipe.setName('{} Supply Outlet'.format(hot_water_loop.nameString()))
+    supply_outlet_pipe.addToNode(hot_water_loop.supplyOutletNode())
+
+    demand_inlet_pipe = openstudio_model.PipeAdiabatic(model)
+    demand_inlet_pipe.setName('{} Demand Inlet'.format(hot_water_loop.nameString()))
+    demand_inlet_pipe.addToNode(hot_water_loop.demandInletNode())
+
+    demand_outlet_pipe = openstudio_model.PipeAdiabatic(model)
+    demand_outlet_pipe.setName('{} Demand Outlet'.format(hot_water_loop.nameString()))
+    demand_outlet_pipe.addToNode(hot_water_loop.demandOutletNode())
+
+    return hot_water_loop
 
 
 def model_get_or_add_chilled_water_loop():
