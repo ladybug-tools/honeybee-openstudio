@@ -1,6 +1,7 @@
 # coding=utf-8
 """Test the translators for ventilative cooling to OpenStudio."""
 import os
+import sys
 
 from ladybug.dt import Time
 from honeybee.room import Room
@@ -13,7 +14,7 @@ from honeybee_energy.schedule.day import ScheduleDay
 from honeybee_energy.schedule.ruleset import ScheduleRuleset
 import honeybee_energy.lib.scheduletypelimits as schedule_types
 
-from honeybee_openstudio.openstudio import OSModel
+from honeybee_openstudio.openstudio import OSModel, os_vector_len
 from honeybee_openstudio.ventcool import ventilation_opening_to_openstudio, \
     ventilation_fan_to_openstudio
 from honeybee_openstudio.writer import model_to_openstudio
@@ -65,6 +66,18 @@ def test_afn_to_openstudio():
     standard_test = os.path.join(os.path.dirname(__file__), standard_test)
     model = Model.from_file(standard_test)
 
+    # test the translation of simple objects
+    os_model = model_to_openstudio(model)
+    zone_mixings = os_model.getZoneMixings()
+    assert os_vector_len(zone_mixings) == 2
+    zone_mix_str = str(zone_mixings[0])
+    assert zone_mix_str.startswith('OS:ZoneMixing,')
+
+    opening_vents = os_model.getZoneVentilationWindandStackOpenAreas()
+    assert os_vector_len(opening_vents) == 3
+    os_vent_str = str(opening_vents[0])
+    assert os_vent_str.startswith('OS:ZoneVentilation:WindandStackOpenArea,')
+
     # generate the AFN leakage for all of the surfaces of the Model
     generate(model.rooms, leakage_type='Medium', use_room_infiltration=True,
              atmospheric_pressure=101325, delta_pressure=4)
@@ -74,19 +87,21 @@ def test_afn_to_openstudio():
     vent_sim_par.vent_control_type = 'MultiZoneWithoutDistribution'
     model.properties.energy.autocalculate_ventilation_simulation_control()
 
+    # test the translation of the full AFN
     os_model = model_to_openstudio(model)
 
-    ems_programs = os_model.getEnergyManagementSystemPrograms()
-    assert len(ems_programs) == 3
-    ems_prog_str = str(ems_programs[0])
-    assert ems_prog_str.startswith('OS:EnergyManagementSystem:Program,')
+    if sys.version_info >= (3, 0):
+        ems_programs = os_model.getEnergyManagementSystemPrograms()
+        assert os_vector_len(ems_programs) == 3
+        ems_prog_str = str(ems_programs[0])
+        assert ems_prog_str.startswith('OS:EnergyManagementSystem:Program,')
 
-    afn_openings = os_model.getAirflowNetworkSimpleOpenings()
-    assert len(afn_openings) == 5
-    afn_opening_str = str(afn_openings[0])
-    assert afn_opening_str.startswith('OS:AirflowNetworkSimpleOpening,')
+        afn_openings = os_model.getAirflowNetworkSimpleOpenings()
+        assert os_vector_len(afn_openings) == 5
+        afn_opening_str = str(afn_openings[0])
+        assert afn_opening_str.startswith('OS:AirflowNetworkSimpleOpening,')
 
-    afn_cracks = os_model.getAirflowNetworkCracks()
-    assert len(afn_cracks) == 5
-    afn_crack_str = str(afn_cracks[0])
-    assert afn_crack_str.startswith('OS:AirflowNetworkCrack,')
+        afn_cracks = os_model.getAirflowNetworkCracks()
+        assert os_vector_len(afn_cracks) == 5
+        afn_crack_str = str(afn_cracks[0])
+        assert afn_crack_str.startswith('OS:AirflowNetworkCrack,')

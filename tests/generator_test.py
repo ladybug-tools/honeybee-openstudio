@@ -7,7 +7,7 @@ from honeybee.model import Model
 from honeybee_energy.generator.pv import PVProperties
 from honeybee_energy.generator.loadcenter import ElectricLoadCenter
 
-from honeybee_openstudio.openstudio import OSModel
+from honeybee_openstudio.openstudio import OSModel, os_vector_len
 from honeybee_openstudio.writer import model_to_openstudio, shade_to_openstudio
 
 
@@ -21,7 +21,7 @@ def test_pv_properties_to_openstudio():
 
     shade_to_openstudio(shade, os_model)
     os_pv_gens = os_model.getGeneratorPVWattss()
-    assert len(os_pv_gens) == 1
+    assert os_vector_len(os_pv_gens) == 1
     os_pv_gen = os_pv_gens[0]
     assert str(os_pv_gen.name()) == 'Standard PV Product..pv_shade_object'
     os_pv_gen_str = str(os_pv_gen)
@@ -44,10 +44,10 @@ def test_electric_load_center_to_openstudio():
 
     os_model = model_to_openstudio(model)
     os_pv_gens = os_model.getGeneratorPVWattss()
-    assert len(os_pv_gens) == 1
+    assert os_vector_len(os_pv_gens) == 1
 
     os_load_centers = os_model.getElectricLoadCenterDistributions()
-    assert len(os_load_centers) == 1
+    assert os_vector_len(os_load_centers) == 1
     os_load_center = os_load_centers[0]
     assert str(os_load_center.name()) == 'Model Load Center Distribution'
     os_load_center_str = str(os_load_center)

@@ -1,6 +1,7 @@
 # coding=utf-8
 """Methods to write Honeybee Models to OpenStudio."""
 from __future__ import division
+import sys
 
 from ladybug_geometry.geometry3d import Face3D
 from honeybee.typing import clean_ep_string
@@ -15,7 +16,7 @@ from honeybee_energy.lib.constructionsets import generic_construction_set
 from honeybee_openstudio.openstudio import OSModel, OSPoint3dVector, OSPoint3d, \
     OSShadingSurfaceGroup, OSShadingSurface, OSSubSurface, OSSurface, OSSpace, \
     OSThermalZone, OSBuildingStory, OSSurfacePropertyOtherSideCoefficients, \
-    OSEnergyManagementSystemProgramCallingManager
+    OSEnergyManagementSystemProgramCallingManager, os_vector_len
 from honeybee_openstudio.schedule import schedule_type_limits_to_openstudio, \
     schedule_to_openstudio
 from honeybee_openstudio.material import material_to_openstudio
@@ -623,7 +624,8 @@ def model_to_openstudio(
 
     # make note of how the airflow will be modeled across the building
     vent_sim_control = model.properties.energy.ventilation_simulation_control
-    use_simple_vent = True if vent_sim_control == 'SingleZone' else False
+    use_simple_vent = True if vent_sim_control.vent_control_type == 'SingleZone' \
+        else False
 
     # create the OpenStudio model object and setup the Building
     os_model = OSModel() if seed_model is None else seed_model
@@ -798,14 +800,14 @@ def model_to_openstudio(
                         base_os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
 
     # if simple ventilation is being used
-    if use_simple_vent:
+    if use_simple_vent or sys.version_info < (3, 0):  # AFN not supported in .NET
         for room in model.rooms:  # add simple add air mixing and window ventilation
             for face in room.faces:
                 if isinstance(face.type, AirBoundary):  # write the air mixing objects
                     try:
                         adj_room = face.boundary_condition.boundary_condition_objects[-1]
-                        target_zone = zone_dict[room.identifier]
-                        source_zone = zone_dict[adj_room]
+                        target_zone = zone_map[room.identifier]
+                        source_zone = zone_map[adj_room]
                         air_mixing_to_openstudio(face, target_zone, source_zone, os_model)
                     except AttributeError as e:
                         raise ValueError(
@@ -942,7 +944,7 @@ def model_to_openstudio(
 
     # write the electric load center is any generator objects are in the model
     os_pv_gens = os_model.getGeneratorPVWattss()
-    if len(os_pv_gens) != 0:
+    if os_vector_len(os_pv_gens) != 0:
         load_center = model.properties.energy.electric_load_center
         electric_load_center_to_openstudio(load_center, os_pv_gens, os_model)
 
