@@ -10,10 +10,13 @@ from ladybug.datatype.temperature import Temperature
 from ladybug.datatype.temperaturedelta import TemperatureDelta
 from ladybug.datatype.pressure import Pressure
 
-from honeybee_openstudio.openstudio import openstudio, openstudio_model
+from honeybee_openstudio.openstudio import openstudio, openstudio_model, os_vector_len
+from .utilities import kw_per_ton_to_cop
 from .schedule import create_constant_schedule_ruleset
 from .central_air_source_heat_pump import create_central_air_source_heat_pump
 from .boiler_hot_water import create_boiler_hot_water
+from .plant_loop import chw_sizing_control, plant_loop_set_chw_pri_sec_configuration
+from .pump_variable_speed import pump_variable_speed_set_control_type
 
 TEMPERATURE = Temperature()
 TEMP_DELTA = TemperatureDelta()
@@ -29,7 +32,7 @@ def standard_design_sizing_temperatures():
     dsgn_temps['clg_dsgn_sup_air_temp_f'] = 55.0
     dsgn_temps['zn_htg_dsgn_sup_air_temp_f'] = 104.0
     dsgn_temps['zn_clg_dsgn_sup_air_temp_f'] = 55.0
-    dsgn_temps_c = {} 
+    dsgn_temps_c = {}
     for key, val in dsgn_temps.items():
         dsgn_temps_c['{}_c'.format(key[:-2])] = TEMPERATURE.to_unit([val], 'C', 'F')[0]
     dsgn_temps.update(dsgn_temps_c)
@@ -68,7 +71,7 @@ def model_add_hw_loop(
             degrees Fahrenheit.
         boiler_max_plr: [Double] boiler maximum part load ratio.
         boiler_sizing_factor: [Double] boiler oversizing factor.
-    
+
     Returns:
         [OpenStudio::Model::PlantLoop] the resulting hot water loop.
     """
@@ -155,7 +158,6 @@ def model_add_hw_loop(
     elif boiler_fuel_type in ('AirSourceHeatPump', 'ASHP'):
         # Central Air Source Heat Pump
         create_central_air_source_heat_pump(model, hot_water_loop)
-      
     elif boiler_fuel_type in ('Electricity', 'Gas', 'NaturalGas', 'Propane',
                               'PropaneGas', 'FuelOilNo1', 'FuelOilNo2'):
         # Boiler
@@ -196,6 +198,262 @@ def model_add_hw_loop(
     demand_outlet_pipe.addToNode(hot_water_loop.demandOutletNode())
 
     return hot_water_loop
+
+
+def model_add_chw_loop(
+        model, system_name='Chilled Water Loop', cooling_fuel='Electricity',
+        dsgn_sup_wtr_temp=44.0, dsgn_sup_wtr_temp_delt=10.1, chw_pumping_type=None,
+        chiller_cooling_type=None, chiller_condenser_type=None,
+        chiller_compressor_type=None, num_chillers=1,
+        condenser_water_loop=None, waterside_economizer='none'):
+    """Create a chilled water loop and adds it to the model.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        system_name: [String] the name of the system, or None in which case
+            it will be defaulted.
+        cooling_fuel: [String] cooling fuel. Valid choices are: Electricity,
+            DistrictCooling.
+        dsgn_sup_wtr_temp: [Double] design supply water temperature in degrees
+            Fahrenheit, default 44F.
+        dsgn_sup_wtr_temp_delt: [Double] design supply-return water temperature
+            difference in degrees Rankine, default 10 dF.
+        chw_pumping_type: [String] valid choices are const_pri, const_pri_var_sec.
+        chiller_cooling_type: [String] valid choices are AirCooled, WaterCooled.
+        chiller_condenser_type: [String] valid choices are WithCondenser,
+            WithoutCondenser, None.
+        chiller_compressor_type: [String] valid choices are Centrifugal,
+            Reciprocating, Rotary Screw, Scroll, None.
+        num_chillers: [Integer] the number of chillers.
+        condenser_water_loop: [OpenStudio::Model::PlantLoop] optional condenser
+            water loop for water-cooled chillers. If None, the chillers will
+            be air cooled.
+        waterside_economizer: [String] Options are none, integrated, non-integrated.
+            If integrated will add a heat exchanger to the supply inlet of the
+            chilled water loop to provide waterside economizing whenever wet
+            bulb temperatures allow. Non-integrated will add a heat exchanger
+            in parallel with the chiller that will operate only when it can
+            meet cooling demand exclusively with the waterside economizing.
+
+    Returns:
+        [OpenStudio::Model::PlantLoop] the resulting chilled water loop.
+    """
+    # create chilled water loop
+    chilled_water_loop = openstudio_model.PlantLoop(model)
+    if system_name is None:
+        chilled_water_loop.setName('Chilled Water Loop')
+    else:
+        chilled_water_loop.setName(system_name)
+    dsgn_sup_wtr_temp = 44 if dsgn_sup_wtr_temp is None else dsgn_sup_wtr_temp
+
+    # chilled water loop sizing and controls
+    chw_sizing_control(model, chilled_water_loop, dsgn_sup_wtr_temp, dsgn_sup_wtr_temp_delt)
+
+    # create chilled water pumps
+    if chw_pumping_type == 'const_pri':
+        # primary chilled water pump
+        pri_chw_pump = openstudio_model.PumpVariableSpeed(model)
+        pri_chw_pump.setName('{} Pump'.format(chilled_water_loop.nameString()))
+        pri_chw_pump.setRatedPumpHead(PRESSURE.to_unit([60 * 12], 'Pa', 'inH2O')[0])
+        pri_chw_pump.setMotorEfficiency(0.9)
+        # flat pump curve makes it behave as a constant speed pump
+        pri_chw_pump.setFractionofMotorInefficienciestoFluidStream(0)
+        pri_chw_pump.setCoefficient1ofthePartLoadPerformanceCurve(0)
+        pri_chw_pump.setCoefficient2ofthePartLoadPerformanceCurve(1)
+        pri_chw_pump.setCoefficient3ofthePartLoadPerformanceCurve(0)
+        pri_chw_pump.setCoefficient4ofthePartLoadPerformanceCurve(0)
+        pri_chw_pump.setPumpControlType('Intermittent')
+        pri_chw_pump.addToNode(chilled_water_loop.supplyInletNode())
+    elif chw_pumping_type == 'const_pri_var_sec':
+        pri_sec_config = plant_loop_set_chw_pri_sec_configuration(model)
+
+        if pri_sec_config == 'common_pipe':
+            # primary chilled water pump
+            pri_chw_pump = openstudio_model.PumpConstantSpeed(model)
+            pri_chw_pump.setName('{} Primary Pump'.format(chilled_water_loop.nameString()))
+            pri_chw_pump.setRatedPumpHead(PRESSURE.to_unit([15 * 12], 'Pa', 'inH2O')[0])
+            pri_chw_pump.setMotorEfficiency(0.9)
+            pri_chw_pump.setPumpControlType('Intermittent')
+            pri_chw_pump.addToNode(chilled_water_loop.supplyInletNode())
+            # secondary chilled water pump
+            sec_chw_pump = openstudio_model.PumpVariableSpeed(model)
+            sec_chw_pump.setName('{} Secondary Pump'.format(chilled_water_loop.nameString()))
+            sec_chw_pump.setRatedPumpHead(PRESSURE.to_unit([45 * 12], 'Pa', 'inH2O')[0])
+            sec_chw_pump.setMotorEfficiency(0.9)
+            # curve makes it perform like variable speed pump
+            sec_chw_pump.setFractionofMotorInefficienciestoFluidStream(0)
+            sec_chw_pump.setCoefficient1ofthePartLoadPerformanceCurve(0)
+            sec_chw_pump.setCoefficient2ofthePartLoadPerformanceCurve(0.0205)
+            sec_chw_pump.setCoefficient3ofthePartLoadPerformanceCurve(0.4101)
+            sec_chw_pump.setCoefficient4ofthePartLoadPerformanceCurve(0.5753)
+            sec_chw_pump.setPumpControlType('Intermittent')
+            sec_chw_pump.addToNode(chilled_water_loop.demandInletNode())
+            # Change the chilled water loop to have a two-way common pipes
+            chilled_water_loop.setCommonPipeSimulation('CommonPipe')
+        elif pri_sec_config == 'heat_exchanger':
+            # Check number of chillers
+            if num_chillers > 3:
+                msg = 'EMS Code for multiple chiller pump has not been written for ' \
+                    'greater than 3 chillers. This has {} chillers'.format(num_chillers)
+                print(msg)
+            # NOTE: PRECONDITIONING for `const_pri_var_sec` pump type is only applicable
+            # for PRM routine and only applies to System Type 7 and System Type 8
+            # See: model_add_prm_baseline_system under Model object.
+            # In this scenario, we will need to create a primary and secondary configuration:
+            # chilled_water_loop is the primary loop
+            # Primary: demand: heat exchanger, supply: chillers, name: Chilled Water Loop_Primary
+            # Secondary: demand: Coils, supply: heat exchanger, name: Chilled Water Loop
+            secondary_chilled_water_loop = openstudio_model.PlantLoop(model)
+            secondary_loop_name = 'Chilled Water Loop' if system_name is None \
+                else system_name
+            # Reset primary loop name
+            chilled_water_loop.setName('{}_Primary'.format(secondary_loop_name))
+            secondary_chilled_water_loop.setName(secondary_loop_name)
+            chw_sizing_control(model, secondary_chilled_water_loop,
+                               dsgn_sup_wtr_temp, dsgn_sup_wtr_temp_delt)
+            chilled_water_loop.additionalProperties.setFeature('is_primary_loop', True)
+            chilled_water_loop.additionalProperties.setFeature(
+                'secondary_loop_name', secondary_chilled_water_loop.nameString())
+            secondary_chilled_water_loop.additionalProperties.setFeature(
+                'is_secondary_loop', True)
+            # primary chilled water pumps are added when adding chillers
+            # Add Constant pump, in plant loop, the number of chiller adjustment
+            # will assign pump to each chiller
+            pri_chw_pump = openstudio_model.PumpVariableSpeed(model)
+            pump_variable_speed_set_control_type(
+                pri_chw_pump, control_type='Riding Curve')
+            # This pump name is important for function
+            # add_ems_for_multiple_chiller_pumps_w_secondary_plant
+            # If you update it here, you must update the logic there to account for this
+            pri_chw_pump.setName('{} Primary Pump'.format(chilled_water_loop.nameString()))
+            # Will need to adjust the pump power after a sizing run
+            pri_chw_pump.setRatedPumpHead(
+                PRESSURE.to_unit([15 * 12], 'Pa', 'inH2O')[0] / num_chillers)
+            pri_chw_pump.setMotorEfficiency(0.9)
+            pri_chw_pump.setPumpControlType('Intermittent')
+            pri_chw_pump.addToNode(chilled_water_loop.supplyInletNode())
+
+            # secondary chilled water pump
+            sec_chw_pump = openstudio_model.PumpVariableSpeed(model)
+            sec_chw_pump.setName('{} Pump'.format(secondary_chilled_water_loop.nameString()))
+            sec_chw_pump.setRatedPumpHead(PRESSURE.to_unit([45 * 12], 'Pa', 'inH2O')[0])
+            sec_chw_pump.setMotorEfficiency(0.9)
+            # curve makes it perform like variable speed pump
+            sec_chw_pump.setFractionofMotorInefficienciestoFluidStream(0)
+            sec_chw_pump.setCoefficient1ofthePartLoadPerformanceCurve(0)
+            sec_chw_pump.setCoefficient2ofthePartLoadPerformanceCurve(0.0205)
+            sec_chw_pump.setCoefficient3ofthePartLoadPerformanceCurve(0.4101)
+            sec_chw_pump.setCoefficient4ofthePartLoadPerformanceCurve(0.5753)
+            sec_chw_pump.setPumpControlType('Intermittent')
+            sec_chw_pump.addToNode(secondary_chilled_water_loop.demandInletNode())
+
+            # Add HX to connect secondary and primary loop
+            heat_exchanger = openstudio_model.HeatExchangerFluidToFluid(model)
+            secondary_chilled_water_loop.addSupplyBranchForComponent(heat_exchanger)
+            chilled_water_loop.addDemandBranchForComponent(heat_exchanger)
+
+            # Clean up connections
+            hx_bypass_pipe = openstudio_model.PipeAdiabatic(model)
+            hx_bypass_pipe.setName(
+                '{} HX Bypass'.format(secondary_chilled_water_loop.nameString()))
+            secondary_chilled_water_loop.addSupplyBranchForComponent(hx_bypass_pipe)
+            outlet_pipe = openstudio_model.PipeAdiabatic(model)
+            outlet_pipe.setName(
+                '{} Supply Outlet'.format(secondary_chilled_water_loop.nameString()))
+            outlet_pipe.addToNode(secondary_chilled_water_loop.supplyOutletNode())
+        else:
+            msg = 'No primary/secondary configuration specified for chilled water loop.'
+            print(msg)
+    else:
+        print('No pumping type specified for the chilled water loop.')
+
+    # check for existence of condenser_water_loop if WaterCooled
+    if chiller_cooling_type == 'WaterCooled' and condenser_water_loop is None:
+        print('Requested chiller is WaterCooled but no condenser loop specified.')
+
+    # check for non-existence of condenser_water_loop if AirCooled
+    if chiller_cooling_type == 'AirCooled' and condenser_water_loop is not None:
+        print('Requested chiller is AirCooled but condenser loop specified.')
+
+    if cooling_fuel == 'DistrictCooling':
+        # DistrictCooling
+        dist_clg = openstudio_model.DistrictCooling(model)
+        dist_clg.setName('Purchased Cooling')
+        dist_clg.autosizeNominalCapacity()
+        chilled_water_loop.addSupplyBranchForComponent(dist_clg)
+    else:
+        # use default efficiency from 90.1-2019
+        # 1.188 kw/ton for a 150 ton AirCooled chiller
+        # 0.66 kw/ton for a 150 ton Water Cooled positive displacement chiller
+        if chiller_cooling_type == 'AirCooled':
+            default_cop = kw_per_ton_to_cop(1.188)
+        elif chiller_cooling_type == 'WaterCooled':
+            default_cop = kw_per_ton_to_cop(0.66)
+        else:
+            default_cop = kw_per_ton_to_cop(0.66)
+
+        # make the correct type of chiller based these properties
+        chiller_sizing_factor = round(1.0 / num_chillers, 2)
+
+        # Create chillers and set plant operation scheme
+        for i in range(num_chillers):
+            chiller = openstudio_model.ChillerElectricEIR(model)
+            ch_name = 'ASHRAE 90.1 {} {} {} Chiller {}'.format(
+                chiller_cooling_type, chiller_condenser_type, chiller_compressor_type, i)
+            chiller.setName(ch_name)
+            chilled_water_loop.addSupplyBranchForComponent(chiller)
+            dsgn_sup_wtr_temp_c = TEMPERATURE.to_unit([dsgn_sup_wtr_temp], 'C', 'F')[0]
+            chiller.setReferenceLeavingChilledWaterTemperature(dsgn_sup_wtr_temp_c)
+            lcw_ltl = TEMPERATURE.to_unit([36.0], 'C', 'F')[0]
+            chiller.setLeavingChilledWaterLowerTemperatureLimit(lcw_ltl)
+            rec_ft = TEMPERATURE.to_unit([95.0], 'C', 'F')[0]
+            chiller.setReferenceEnteringCondenserFluidTemperature(rec_ft)
+            chiller.setMinimumPartLoadRatio(0.15)
+            chiller.setMaximumPartLoadRatio(1.0)
+            chiller.setOptimumPartLoadRatio(1.0)
+            chiller.setMinimumUnloadingRatio(0.25)
+            chiller.setChillerFlowMode('ConstantFlow')
+            chiller.setSizingFactor(chiller_sizing_factor)
+            chiller.setReferenceCOP(default_cop)
+
+            # connect the chiller to the condenser loop if one was supplied
+            if condenser_water_loop is None:
+                chiller.setCondenserType('AirCooled')
+            else:
+                condenser_water_loop.addDemandBranchForComponent(chiller)
+                chiller.setCondenserType('WaterCooled')
+
+    # enable waterside economizer if requested
+    if condenser_water_loop is not None:
+        if waterside_economizer == 'integrated':
+            model_add_waterside_economizer(
+                model, chilled_water_loop, condenser_water_loop, integrated=True)
+        elif waterside_economizer == 'non-integrated':
+            model_add_waterside_economizer(
+                model, chilled_water_loop, condenser_water_loop, integrated=False)
+
+    # chilled water loop pipes
+    chiller_bypass_pipe = openstudio_model.PipeAdiabatic(model)
+    chiller_bypass_pipe.setName('{} Chiller Bypass'.format(chilled_water_loop.nameString()))
+    chilled_water_loop.addSupplyBranchForComponent(chiller_bypass_pipe)
+
+    coil_bypass_pipe = openstudio_model.PipeAdiabatic(model)
+    coil_bypass_pipe.setName('{} Coil Bypass'.format(chilled_water_loop.nameString()))
+    chilled_water_loop.addDemandBranchForComponent(coil_bypass_pipe)
+
+    supply_outlet_pipe = openstudio_model.PipeAdiabatic(model)
+    supply_outlet_pipe.setName('{} Supply Outlet'.format(chilled_water_loop.nameString()))
+    supply_outlet_pipe.addToNode(chilled_water_loop.supplyOutletNode())
+
+    demand_inlet_pipe = openstudio_model.PipeAdiabatic(model)
+    demand_inlet_pipe.setName('{} Demand Inlet'.format(chilled_water_loop.nameString()))
+    demand_inlet_pipe.addToNode(chilled_water_loop.demandInletNode())
+
+    demand_outlet_pipe = openstudio_model.PipeAdiabatic(model)
+    demand_outlet_pipe.setName('{} Demand Outlet'.format(chilled_water_loop.nameString()))
+    demand_outlet_pipe.addToNode(chilled_water_loop.demandOutletNode())
+
+    return chilled_water_loop
 
 
 def model_get_or_add_chilled_water_loop():
@@ -308,6 +566,163 @@ def model_add_residential_ventilator():
 
 def model_get_or_add_ambient_water_loop():
     pass
+
+
+def model_add_waterside_economizer(
+        model, chilled_water_loop, condenser_water_loop, integrated=True):
+    """Adds a waterside economizer to the chilled water and condenser loop.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        integrated [Boolean] when set to true, models an integrated waterside economizer.
+            Integrated - in series with chillers, can run simultaneously with chillers
+            Non-Integrated - in parallel with chillers, chillers locked out during operation
+    """
+    # make a new heat exchanger
+    heat_exchanger = openstudio_model.HeatExchangerFluidToFluid(model)
+    heat_exchanger.setHeatExchangeModelType('CounterFlow')
+    # zero degree minimum necessary to allow both economizer and heat exchanger
+    # to operate in both integrated and non-integrated archetypes
+    # possibly results from an EnergyPlus issue that didn't get resolved correctly
+    # https://github.com/NREL/EnergyPlus/issues/5626
+    heat_exchanger.setMinimumTemperatureDifferencetoActivateHeatExchanger(0.0)
+    heat_exchanger.setHeatTransferMeteringEndUseType('FreeCooling')
+    o_min_tl = TEMPERATURE.to_unit([35.0], 'C', 'F')[0]
+    heat_exchanger.setOperationMinimumTemperatureLimit(o_min_tl)
+    o_max_tl = TEMPERATURE.to_unit([72.0], 'C', 'F')[0]
+    heat_exchanger.setOperationMaximumTemperatureLimit(o_max_tl)
+    heat_exchanger.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule())
+
+    # get the chillers on the chilled water loop
+    chillers = chilled_water_loop.supplyComponents(
+        'OS:Chiller:Electric:EIR'.to_IddObjectType())
+
+    if integrated:
+        if os_vector_len(chillers) == 0:
+            msg = 'No chillers were found on {}; only modeling waterside economizer'.format(
+                chilled_water_loop.nameString())
+            print(msg)
+
+        # set methods for integrated heat exchanger
+        heat_exchanger.setName('Integrated Waterside Economizer Heat Exchanger')
+        heat_exchanger.setControlType('CoolingDifferentialOnOff')
+
+        # add the heat exchanger to the chilled water loop upstream of the chiller
+        heat_exchanger.addToNode(chilled_water_loop.supplyInletNode())
+
+        # Copy the setpoint managers from the plant's supply outlet node
+        # to the chillers and HX outlets.
+        # This is necessary so that the correct type of operation scheme will be created.
+        # Without this, OS will create an uncontrolled operation scheme
+        # and the chillers will never run.
+        chw_spms = chilled_water_loop.supplyOutletNode.setpointManagers()
+        objs = []
+        for obj in chillers:
+            objs.append(obj.to_ChillerElectricEIR.get())
+        objs.append(heat_exchanger)
+        for obj in objs:
+            outlet = obj.supplyOutletModelObject().get().to_Node().get()
+            for spm in chw_spms:
+                new_spm = spm.clone().to_SetpointManager().get()
+                new_spm.addToNode(outlet)
+    else:
+        # non-integrated
+        # if the heat exchanger can meet the entire load, the heat exchanger will run
+        # and the chiller is disabled.
+        # In E+, only one chiller can be tied to a given heat exchanger, so if you have
+        # multiple chillers, they will cannot be tied to a single heat exchanger without EMS.
+        chiller = None
+        if os_vector_len(chillers) == 0:
+            msg = 'No chillers were found on {}; cannot add a non-integrated ' \
+                'waterside economizer.'.format(chilled_water_loop.nameString())
+            print(msg)
+            heat_exchanger.setControlType('CoolingSetpointOnOff')
+        elif os_vector_len(chillers) > 1:
+            chiller = chillers[0]
+            msg = 'More than one chiller was found on {}. EnergyPlus only allows a ' \
+                'single chiller to be interlocked with the HX.  Chiller {} was selected.' \
+                ' Additional chillers will not be locked out during HX operation.'.format(
+                    chilled_water_loop.nameString(), chiller.nameString())
+            print(msg)
+        else:  # 1 chiller
+            chiller = chillers[0]
+        chiller = chiller.to_ChillerElectricEIR().get()
+
+        # set methods for non-integrated heat exchanger
+        heat_exchanger.setName('Non-Integrated Waterside Economizer Heat Exchanger')
+        heat_exchanger.setControlType('CoolingSetpointOnOffWithComponentOverride')
+
+        # add the heat exchanger to a supply side branch of the chilled water loop
+        # parallel with the chiller(s)
+        chilled_water_loop.addSupplyBranchForComponent(heat_exchanger)
+
+        # Copy the setpoint managers from the plant's supply outlet node to the HX outlet.
+        # This is necessary so that the correct type of operation scheme will be created.
+        # Without this, the HX will never run
+        chw_spms = chilled_water_loop.supplyOutletNode().setpointManagers()
+        outlet = heat_exchanger.supplyOutletModelObject().get().to_Node().get()
+        for spm in chw_spms:
+            new_spm = spm.clone().to_SetpointManager().get()
+            new_spm.addToNode(outlet)
+
+        # set the supply and demand inlet fields to interlock the heat exchanger with the chiller
+        chiller_supply_inlet = chiller.supplyInletModelObject().get().to_Node().get()
+        heat_exchanger.setComponentOverrideLoopSupplySideInletNode(chiller_supply_inlet)
+        chiller_demand_inlet = chiller.demandInletModelObject().get().to_Node().get()
+        heat_exchanger.setComponentOverrideLoopDemandSideInletNode(chiller_demand_inlet)
+
+        # check if the chilled water pump is on a branch with the chiller.
+        # if it is, move this pump before the splitter so that it can push water
+        # through either the chiller or the heat exchanger.
+        pumps_on_branches = []
+        # search for constant and variable speed pumps between supply splitter and supply mixer.
+        supply_comps = chilled_water_loop.supplyComponents(
+            chilled_water_loop.supplySplitter(), chilled_water_loop.supplyMixer())
+        for supply_comp in supply_comps:
+            if supply_comp.to_PumpConstantSpeed().is_initialized():
+                pumps_on_branches.append(supply_comp.to_PumpConstantSpeed().get())
+            elif supply_comp.to_PumpVariableSpeed().is_initialized():
+                pumps_on_branches.append(supply_comp.to_PumpVariableSpeed().get())
+        # If only one pump is found, clone it, put the clone on the supply inlet node,
+        # and delete the original pump.
+        # If multiple branch pumps, clone the first pump found, add it to the inlet
+        # of the heat exchanger, and warn user.
+        if len(pumps_on_branches) == 1:
+            pump = pumps_on_branches[0]
+            pump_clone = pump.clone(model).to_StraightComponent().get()
+            pump_clone.addToNode(chilled_water_loop.supplyInletNode())
+            pump.remove()
+        elif len(pumps_on_branches) > 1:
+            hx_inlet_node = heat_exchanger.inletModelObject().get().to_Node().get()
+            pump = pumps_on_branches[0]
+            pump_clone = pump.clone(model).to_StraightComponent().get()
+            pump_clone.addToNode(hx_inlet_node)
+
+    # add heat exchanger to condenser water loop
+    condenser_water_loop.addDemandBranchForComponent(heat_exchanger)
+
+    # change setpoint manager on condenser water loop to allow waterside economizing
+    dsgn_sup_wtr_temp_f = 42.0
+    dsgn_sup_wtr_temp_c = TEMPERATURE.to_unit([42.0], 'C', 'F')[0]
+    for spm in condenser_water_loop.supplyOutletNode().setpointManagers():
+        if spm.to_SetpointManagerFollowOutdoorAirTemperature().is_initialized():
+            spm = spm.to_SetpointManagerFollowOutdoorAirTemperature().get()
+            spm.setMinimumSetpointTemperature(dsgn_sup_wtr_temp_c)
+        elif spm.to_SetpointManagerScheduled().is_initialized():
+            spm = spm.to_SetpointManagerScheduled().get()()
+            cw_temp_sch = create_constant_schedule_ruleset(
+                model, dsgn_sup_wtr_temp_c,
+                name='{} Temp - {}F'.format(
+                    chilled_water_loop.nameString(), int(dsgn_sup_wtr_temp_f)),
+                schedule_type_limit='Temperature')
+            spm.setSchedule(cw_temp_sch)
+        else:
+            msg = 'Condenser water loop {} setpoint manager {} is not a recognized ' \
+                'setpoint manager type. Cannot change to account for the waterside ' \
+                'economizer.'.format(condenser_water_loop.nameString(), spm.nameString())
+            print(msg)
+
+    return heat_exchanger
 
 
 def model_get_or_add_ground_hx_loop():
