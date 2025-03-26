@@ -11,12 +11,13 @@ from ladybug.datatype.temperaturedelta import TemperatureDelta
 from ladybug.datatype.pressure import Pressure
 
 from honeybee_openstudio.openstudio import openstudio, openstudio_model, os_vector_len
-from .utilities import kw_per_ton_to_cop
+from .utilities import kw_per_ton_to_cop, ems_friendly_name
 from .schedule import create_constant_schedule_ruleset
 from .central_air_source_heat_pump import create_central_air_source_heat_pump
 from .boiler_hot_water import create_boiler_hot_water
 from .plant_loop import chw_sizing_control, plant_loop_set_chw_pri_sec_configuration
 from .pump_variable_speed import pump_variable_speed_set_control_type
+from .cooling_tower import prototype_apply_condenser_water_temperatures
 
 TEMPERATURE = Temperature()
 TEMP_DELTA = TemperatureDelta()
@@ -456,12 +457,669 @@ def model_add_chw_loop(
     return chilled_water_loop
 
 
-def model_get_or_add_chilled_water_loop():
-    pass
+def model_add_vsd_twr_fan_curve(model):
+    """Add a curve to be used for cooling tower fans."""
+    # check for the existing curve
+    exist_curve = model.getCurveCubicByName('VSD-TWR-FAN-FPLR')
+    if exist_curve.is_initialized():
+        return exist_curve.get()
+    # create the curve
+    curve = openstudio_model.CurveCubic(model)
+    curve.setName('VSD-TWR-FAN-FPLR')
+    curve.setCoefficient1Constant(0.33162901)
+    curve.setCoefficient2x(-0.88567609)
+    curve.setCoefficient3xPOW2(0.60556507)
+    curve.setCoefficient4xPOW3(0.9484823)
+    curve.setMinimumValueofx(0.0)
+    curve.setMaximumValueofx(1.0)
+    return curve
 
 
-def model_get_or_add_hot_water_loop():
-    pass
+def model_add_cw_loop(
+        model, system_name='Condenser Water Loop', cooling_tower_type='Open Cooling Tower',
+        cooling_tower_fan_type='Propeller or Axial',
+        cooling_tower_capacity_control='TwoSpeed Fan',
+        number_of_cells_per_tower=1, number_cooling_towers=1, use_90_1_design_sizing=True,
+        sup_wtr_temp=70.0, dsgn_sup_wtr_temp=85.0, dsgn_sup_wtr_temp_delt=10.0,
+        wet_bulb_approach=7.0, pump_spd_ctrl='Constant', pump_tot_hd=49.7):
+    """Creates a condenser water loop and adds it to the model.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object
+        system_name: [String] the name of the system, or None in which case it
+            will be defaulted.
+        cooling_tower_type: [String] valid choices are Open Cooling Tower,
+            Closed Cooling Tower.
+        cooling_tower_fan_type: [String] valid choices are Centrifugal, "Propeller or Axial."
+        cooling_tower_capacity_control: [String] valid choices are Fluid Bypass,
+            Fan Cycling, TwoSpeed Fan, Variable Speed Fan.
+        number_of_cells_per_tower: [Integer] the number of discrete cells per tower.
+        number_cooling_towers: [Integer] the number of cooling towers to be
+            added (in parallel).
+        use_90_1_design_sizing: [Boolean] will determine the design sizing
+            temperatures based on the 90.1 Appendix G approach. Overrides sup_wtr_temp,
+            dsgn_sup_wtr_temp, dsgn_sup_wtr_temp_delt, and wet_bulb_approach if True.
+        sup_wtr_temp: [Double] supply water temperature in degrees
+            Fahrenheit, default 70F.
+        dsgn_sup_wtr_temp: [Double] design supply water temperature in degrees
+            Fahrenheit, default 85F.
+        dsgn_sup_wtr_temp_delt: [Double] design water range temperature in
+            degrees Rankine (aka. dF), default 10R.
+        wet_bulb_approach: [Double] design wet bulb approach temperature, default 7R.
+        pump_spd_ctrl: [String] pump speed control type, Constant or Variable (default).
+        pump_tot_hd: [Double] pump head in ft H2O.
+
+    Returns:
+        [OpenStudio::Model::PlantLoop] the resulting condenser water plant loop
+    """
+    # create condenser water loop
+    condenser_water_loop = openstudio_model.PlantLoop(model)
+    if system_name is None:
+        condenser_water_loop.setName('Condenser Water Loop')
+    else:
+        condenser_water_loop.setName(system_name)
+
+    # condenser water loop sizing and controls
+    sup_wtr_temp = 70.0 if sup_wtr_temp is None else sup_wtr_temp
+    sup_wtr_temp_c = TEMPERATURE.to_unit([sup_wtr_temp], 'C', 'F')[0]
+    dsgn_sup_wtr_temp = 85.0 if dsgn_sup_wtr_temp is None else dsgn_sup_wtr_temp
+    dsgn_sup_wtr_temp_c = TEMPERATURE.to_unit([dsgn_sup_wtr_temp], 'C', 'F')[0]
+    dsgn_sup_wtr_temp_delt = 10.0 if dsgn_sup_wtr_temp_delt is None \
+        else dsgn_sup_wtr_temp_delt
+    dsgn_sup_wtr_temp_delt_k = TEMP_DELTA.to_unit([dsgn_sup_wtr_temp_delt], 'dC', 'dF')[0]
+    wet_bulb_approach = 7.0 if wet_bulb_approach is None else wet_bulb_approach
+    wet_bulb_approach_k = TEMP_DELTA.to_unit([wet_bulb_approach], 'dC', 'dF')[0]
+
+    condenser_water_loop.setMinimumLoopTemperature(5.0)
+    condenser_water_loop.setMaximumLoopTemperature(80.0)
+    sizing_plant = condenser_water_loop.sizingPlant()
+    sizing_plant.setLoopType('Condenser')
+    sizing_plant.setDesignLoopExitTemperature(dsgn_sup_wtr_temp_c)
+    sizing_plant.setLoopDesignTemperatureDifference(dsgn_sup_wtr_temp_delt_k)
+    sizing_plant.setSizingOption('Coincident')
+    sizing_plant.setZoneTimestepsinAveragingWindow(6)
+    sizing_plant.setCoincidentSizingFactorMode('GlobalCoolingSizingFactor')
+
+    # follow outdoor air wetbulb with given approach temperature
+    cw_stpt_manager = openstudio_model.SetpointManagerFollowOutdoorAirTemperature(model)
+    s_pt_name = '{} Setpoint Manager Follow OATwb with {}F Approach'.format(
+        condenser_water_loop.nameString(), wet_bulb_approach)
+    cw_stpt_manager.setName(s_pt_name)
+    cw_stpt_manager.setReferenceTemperatureType('OutdoorAirWetBulb')
+    cw_stpt_manager.setMaximumSetpointTemperature(dsgn_sup_wtr_temp_c)
+    cw_stpt_manager.setMinimumSetpointTemperature(sup_wtr_temp_c)
+    cw_stpt_manager.setOffsetTemperatureDifference(wet_bulb_approach_k)
+    cw_stpt_manager.addToNode(condenser_water_loop.supplyOutletNode())
+
+    # create condenser water pump
+    if pump_spd_ctrl == 'Constant':
+        cw_pump = openstudio_model.PumpConstantSpeed(model)
+    elif pump_spd_ctrl == 'Variable':
+        cw_pump = openstudio_model.PumpVariableSpeed(model)
+    elif pump_spd_ctrl == 'HeaderedVariable':
+        cw_pump = openstudio_model.HeaderedPumpsVariableSpeed(model)
+        cw_pump.setNumberofPumpsinBank(2)
+    elif pump_spd_ctrl == 'HeaderedConstant':
+        cw_pump = openstudio_model.HeaderedPumpsConstantSpeed(model)
+        cw_pump.setNumberofPumpsinBank(2)
+    else:
+        cw_pump = openstudio_model.PumpConstantSpeed(model)
+    cw_pump.setName('{} {} Pump'.format(condenser_water_loop.nameString(), pump_spd_ctrl))
+    cw_pump.setPumpControlType('Intermittent')
+
+    pump_tot_hd = 49.7 if pump_tot_hd is None else pump_tot_hd
+    pump_tot_hd_pa = PRESSURE.to_unit([pump_tot_hd * 12], 'Pa', 'inH2O')[0]
+    cw_pump.setRatedPumpHead(pump_tot_hd_pa)
+    cw_pump.addToNode(condenser_water_loop.supplyInletNode())
+
+    # Cooling towers
+    # Per PNNL PRM Reference Manual
+    for _ in range(number_cooling_towers):
+        # Tower object depends on the control type
+        cooling_tower = None
+        if cooling_tower_capacity_control in ('Fluid Bypass', 'Fan Cycling'):
+            cooling_tower = openstudio_model.CoolingTowerSingleSpeed(model)
+            if cooling_tower_capacity_control == 'Fluid Bypass':
+                cooling_tower.setCellControl('FluidBypass')
+            else:
+                cooling_tower.setCellControl('FanCycling')
+        elif cooling_tower_capacity_control == 'TwoSpeed Fan':
+            cooling_tower = openstudio_model.CoolingTowerTwoSpeed(model)
+        elif cooling_tower_capacity_control == 'Variable Speed Fan':
+            cooling_tower = openstudio_model.CoolingTowerVariableSpeed(model)
+            cooling_tower.setDesignRangeTemperature(dsgn_sup_wtr_temp_delt_k)
+            cooling_tower.setDesignApproachTemperature(wet_bulb_approach_k)
+            cooling_tower.setFractionofTowerCapacityinFreeConvectionRegime(0.125)
+            twr_fan_curve = model_add_vsd_twr_fan_curve(model)
+            cooling_tower.setFanPowerRatioFunctionofAirFlowRateRatioCurve(twr_fan_curve)
+        else:
+            msg = '{} is not a valid choice of cooling tower capacity control. ' \
+                'Valid choices are Fluid Bypass, Fan Cycling, TwoSpeed Fan, Variable ' \
+                'Speed Fan.'.format(cooling_tower_capacity_control)
+            print(msg)
+
+        # Set the properties that apply to all tower types and attach to the condenser loop.
+        if cooling_tower is not None:
+            twr_name = '{} {} {}'.format(cooling_tower_fan_type, cooling_tower_capacity_control,
+                                         cooling_tower_type)
+            cooling_tower.setName(twr_name)
+            cooling_tower.setSizingFactor(1 / number_cooling_towers)
+            cooling_tower.setNumberofCells(number_of_cells_per_tower)
+            condenser_water_loop.addSupplyBranchForComponent(cooling_tower)
+
+    # apply 90.1 sizing temperatures
+    if use_90_1_design_sizing:
+        # use the formulation in 90.1-2010 G3.1.3.11 to set the approach temperature
+        # first, look in the model design day objects for sizing information
+        summer_oat_wbs_f = []
+        for dd in model.getDesignDays():
+            if dd.dayType != 'SummerDesignDay':
+                continue
+            if 'WB=>MDB' not in dd.nameString():
+                continue
+
+            if model.version() < openstudio.VersionString('3.3.0'):
+                if dd.humidityIndicatingType == 'Wetbulb':
+                    summer_oat_wb_c = dd.humidityIndicatingConditionsAtMaximumDryBulb()
+                    summer_oat_wbs_f.append(TEMPERATURE.to_unit([summer_oat_wb_c], 'F', 'C')[0])
+                else:
+                    msg = 'For {}, humidity is specified as {}; cannot determine Twb.'.format(
+                        dd.nameString, dd.humidityIndicatingType())
+                    print(msg)
+            else:
+                if dd.humidityConditionType() == 'Wetbulb' and \
+                        dd.wetBulbOrDewPointAtMaximumDryBulb().is_initialized():
+                    wb_mdbt = dd.wetBulbOrDewPointAtMaximumDryBulb().get()
+                    summer_oat_wbs_f.append(TEMPERATURE.to_unit([wb_mdbt], 'F', 'C')[0])
+                else:
+                    msg = 'For {}, humidity is specified as {}; cannot determine Twb.'.format(
+                        dd.nameString(), dd.humidityConditionType())
+                    print(msg)
+
+        # if values are still absent, use the CTI rating condition 78F
+        design_oat_wb_f = None
+        if len(summer_oat_wbs_f) == 0:
+            design_oat_wb_f = 78.0
+            msg = 'For condenser loop {}, no design day OATwb conditions found. ' \
+                'CTI rating condition of 78F OATwb will be used for sizing cooling ' \
+                'towers.'.format(condenser_water_loop.nameString())
+            print(msg)
+        else:
+            design_oat_wb_f = max(summer_oat_wbs_f)  # Take worst case condition
+        design_oat_wb_c = TEMPERATURE.to_unit([design_oat_wb_f], 'C', 'F')[0]
+
+        # call method to apply design sizing to the condenser water loop
+        prototype_apply_condenser_water_temperatures(
+            condenser_water_loop, design_wet_bulb_c=design_oat_wb_c)
+
+    # Condenser water loop pipes
+    cooling_tower_bypass_pipe = openstudio_model.PipeAdiabatic(model)
+    pipe_name = '{} Cooling Tower Bypass'.format(condenser_water_loop.nameString())
+    cooling_tower_bypass_pipe.setName(pipe_name)
+    condenser_water_loop.addSupplyBranchForComponent(cooling_tower_bypass_pipe)
+
+    chiller_bypass_pipe = openstudio_model.PipeAdiabatic(model)
+    pipe_name = '{} Chiller Bypass'.format(condenser_water_loop.nameString())
+    chiller_bypass_pipe.setName(pipe_name)
+    condenser_water_loop.addDemandBranchForComponent(chiller_bypass_pipe)
+
+    supply_outlet_pipe = openstudio_model.PipeAdiabatic(model)
+    supply_outlet_pipe.setName('{} Supply Outlet'.format(condenser_water_loop.nameString()))
+    supply_outlet_pipe.addToNode(condenser_water_loop.supplyOutletNode())
+
+    demand_inlet_pipe = openstudio_model.PipeAdiabatic(model)
+    demand_inlet_pipe.setName('{} Demand Inlet'.format(condenser_water_loop.nameString()))
+    demand_inlet_pipe.addToNode(condenser_water_loop.demandInletNode())
+
+    demand_outlet_pipe = openstudio_model.PipeAdiabatic(model)
+    demand_outlet_pipe.setName('{} Demand Outlet'.format(condenser_water_loop.nameString()))
+    demand_outlet_pipe.addToNode(condenser_water_loop.demandOutletNode())
+
+    return condenser_water_loop
+
+
+def model_add_hp_loop(
+        model, heating_fuel='NaturalGas', cooling_fuel='Electricity',
+        cooling_type='EvaporativeFluidCooler', system_name='Heat Pump Loop',
+        sup_wtr_high_temp=87.0, sup_wtr_low_temp=67.0,
+        dsgn_sup_wtr_temp=102.2, dsgn_sup_wtr_temp_delt=19.8):
+    """Creates a heat pump loop which has a boiler and fluid cooler.
+
+    Args:
+        model [OpenStudio::Model::Model] OpenStudio model object.
+        heating_fuel: [String]
+        cooling_fuel: [String] cooling fuel. Valid options are: Electricity,
+            DistrictCooling.
+        cooling_type: [String] cooling type if not DistrictCooling.
+            Valid options are: CoolingTower, CoolingTowerSingleSpeed,
+            CoolingTowerTwoSpeed, CoolingTowerVariableSpeed, FluidCooler,
+            FluidCoolerSingleSpeed, FluidCoolerTwoSpeed, EvaporativeFluidCooler,
+            EvaporativeFluidCoolerSingleSpeed, EvaporativeFluidCoolerTwoSpeed
+        system_name: [String] the name of the system, or nil in which case it
+            will be defaulted
+        sup_wtr_high_temp: [Double] target supply water temperature to enable
+            cooling in degrees Fahrenheit, default 65.0F
+        sup_wtr_low_temp: [Double] target supply water temperature to enable
+            heating in degrees Fahrenheit, default 41.0F
+        dsgn_sup_wtr_temp: [Double] design supply water temperature in degrees
+            Fahrenheit, default 102.2F
+        dsgn_sup_wtr_temp_delt: [Double] design supply-return water temperature
+            difference in degrees Rankine, default 19.8R.
+
+    Returns:
+        [OpenStudio::Model::PlantLoop] the resulting plant loop.
+    """
+    # create heat pump loop
+    heat_pump_water_loop = openstudio_model.PlantLoop(model)
+    heat_pump_water_loop.setLoadDistributionScheme('SequentialLoad')
+    if system_name is None:
+        heat_pump_water_loop.setName('Heat Pump Loop')
+    else:
+        heat_pump_water_loop.setName(system_name)
+
+    # hot water loop sizing and controls
+    sup_wtr_high_temp = 87.0 if sup_wtr_high_temp is None else sup_wtr_high_temp
+    sup_wtr_high_temp_c = TEMPERATURE.to_unit([sup_wtr_high_temp], 'C', 'F')[0]
+    sup_wtr_low_temp = 67.0 if sup_wtr_low_temp is None else sup_wtr_low_temp
+    sup_wtr_low_temp_c = TEMPERATURE.to_unit([sup_wtr_low_temp], 'C', 'F')[0]
+    dsgn_sup_wtr_temp = 102.2 if dsgn_sup_wtr_temp is None else dsgn_sup_wtr_temp
+    dsgn_sup_wtr_temp_c = TEMPERATURE.to_unit([dsgn_sup_wtr_temp], 'C', 'F')[0]
+    dsgn_sup_wtr_temp_delt = 19.8 if dsgn_sup_wtr_temp_delt is None \
+        else dsgn_sup_wtr_temp_delt
+    dsgn_sup_wtr_temp_delt_k = TEMP_DELTA.to_unit([dsgn_sup_wtr_temp_delt], 'dC', 'dF')[0]
+
+    sizing_plant = heat_pump_water_loop.sizingPlant()
+    sizing_plant.setLoopType('Heating')
+    heat_pump_water_loop.setMinimumLoopTemperature(10.0)
+    heat_pump_water_loop.setMaximumLoopTemperature(35.0)
+    sizing_plant.setDesignLoopExitTemperature(dsgn_sup_wtr_temp_c)
+    sizing_plant.setLoopDesignTemperatureDifference(dsgn_sup_wtr_temp_delt_k)
+    loop_name = heat_pump_water_loop.nameString()
+    hp_high_temp_sch = create_constant_schedule_ruleset(
+        model, sup_wtr_high_temp_c,
+        name='{} High Temp - {}F'.format(loop_name, int(sup_wtr_high_temp)),
+        schedule_type_limit='Temperature')
+    hp_low_temp_sch = create_constant_schedule_ruleset(
+        model, sup_wtr_low_temp_c,
+        name='{} Low Temp - {}F'.format(loop_name, int(sup_wtr_low_temp)),
+        schedule_type_limit='Temperature')
+    hp_stpt_manager = openstudio_model.SetpointManagerScheduledDualSetpoint(model)
+    hp_stpt_manager.setName('{} Scheduled Dual Setpoint'.format(loop_name))
+    hp_stpt_manager.setHighSetpointSchedule(hp_high_temp_sch)
+    hp_stpt_manager.setLowSetpointSchedule(hp_low_temp_sch)
+    hp_stpt_manager.addToNode(heat_pump_water_loop.supplyOutletNode())
+
+    # create pump
+    hp_pump = openstudio_model.PumpConstantSpeed(model)
+    hp_pump.setName('{} Pump'.format(loop_name))
+    hp_pump.setRatedPumpHead(PRESSURE.to_unit([60.0 * 12], 'Pa', 'inH2O')[0])
+    hp_pump.setPumpControlType('Intermittent')
+    hp_pump.addToNode(heat_pump_water_loop.supplyInletNode())
+
+    # add setpoint to cooling outlet so correct plant operation scheme is generated
+    cooling_equipment_stpt_manager = \
+        openstudio_model.SetpointManagerScheduledDualSetpoint(model)
+    cooling_equipment_stpt_manager.setHighSetpointSchedule(hp_high_temp_sch)
+    cooling_equipment_stpt_manager.setLowSetpointSchedule(hp_low_temp_sch)
+
+    # create cooling equipment and add to the loop
+    if cooling_fuel == 'DistrictCooling':
+        cooling_equipment = openstudio_model.DistrictCooling(model)
+        cooling_equipment.setName('{} District Cooling'.format(loop_name))
+        cooling_equipment.autosizeNominalCapacity()
+        heat_pump_water_loop.addSupplyBranchForComponent(cooling_equipment)
+        cooling_equipment_stpt_manager.setName(
+            '{} District Cooling Scheduled Dual Setpoint'.format(loop_name))
+    else:
+        if cooling_type in ('CoolingTower', 'CoolingTowerTwoSpeed'):
+            cooling_equipment = openstudio_model.CoolingTowerTwoSpeed(model)
+            cooling_equipment.setName('{} CoolingTowerTwoSpeed'.format(loop_name))
+            heat_pump_water_loop.addSupplyBranchForComponent(cooling_equipment)
+            cooling_equipment_stpt_manager.setName(
+                '{} Cooling Tower Scheduled Dual Setpoint'.format(loop_name))
+        elif cooling_type == 'CoolingTowerSingleSpeed':
+            cooling_equipment = openstudio_model.CoolingTowerSingleSpeed(model)
+            cooling_equipment.setName('{} CoolingTowerSingleSpeed'.format(loop_name))
+            heat_pump_water_loop.addSupplyBranchForComponent(cooling_equipment)
+            cooling_equipment_stpt_manager.setName(
+                '{} Cooling Tower Scheduled Dual Setpoint'.format(loop_name))
+        elif cooling_type == 'CoolingTowerVariableSpeed':
+            cooling_equipment = openstudio_model.CoolingTowerVariableSpeed(model)
+            cooling_equipment.setName('{} CoolingTowerVariableSpeed'.format(loop_name))
+            heat_pump_water_loop.addSupplyBranchForComponent(cooling_equipment)
+            cooling_equipment_stpt_manager.setName(
+                '{} Cooling Tower Scheduled Dual Setpoint'.format(loop_name))
+        elif cooling_type in ('FluidCooler', 'FluidCoolerSingleSpeed'):
+            cooling_equipment = openstudio_model.FluidCoolerSingleSpeed(model)
+            cooling_equipment.setName('{} FluidCoolerSingleSpeed'.format(loop_name))
+            heat_pump_water_loop.addSupplyBranchForComponent(cooling_equipment)
+            cooling_equipment_stpt_manager.setName(
+                '{} Fluid Cooler Scheduled Dual Setpoint'.format(loop_name))
+            # Remove hard coded default values
+            cooling_equipment.setPerformanceInputMethod(
+                'UFactorTimesAreaAndDesignWaterFlowRate')
+            cooling_equipment.autosizeDesignWaterFlowRate()
+            cooling_equipment.autosizeDesignAirFlowRate()
+        elif cooling_type == 'FluidCoolerTwoSpeed':
+            cooling_equipment = openstudio_model.FluidCoolerTwoSpeed(model)
+            cooling_equipment.setName('{} FluidCoolerTwoSpeed'.format(loop_name))
+            heat_pump_water_loop.addSupplyBranchForComponent(cooling_equipment)
+            cooling_equipment_stpt_manager.setName(
+                '{} Fluid Cooler Scheduled Dual Setpoint'.format(loop_name))
+            # Remove hard coded default values
+            cooling_equipment.setPerformanceInputMethod(
+                'UFactorTimesAreaAndDesignWaterFlowRate')
+            cooling_equipment.autosizeDesignWaterFlowRate()
+            cooling_equipment.autosizeHighFanSpeedAirFlowRate()
+            cooling_equipment.autosizeLowFanSpeedAirFlowRate()
+        elif cooling_type in ('EvaporativeFluidCooler', 'EvaporativeFluidCoolerSingleSpeed'):
+            cooling_equipment = openstudio_model.EvaporativeFluidCoolerSingleSpeed(model)
+            cooling_equipment.setName(
+                '{} EvaporativeFluidCoolerSingleSpeed'.format(loop_name))
+            cooling_equipment.setDesignSprayWaterFlowRate(0.002208)  # Based on HighRiseApartment
+            cooling_equipment.setPerformanceInputMethod(
+                'UFactorTimesAreaAndDesignWaterFlowRate')
+            heat_pump_water_loop.addSupplyBranchForComponent(cooling_equipment)
+            cooling_equipment_stpt_manager.setName(
+                '{} Fluid Cooler Scheduled Dual Setpoint'.format(loop_name))
+        elif cooling_type == 'EvaporativeFluidCoolerTwoSpeed':
+            cooling_equipment = openstudio_model.EvaporativeFluidCoolerTwoSpeed(model)
+            cooling_equipment.setName('{} EvaporativeFluidCoolerTwoSpeed'.format(loop_name))
+            cooling_equipment.setDesignSprayWaterFlowRate(0.002208)  # Based on HighRiseApartment
+            cooling_equipment.setPerformanceInputMethod(
+                'UFactorTimesAreaAndDesignWaterFlowRate')
+            heat_pump_water_loop.addSupplyBranchForComponent(cooling_equipment)
+            cooling_equipment_stpt_manager.setName(
+                '{} Fluid Cooler Scheduled Dual Setpoint'.format(loop_name))
+        else:
+            msg = 'Cooling fuel type {} is not a valid option, no cooling ' \
+                'equipment will be added.'.format(cooling_type)
+            print(msg)
+            return False
+    equip_out_node = cooling_equipment.outletModelObject().get().to_Node().get()
+    cooling_equipment_stpt_manager.addToNode(equip_out_node)
+
+    # add setpoint to heating outlet so correct plant operation scheme is generated
+    heating_equipment_stpt_manager = \
+        openstudio_model.SetpointManagerScheduledDualSetpoint(model)
+    heating_equipment_stpt_manager.setHighSetpointSchedule(hp_high_temp_sch)
+    heating_equipment_stpt_manager.setLowSetpointSchedule(hp_low_temp_sch)
+
+    # switch statement to handle district heating name change
+    if model.version() < openstudio.VersionString('3.7.0'):
+        if heating_fuel == 'DistrictHeatingWater' or \
+                heating_fuel == 'DistrictHeatingSteam':
+            heating_fuel = 'DistrictHeating'
+    else:
+        if heating_fuel == 'DistrictHeating':
+            heating_fuel = 'DistrictHeatingWater'
+
+    # create heating equipment and add to the loop
+    if heating_fuel == 'DistrictHeating':
+        heating_equipment = openstudio_model.DistrictHeating(model)
+        heating_equipment.setName('{} District Heating'.format(loop_name))
+        heating_equipment.autosizeNominalCapacity()
+        heat_pump_water_loop.addSupplyBranchForComponent(heating_equipment)
+        heating_equipment_stpt_manager.setName(
+            '{} District Heating Scheduled Dual Setpoint'.format(loop_name))
+    elif heating_fuel == 'DistrictHeatingWater':
+        heating_equipment = openstudio_model.DistrictHeatingWater(model)
+        heating_equipment.setName('{} District Heating'.format(loop_name))
+        heating_equipment.autosizeNominalCapacity()
+        heat_pump_water_loop.addSupplyBranchForComponent(heating_equipment)
+        heating_equipment_stpt_manager.setName(
+            '{} District Heating Scheduled Dual Setpoint'.format(loop_name))
+    elif heating_fuel == 'DistrictHeatingSteam':
+        heating_equipment = openstudio_model.DistrictHeatingSteam(model)
+        heating_equipment.setName('{} District Heating'.format(loop_name))
+        heating_equipment.autosizeNominalCapacity()
+        heat_pump_water_loop.addSupplyBranchForComponent(heating_equipment)
+        heating_equipment_stpt_manager.setName(
+            '{} District Heating Scheduled Dual Setpoint'.format(loop_name))
+    elif heating_fuel in ('AirSourceHeatPump', 'ASHP'):
+        heating_equipment = create_central_air_source_heat_pump(
+            model, heat_pump_water_loop)
+        heating_equipment_stpt_manager.setName(
+            '{} ASHP Scheduled Dual Setpoint'.format(loop_name))
+    elif heating_fuel in ('Electricity', 'Gas', 'NaturalGas', 'Propane',
+                          'PropaneGas', 'FuelOilNo1', 'FuelOilNo2'):
+        heating_equipment = create_boiler_hot_water(
+            model, hot_water_loop=heat_pump_water_loop,
+            name='{} Supplemental Boiler'.format(loop_name), fuel_type=heating_fuel,
+            flow_mode='ConstantFlow',
+            lvg_temp_dsgn_f=86.0, min_plr=0.0, max_plr=1.2, opt_plr=1.0)
+        heating_equipment_stpt_manager.setName(
+            '{} Boiler Scheduled Dual Setpoint'.format(loop_name))
+    else:
+        print('Boiler fuel type {} is not valid, no heating equipment '
+              'will be added.'.format(heating_fuel))
+        return False
+    equip_out_node = heating_equipment.outletModelObject().get().to_Node().get()
+    heating_equipment_stpt_manager.addToNode(equip_out_node)
+
+    # add heat pump water loop pipes
+    supply_bypass_pipe = openstudio_model.PipeAdiabatic(model)
+    supply_bypass_pipe.setName('{} Supply Bypass'.format(loop_name))
+    heat_pump_water_loop.addSupplyBranchForComponent(supply_bypass_pipe)
+
+    demand_bypass_pipe = openstudio_model.PipeAdiabatic(model)
+    demand_bypass_pipe.setName('{} Demand Bypass'.format(loop_name))
+    heat_pump_water_loop.addDemandBranchForComponent(demand_bypass_pipe)
+
+    supply_outlet_pipe = openstudio_model.PipeAdiabatic(model)
+    supply_outlet_pipe.setName('{} Supply Outlet'.format(loop_name))
+    supply_outlet_pipe.addToNode(heat_pump_water_loop.supplyOutletNode)
+
+    demand_inlet_pipe = openstudio_model.PipeAdiabatic(model)
+    demand_inlet_pipe.setName('{} Demand Inlet'.format(loop_name))
+    demand_inlet_pipe.addToNode(heat_pump_water_loop.demandInletNode)
+
+    demand_outlet_pipe = openstudio_model.PipeAdiabatic(model)
+    demand_outlet_pipe.setName('{} Demand Outlet'.format(loop_name))
+    demand_outlet_pipe.addToNode(heat_pump_water_loop.demandOutletNode)
+
+    return heat_pump_water_loop
+
+
+def model_add_ground_hx_loop(model, system_name='Ground HX Loop'):
+    """Creates loop that roughly mimics a properly sized ground heat exchanger.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object
+        system_name: [String] the name of the system, or None in which case
+            it will be defaulted.
+
+    Returns:
+        [OpenStudio::Model::PlantLoop] the resulting plant loop.
+    """
+    # create ground hx loop
+    ground_hx_loop = openstudio_model.PlantLoop(model)
+    system_name = 'Ground HX Loop' if system_name is None else system_name
+    ground_hx_loop.setName(system_name)
+    loop_name = ground_hx_loop.nameString()
+
+    # ground hx loop sizing and controls
+    ground_hx_loop.setMinimumLoopTemperature(5.0)
+    ground_hx_loop.setMaximumLoopTemperature(80.0)
+    # temp change at high and low entering condition
+    delta_t_k = TEMP_DELTA.to_unit([12.0], 'dC', 'dF')[0]
+    # low entering condition
+    min_inlet_c = TEMPERATURE.to_unit([30.0], 'C', 'F')[0]
+    # high entering condition
+    max_inlet_c = TEMPERATURE.to_unit([90.0], 'C', 'F')[0]
+
+    # calculate the linear formula that defines outlet temperature
+    # based on inlet temperature of the ground hx
+    min_outlet_c = min_inlet_c + delta_t_k
+    max_outlet_c = max_inlet_c - delta_t_k
+    slope_c_per_c = (max_outlet_c - min_outlet_c) / (max_inlet_c - min_inlet_c)
+    intercept_c = min_outlet_c - (slope_c_per_c * min_inlet_c)
+
+    sizing_plant = ground_hx_loop.sizingPlant
+    sizing_plant.setLoopType('Heating')
+    sizing_plant.setDesignLoopExitTemperature(max_outlet_c)
+    sizing_plant.setLoopDesignTemperatureDifference(delta_t_k)
+
+    # create pump
+    pump = openstudio_model.PumpConstantSpeed(model)
+    pump.setName('{} Pump'.format(loop_name))
+    pump.setRatedPumpHead(PRESSURE.to_unit([60.0 * 12], 'Pa', 'inH2O')[0])
+    pump.setPumpControlType('Intermittent')
+    pump.addToNode(ground_hx_loop.supplyInletNode())
+
+    # use EMS and a PlantComponentTemperatureSource
+    # to mimic the operation of the ground heat exchanger
+
+    # schedule to actuate ground HX outlet temperature
+    hx_temp_sch = openstudio_model.ScheduleConstant(model)
+    hx_temp_sch.setName('Ground HX Temp Sch')
+    hx_temp_sch.setValue(24.0)
+
+    ground_hx = openstudio_model.PlantComponentTemperatureSource(model)
+    ground_hx.setName('Ground HX')
+    ground_hx.setTemperatureSpecificationType('Scheduled')
+    ground_hx.setSourceTemperatureSchedule(hx_temp_sch)
+    ground_hx_loop.addSupplyBranchForComponent(ground_hx)
+
+    hx_stpt_manager = openstudio_model.SetpointManagerScheduled(model, hx_temp_sch)
+    hx_stpt_manager.setName('{} Supply Outlet Setpoint'.format(ground_hx.nameString()))
+    hx_stpt_manager.addToNode(ground_hx.outletModelObject().get().to_Node().get())
+
+    loop_stpt_manager = openstudio_model.SetpointManagerScheduled(model, hx_temp_sch)
+    loop_stpt_manager.setName('{} Supply Outlet Setpoint'.format(ground_hx_loop.nameString()))
+    loop_stpt_manager.addToNode(ground_hx_loop.supplyOutletNode())
+
+    # edit name to be EMS friendly
+    ground_hx_ems_name = ems_friendly_name(ground_hx.nameString())
+
+    # sensor to read supply inlet temperature
+    inlet_temp_sensor = openstudio_model.EnergyManagementSystemSensor(
+        model, 'System Node Temperature')
+    inlet_temp_sensor.setName('{} Inlet Temp Sensor'.format(ground_hx_ems_name))
+    inlet_temp_sensor.setKeyName(ground_hx_loop.supplyInletNode().handle().to_s())
+
+    # actuator to set supply outlet temperature
+    outlet_temp_actuator = openstudio_model.EnergyManagementSystemActuator(
+        hx_temp_sch, 'Schedule:Constant', 'Schedule Value')
+    outlet_temp_actuator.setName('{} Outlet Temp Actuator'.format(ground_hx_ems_name))
+
+    # program to control outlet temperature
+    # adjusts delta-t based on calculation of slope and intercept from control temperatures
+    program = openstudio_model.EnergyManagementSystemProgram(model)
+    program.setName('{} Temperature Control'.format(ground_hx_ems_name))
+    program_body = \
+        'SET Tin = {inlet_temp_sensor_handle}\n' \
+        'SET Tout = {slope_c_per_c} * Tin + {intercept_c}\n' \
+        'SET {outlet_temp_actuator_handle} = Tout'.format(
+            inlet_temp_sensor_handle=inlet_temp_sensor.handle(),
+            slope_c_per_c=round(slope_c_per_c, 2), intercept_c=round(intercept_c, 2),
+            outlet_temp_actuator_handle=outlet_temp_actuator.handle()
+        )
+    program.setBody(program_body)
+
+    # program calling manager
+    pcm = openstudio_model.EnergyManagementSystemProgramCallingManager(model)
+    pcm.setName('{} Calling Manager'.format(program.nameString()))
+    pcm.setCallingPoint('InsideHVACSystemIterationLoop')
+    pcm.addProgram(program)
+
+    return ground_hx_loop
+
+
+def model_add_district_ambient_loop(model, system_name='Ambient Loop'):
+    """Adds an ambient condenser water loop that represents a district system.
+
+    It connects buildings as a shared sink/source for heat pumps.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        system_name: [String] the name of the system, or nil in which case it
+            will be defaulted.
+
+    Returns:
+        [OpenStudio::Model::PlantLoop] the ambient loop.
+    """
+    # create ambient loop
+    ambient_loop = openstudio_model.PlantLoop(model)
+    system_name = 'Ambient Loop' if system_name is None else system_name
+    ambient_loop.setName(system_name)
+    loop_name = ambient_loop.nameString()
+
+    # ambient loop sizing and controls
+    ambient_loop.setMinimumLoopTemperature(5.0)
+    ambient_loop.setMaximumLoopTemperature(80.0)
+
+    amb_high_temp_f = 90  # Supplemental cooling below 65F
+    amb_low_temp_f = 41  # Supplemental heat below 41F
+    amb_temp_sizing_f = 102.2  # CW sized to deliver 102.2F
+    amb_delta_t_r = 19.8  # 19.8F delta-T
+    amb_high_temp_c = TEMPERATURE.to_unit([amb_high_temp_f], 'C', 'F')[0]
+    amb_low_temp_c = TEMPERATURE.to_unit([amb_low_temp_f], 'C', 'F')[0]
+    amb_temp_sizing_c = TEMPERATURE.to_unit([amb_temp_sizing_f], 'C', 'F')[0]
+    amb_delta_t_k = TEMP_DELTA.to_unit([amb_delta_t_r], 'dC', 'dF')[0]
+
+    amb_high_temp_sch = create_constant_schedule_ruleset(
+        model, amb_high_temp_c,
+        name='Ambient Loop High Temp - {}F'.format(amb_high_temp_f),
+        schedule_type_limit='Temperature')
+    amb_low_temp_sch = create_constant_schedule_ruleset(
+        model, amb_low_temp_c,
+        name='Ambient Loop Low Temp - {}F'.format(amb_low_temp_f),
+        schedule_type_limit='Temperature')
+
+    amb_stpt_manager = openstudio_model.SetpointManagerScheduledDualSetpoint(model)
+    amb_stpt_manager.setName('{} Supply Water Setpoint Manager'.format(loop_name))
+    amb_stpt_manager.setHighSetpointSchedule(amb_high_temp_sch)
+    amb_stpt_manager.setLowSetpointSchedule(amb_low_temp_sch)
+    amb_stpt_manager.addToNode(ambient_loop.supplyOutletNode())
+
+    sizing_plant = ambient_loop.sizingPlant()
+    sizing_plant.setLoopType('Heating')
+    sizing_plant.setDesignLoopExitTemperature(amb_temp_sizing_c)
+    sizing_plant.setLoopDesignTemperatureDifference(amb_delta_t_k)
+
+    # create pump
+    pump = openstudio_model.PumpVariableSpeed(model)
+    pump.setName('{} Pump'.format(loop_name))
+    pump.setRatedPumpHead(PRESSURE.to_unit([60.0 * 12], 'Pa', 'inH2O')[0])
+    pump.setPumpControlType('Intermittent')
+    pump.addToNode(ambient_loop.supplyInletNode())
+
+    # cooling
+    district_cooling = openstudio_model.DistrictCooling(model)
+    district_cooling.setNominalCapacity(1000000000000)  # large number; no autosizing
+    ambient_loop.addSupplyBranchForComponent(district_cooling)
+
+    # heating
+    if model.version() < openstudio.VersionString('3.7.0'):
+        district_heating = openstudio_model.DistrictHeating(model)
+    else:
+        district_heating = openstudio_model.DistrictHeatingWater(model)
+    district_heating.setNominalCapacity(1000000000000)  # large number; no autosizing
+    ambient_loop.addSupplyBranchForComponent(district_heating)
+
+    # add ambient water loop pipes
+    supply_bypass_pipe = openstudio_model.PipeAdiabatic(model)
+    supply_bypass_pipe.setName('{} Supply Bypass'.format(loop_name))
+    ambient_loop.addSupplyBranchForComponent(supply_bypass_pipe)
+
+    demand_bypass_pipe = openstudio_model.PipeAdiabatic.new(model)
+    demand_bypass_pipe.setName('{} Demand Bypass'.format(loop_name))
+    ambient_loop.addDemandBranchForComponent(demand_bypass_pipe)
+
+    supply_outlet_pipe = openstudio_model.PipeAdiabatic.new(model)
+    supply_outlet_pipe.setName('{} Supply Outlet'.format(loop_name))
+    supply_outlet_pipe.addToNode(ambient_loop.supplyOutletNode)
+
+    demand_inlet_pipe = openstudio_model.PipeAdiabatic.new(model)
+    demand_inlet_pipe.setName('{} Demand Inlet'.format(loop_name))
+    demand_inlet_pipe.addToNode(ambient_loop.demandInletNode)
+
+    demand_outlet_pipe = openstudio_model.PipeAdiabatic.new(model)
+    demand_outlet_pipe.setName('{} Demand Outlet'.format(loop_name))
+    demand_outlet_pipe.addToNode(ambient_loop.demandOutletNode)
+
+    return ambient_loop
 
 
 def model_add_doas():
@@ -730,6 +1388,14 @@ def model_get_or_add_ground_hx_loop():
 
 
 def model_get_or_add_heat_pump_loop():
+    pass
+
+
+def model_get_or_add_chilled_water_loop():
+    pass
+
+
+def model_get_or_add_hot_water_loop():
     pass
 
 
