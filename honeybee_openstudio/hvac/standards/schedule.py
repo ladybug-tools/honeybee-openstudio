@@ -136,3 +136,13 @@ def create_schedule_type_limits(
         else:
             schedule_type_limits = schedule_type_limits.get()
     return schedule_type_limits
+
+
+def model_add_schedule(model, schedule_name):
+    """Get a schedule from the Model or always on schedule if it does not exist."""
+    if schedule_name is None or schedule_name == '':
+        return model.alwaysOnDiscreteSchedule()
+    schedule = model.getScheduleByName(schedule_name)
+    if schedule.is_initialized():
+        return schedule.get()
+    return model.alwaysOnDiscreteSchedule()
