@@ -6,7 +6,7 @@ lib/openstudio-standards/prototypes/common/objects/Prototype.CoilHeatingElectric
 """
 from __future__ import division
 
-from honeybee_openstudio.openstudio import openstudio_model
+from honeybee_openstudio.openstudio import openstudio, openstudio_model
 
 from .utilities import convert_curve_biquadratic, create_curve_biquadratic, \
     create_curve_quadratic
@@ -59,6 +59,64 @@ def create_coil_heating_electric(
     # set efficiency
     if efficiency is not None:
         htg_coil.setEfficiency(efficiency)
+
+    return htg_coil
+
+
+def create_coil_heating_gas(
+        model, air_loop_node=None, name='Gas Htg Coil', schedule=None,
+        nominal_capacity=None, efficiency=0.80):
+    """Prototype CoilHeatingGas object.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        air_loop_node: [<OpenStudio::Model::Node>] the coil will be placed on
+            this node of the air loop.
+        name: [String] the name of the system, or None in which case it will be defaulted.
+        schedule: [String] name of the availability schedule, or
+            [<OpenStudio::Model::Schedule>] Schedule object, or None in which
+            case default to always on.
+        nominal_capacity: [Double] rated nominal capacity.
+        efficiency: [Double] rated heating efficiency.
+    """
+    htg_coil = openstudio_model.CoilHeatingGas(model)
+
+    # add to air loop if specified
+    if air_loop_node is not None:
+        htg_coil.addToNode(air_loop_node)
+
+    # set coil name
+    htg_coil.setName(name)
+
+    # set coil availability schedule
+    if schedule is None:  # default always on
+        coil_availability_schedule = model.alwaysOnDiscreteSchedule()
+    elif isinstance(schedule, str):
+        if schedule == 'alwaysOffDiscreteSchedule':
+            coil_availability_schedule = model.alwaysOffDiscreteSchedule()
+        elif coil_availability_schedule == 'alwaysOnDiscreteSchedule':
+            coil_availability_schedule = model.alwaysOnDiscreteSchedule()
+        else:
+            coil_availability_schedule = model_add_schedule(model, schedule)
+    else:  # assume that it is an actual schedule object
+        coil_availability_schedule = schedule
+    htg_coil.setAvailabilitySchedule(coil_availability_schedule)
+
+    # set capacity
+    if nominal_capacity is not None:
+        htg_coil.setNominalCapacity(nominal_capacity)
+
+    # set efficiency
+    if efficiency is not None:
+        htg_coil.setGasBurnerEfficiency(efficiency)
+
+    # defaults
+    if model.version() < openstudio.VersionString('3.7.0'):
+        htg_coil.setParasiticElectricLoad(0.0)
+        htg_coil.setParasiticGasLoad(0.0)
+    else:
+        htg_coil.setOnCycleParasiticElectricLoad(0.0)
+        htg_coil.setOffCycleParasiticGasLoad(0.0)
 
     return htg_coil
 
@@ -367,5 +425,127 @@ def create_coil_heating_dx_single_speed(
         htg_coil.setDefrostEnergyInputRatioFunctionofTemperatureCurve(def_eir_f_of_temp)
     htg_coil.setDefrostStrategy(defrost_strategy)
     htg_coil.setDefrostControl('OnDemand')
+
+    return htg_coil
+
+
+def create_coil_heating_water_to_air_heat_pump_equation_fit(
+        model, plant_loop, air_loop_node=None,
+        name='Water-to-Air HP Htg Coil', type=None, cop=4.2):
+    """Prototype CoilHeatingWaterToAirHeatPumpEquationFit object.
+
+    Enters in default curves for coil by type of coil.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        plant_loop: [<OpenStudio::Model::PlantLoop>] the coil will be placed on
+            the demand side of this plant loop.
+        air_loop_node: [<OpenStudio::Model::Node>] the coil will be placed on
+            this node of the air loop.
+        name: [String] the name of the system, or None in which case it will
+            be defaulted.
+        type: [String] the type of coil to reference the correct curve set.
+        cop: [Double] rated heating coefficient of performance.
+    """
+    htg_coil = openstudio_model.CoilHeatingWaterToAirHeatPumpEquationFit(model)
+
+    # add to air loop if specified
+    if air_loop_node is not None:
+        htg_coil.addToNode(air_loop_node)
+
+    # set coil name
+    htg_coil.setName(name)
+
+    # add to plant loop
+    if plant_loop is None:
+        print('No plant loop supplied for heating coil')
+        return False
+    plant_loop.addDemandBranchForComponent(htg_coil)
+
+    # set coil cop
+    cop = 4.2 if cop is None else cop
+    htg_coil.setRatedHeatingCoefficientofPerformance(cop)
+
+    # curve sets
+    if type == 'OS default':
+        pass  # use OS default curves
+    else:  # default curve set
+        if model.version() < openstudio.VersionString('3.2.0'):
+            htg_coil.setHeatingCapacityCoefficient1(0.237847462869254)
+            htg_coil.setHeatingCapacityCoefficient2(-3.35823796081626)
+            htg_coil.setHeatingCapacityCoefficient3(3.80640467406376)
+            htg_coil.setHeatingCapacityCoefficient4(0.179200417311554)
+            htg_coil.setHeatingCapacityCoefficient5(0.12860719846082)
+            htg_coil.setHeatingPowerConsumptionCoefficient1(-3.79175529243238)
+            htg_coil.setHeatingPowerConsumptionCoefficient2(3.38799239505527)
+            htg_coil.setHeatingPowerConsumptionCoefficient3(1.5022612076303)
+            htg_coil.setHeatingPowerConsumptionCoefficient4(-0.177653510577989)
+            htg_coil.setHeatingPowerConsumptionCoefficient5(-0.103079864171839)
+        else:
+            hcc_name = 'Water to Air Heat Pump Heating Capacity Curve'
+            hcc = model.getCurveByName(hcc_name)
+            if hcc.is_initialized():
+                heating_capacity_curve = hcc.get()
+                heating_capacity_curve = heating_capacity_curve.to_CurveQuadLinear().get()
+            else:
+                heating_capacity_curve = openstudio_model.CurveQuadLinear(model)
+                heating_capacity_curve.setName(hcc_name)
+                heating_capacity_curve.setCoefficient1Constant(0.237847462869254)
+                heating_capacity_curve.setCoefficient2w(-3.35823796081626)
+                heating_capacity_curve.setCoefficient3x(3.80640467406376)
+                heating_capacity_curve.setCoefficient4y(0.179200417311554)
+                heating_capacity_curve.setCoefficient5z(0.12860719846082)
+                heating_capacity_curve.setMinimumValueofw(-100)
+                heating_capacity_curve.setMaximumValueofw(100)
+                heating_capacity_curve.setMinimumValueofx(-100)
+                heating_capacity_curve.setMaximumValueofx(100)
+                heating_capacity_curve.setMinimumValueofy(0)
+                heating_capacity_curve.setMaximumValueofy(100)
+                heating_capacity_curve.setMinimumValueofz(0)
+                heating_capacity_curve.setMaximumValueofz(100)
+            htg_coil.setHeatingCapacityCurve(heating_capacity_curve)
+
+            pcc_name = 'Water to Air Heat Pump Heating Power Consumption Curve'
+            pcc = model.getCurveByName(pcc_name)
+            if pcc.is_initialized():
+                heating_power_consumption_curve = pcc.get()
+                heating_power_consumption_curve = \
+                    heating_power_consumption_curve.to_CurveQuadLinear().get()
+            else:
+                heating_power_consumption_curve = openstudio_model.CurveQuadLinear(model)
+                heating_power_consumption_curve.setName(pcc_name)
+                heating_power_consumption_curve.setCoefficient1Constant(-3.79175529243238)
+                heating_power_consumption_curve.setCoefficient2w(3.38799239505527)
+                heating_power_consumption_curve.setCoefficient3x(1.5022612076303)
+                heating_power_consumption_curve.setCoefficient4y(-0.177653510577989)
+                heating_power_consumption_curve.setCoefficient5z(-0.103079864171839)
+                heating_power_consumption_curve.setMinimumValueofw(-100)
+                heating_power_consumption_curve.setMaximumValueofw(100)
+                heating_power_consumption_curve.setMinimumValueofx(-100)
+                heating_power_consumption_curve.setMaximumValueofx(100)
+                heating_power_consumption_curve.setMinimumValueofy(0)
+                heating_power_consumption_curve.setMaximumValueofy(100)
+                heating_power_consumption_curve.setMinimumValueofz(0)
+                heating_power_consumption_curve.setMaximumValueofz(100)
+            htg_coil.setHeatingPowerConsumptionCurve(heating_power_consumption_curve)
+
+        # part load fraction correlation curve added as a required curve in OS v3.7.0
+        if model.version() > openstudio.VersionString('3.6.1'):
+            plfcc_name = 'Water to Air Heat Pump Part Load Fraction Correlation Curve'
+            plfcc = model.getCurveByName(plfcc_name)
+            if plfcc.is_initialized():
+                part_load_correlation_curve = plfcc.get()
+                part_load_correlation_curve = \
+                    part_load_correlation_curve.to_CurveLinear().get()
+            else:
+                part_load_correlation_curve = openstudio_model.CurveLinear(model)
+                part_load_correlation_curve.setName(plfcc_name)
+                part_load_correlation_curve.setCoefficient1Constant(0.833746458696111)
+                part_load_correlation_curve.setCoefficient2x(0.166253541303889)
+                part_load_correlation_curve.setMinimumValueofx(0)
+                part_load_correlation_curve.setMaximumValueofx(1)
+                part_load_correlation_curve.setMinimumCurveOutput(0)
+                part_load_correlation_curve.setMaximumCurveOutput(1)
+            htg_coil.setPartLoadFractionCorrelationCurve(part_load_correlation_curve)
 
     return htg_coil
