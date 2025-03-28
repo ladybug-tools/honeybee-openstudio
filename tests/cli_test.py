@@ -28,10 +28,9 @@ def test_model_to_osm_cli_all_properties():
     in_args = [input_hb_model, '--output-file', out_file]
     result = runner.invoke(model_to_osm_cli, in_args)
 
-    print(result.output)
     assert result.exit_code == 0
     assert os.path.isfile(out_file)
-    # os.remove(out_file)
+    os.remove(out_file)
 
 
 def test_osm_to_idf_cli():
