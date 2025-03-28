@@ -12,8 +12,7 @@ from ladybug.datatype.pressure import Pressure
 from ladybug.datatype.volumeflowrate import VolumeFlowRate
 
 from honeybee_openstudio.openstudio import openstudio, openstudio_model, os_vector_len
-from .utilities import kw_per_ton_to_cop, ems_friendly_name, \
-    rename_air_loop_nodes, rename_plant_loop_nodes
+from .utilities import kw_per_ton_to_cop, ems_friendly_name
 from .schedule import create_constant_schedule_ruleset, model_add_schedule
 from .thermal_zone import thermal_zone_get_outdoor_airflow_rate
 
@@ -3654,7 +3653,3 @@ def model_add_hvac_system(
         else:
             print('HVAC system type "{}" not recognized'.format(system_type))
             return False
-
-    # rename air loop and plant loop nodes for readability
-    rename_air_loop_nodes(model)
-    rename_plant_loop_nodes(model)

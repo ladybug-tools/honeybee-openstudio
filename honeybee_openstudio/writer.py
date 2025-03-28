@@ -43,6 +43,8 @@ from honeybee_openstudio.hvac.idealair import ideal_air_system_to_openstudio
 from honeybee_openstudio.hvac.template import template_hvac_to_openstudio
 from honeybee_openstudio.generator import pv_properties_to_openstudio, \
     electric_load_center_to_openstudio
+from honeybee_openstudio.hvac.standards.utilities import \
+    rename_air_loop_nodes, rename_plant_loop_nodes
 
 
 def face_3d_to_openstudio(face_3d):
@@ -911,6 +913,9 @@ def model_to_openstudio(
     for hvac_id, os_zones in template_zones.items():
         hvac = template_hvac_dict[hvac_id]
         template_hvac_to_openstudio(hvac, os_zones, os_model)
+    if len(template_zones) != 0:  # rename air loop and plant loop nodes for readability
+        rename_air_loop_nodes(os_model)
+        rename_plant_loop_nodes(os_model)
 
     # write service hot water and any SHW systems
     shw_sys_dict = {}
