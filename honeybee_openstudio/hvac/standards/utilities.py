@@ -227,5 +227,93 @@ def rename_air_loop_nodes(model):
 
 
 def rename_plant_loop_nodes(model):
-    """renames plant loop nodes to readable values"""
-    pass
+    """Renames plant loop nodes to readable values."""
+    # rename all hvac components on plant loops
+    for component in model.getHVACComponents():
+        if component.to_Node().is_initialized():  # don't re-rename the node
+            continue
+
+        if component.plantLoop().is_initialized():
+            # rename straight component nodes
+            # some inlet or outlet nodes may get renamed again
+            if component.to_StraightComponent().is_initialized():
+                st_comp = component.to_StraightComponent().get()
+                if st_comp.inletModelObject().is_initialized():
+                    component_inlet_object = st_comp.inletModelObject().get()
+                    if not component_inlet_object.to_Node().is_initialized():
+                        continue
+                    cp_name = component.nameString()
+                    component_inlet_object.setName(
+                        '{} Inlet Water Node'.format(cp_name))
+
+                if st_comp.outletModelObject().is_initialized():
+                    component_outlet_object = st_comp.outletModelObject().get()
+                    if not component_outlet_object.to_Node().is_initialized():
+                        continue
+                    cp_name = component.nameString()
+                    component_outlet_object.setName(
+                        '{} Outlet Water Node'.format(cp_name))
+
+            # rename water to air component nodes
+            if component.to_WaterToAirComponent().is_initialized():
+                component = component.to_WaterToAirComponent().get()
+                if component.waterInletModelObject().is_initialized():
+                    component_inlet_object = component.waterInletModelObject().get()
+                    if not component_inlet_object.to_Node().is_initialized():
+                        continue
+                    cp_name = component.nameString()
+                    component_inlet_object.setName(
+                        '{} Inlet Water Node'.format(cp_name))
+
+                if component.waterOutletModelObject().is_initialized():
+                    component_outlet_object = component.waterOutletModelObject().get()
+                    if not component_outlet_object.to_Node().is_initialized():
+                        continue
+                    cp_name = component.nameString()
+                    component_outlet_object.setName(
+                        '{} Outlet Water Node'.format(cp_name))
+
+            # rename water to water component nodes
+            if component.to_WaterToWaterComponent().is_initialized():
+                component = component.to_WaterToWaterComponent().get()
+                if component.demandInletModelObject().is_initialized():
+                    demand_inlet_object = component.demandInletModelObject().get()
+                    if not demand_inlet_object.to_Node().is_initialized():
+                        continue
+                    cp_name = component.nameString()
+                    demand_inlet_object.setName(
+                        '{} Demand Inlet Water Node'.format(cp_name))
+
+                if component.demandOutletModelObject().is_initialized():
+                    demand_outlet_object = component.demandOutletModelObject().get()
+                    if not demand_outlet_object.to_Node().is_initialized():
+                        continue
+                    cp_name = component.nameString()
+                    demand_outlet_object.setName(
+                        '{} Demand Outlet Water Node'.format(cp_name))
+
+                if component.supplyInletModelObject().is_initialized():
+                    supply_inlet_object = component.supplyInletModelObject().get()
+                    if not supply_inlet_object.to_Node().is_initialized():
+                        continue
+                    cp_name = component.nameString()
+                    supply_inlet_object.setName(
+                        '{} Supply Inlet Water Node'.format(cp_name))
+
+                if component.supplyOutletModelObject().is_initialized():
+                    supply_outlet_object = component.supplyOutletModelObject().get()
+                    if not supply_outlet_object.to_Node().is_initialized():
+                        continue
+                    cp_name = component.nameString()
+                    supply_outlet_object.setName(
+                        '{} Supply Outlet Water Node'.format(cp_name))
+
+    # rename plant nodes
+    for plant_loop in model.getPlantLoops():
+        pl_name = plant_loop.nameString()
+        plant_loop.demandInletNode().setName('{} Demand Inlet Node'.format(pl_name))
+        plant_loop.demandOutletNode().setName('{} Demand Outlet Node'.format(pl_name))
+        plant_loop.supplyInletNode().setName('{} Supply Inlet Node'.format(pl_name))
+        plant_loop.supplyOutletNode().setName('{} Supply Outlet Node'.format(pl_name))
+
+    return model
