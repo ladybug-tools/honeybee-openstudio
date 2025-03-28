@@ -11,6 +11,7 @@ from honeybee.boundarycondition import Outdoors, Ground, Surface
 from honeybee_energy.boundarycondition import Adiabatic, OtherSideTemperature
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 from honeybee_energy.hvac.idealair import IdealAirSystem
+from honeybee_energy.hvac._template import _TemplateSystem
 from honeybee_energy.lib.constructionsets import generic_construction_set
 
 from honeybee_openstudio.openstudio import OSModel, OSPoint3dVector, OSPoint3d, \
@@ -39,6 +40,7 @@ from honeybee_openstudio.ventcool import ventilation_opening_to_openstudio, \
     outdoor_temperature_sensor, ventilation_control_program_manager
 from honeybee_openstudio.shw import shw_system_to_openstudio
 from honeybee_openstudio.hvac.idealair import ideal_air_system_to_openstudio
+from honeybee_openstudio.hvac.template import template_hvac_to_openstudio
 from honeybee_openstudio.generator import pv_properties_to_openstudio, \
     electric_load_center_to_openstudio
 
@@ -884,14 +886,31 @@ def model_to_openstudio(
             if room.properties.energy.hvac is not None:
                 zone_rooms[zone_id] = room
                 break
+    template_zones, template_hvac_dict = {}, {}
     for zone_id, room in zone_rooms.items():
         hvac = room.properties.energy.hvac
+        os_zone = zone_map[room.identifier]
         if isinstance(hvac, IdealAirSystem):
             os_hvac = ideal_air_system_to_openstudio(hvac, os_model, room)
             if room.identifier != zone_id:
                 os_hvac.setName('{} Ideal Loads Air System'.format(zone_id))
-            os_zone = zone_map[room.identifier]
             os_hvac.addToThermalZone(os_zone)
+        elif isinstance(hvac, _TemplateSystem):
+            template_hvac_dict[hvac.identifier] = hvac
+            set_pt = room.properties.energy.setpoint
+            if set_pt is not None:
+                try:
+                    zone_list = template_zones[hvac.identifier]
+                except KeyError:  # first zone found in the HVAC
+                    zone_list = {'heated_zones': [], 'cooled_zones': []}
+                    template_zones[hvac.identifier] = zone_list
+                if set_pt.heating_setpoint > 5:
+                    zone_list['heated_zones'].append(os_zone)
+                if set_pt.cooling_setpoint < 33:
+                    zone_list['cooled_zones'].append(os_zone)
+    for hvac_id, os_zones in template_zones.items():
+        hvac = template_hvac_dict[hvac_id]
+        template_hvac_to_openstudio(hvac, os_zones, os_model)
 
     # write service hot water and any SHW systems
     shw_sys_dict = {}
