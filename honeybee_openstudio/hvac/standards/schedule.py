@@ -31,11 +31,11 @@ def create_constant_schedule_ruleset(model, value, name=None, schedule_type_limi
                     return existing_sch
     # create ScheduleRuleset
     schedule = openstudio_model.ScheduleRuleset(model)
-    schedule.defaultDaySchedule.addValue(openstudio.Time(0, 24, 0, 0), value)
+    schedule.defaultDaySchedule().addValue(openstudio.Time(0, 24, 0, 0), value)
     # set name
     if name is not None:
         schedule.setName(name)
-        schedule.defaultDaySchedule.setName('{} Default'.format(name))
+        schedule.defaultDaySchedule().setName('{} Default'.format(name))
     # set schedule type limits
     if schedule_type_limit is not None:
         sch_type_limits_obj = create_schedule_type_limits(

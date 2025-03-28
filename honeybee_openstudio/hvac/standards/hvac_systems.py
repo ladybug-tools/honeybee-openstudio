@@ -12,7 +12,8 @@ from ladybug.datatype.pressure import Pressure
 from ladybug.datatype.volumeflowrate import VolumeFlowRate
 
 from honeybee_openstudio.openstudio import openstudio, openstudio_model, os_vector_len
-from .utilities import kw_per_ton_to_cop, ems_friendly_name
+from .utilities import kw_per_ton_to_cop, ems_friendly_name, \
+    rename_air_loop_nodes, rename_plant_loop_nodes
 from .schedule import create_constant_schedule_ruleset, model_add_schedule
 from .thermal_zone import thermal_zone_get_outdoor_airflow_rate
 
@@ -114,7 +115,7 @@ def model_add_hw_loop(
         schedule_type_limit='Temperature')
     hw_stpt_manager = openstudio_model.SetpointManagerScheduled(model, hw_temp_sch)
     hw_stpt_manager.setName('{} Setpoint Manager'.format(hot_water_loop.nameString()))
-    hw_stpt_manager.addToNode(hot_water_loop.supplyOutletNode)
+    hw_stpt_manager.addToNode(hot_water_loop.supplyOutletNode())
 
     # create hot water pump
     if pump_spd_ctrl == 'Constant':
@@ -1558,7 +1559,7 @@ def model_add_doas(
                 air_terminal.setControlForOutdoorAir(True)
         else:  # DOASVAV
             air_terminal = openstudio_model.AirTerminalSingleDuctVAVNoReheat(
-                model, model.alwaysOnDiscreteSchedule)
+                model, model.alwaysOnDiscreteSchedule())
             if model.version() < openstudio.VersionString('3.0.1'):
                 air_terminal.setZoneMinimumAirFlowMethod('Constant')
             else:
@@ -2482,8 +2483,182 @@ def model_add_psz_ac(
     return air_loops
 
 
-def model_add_psz_vav():
-    pass
+def model_add_psz_vav(
+        model, thermal_zones, system_name=None, heating_type=None,
+        cooling_type='AirCooled', supplemental_heating_type=None, hvac_op_sch=None,
+        fan_type='VAV_System_Fan', oa_damper_sch=None, hot_water_loop=None,
+        chilled_water_loop=None, minimum_volume_setpoint=None):
+    """Creates a packaged single zone VAV system for each zone.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones
+            to connect to this system.
+        system_name: [String] the name of the system, or None in which case it
+            will be defaulted.
+        heating_type: [String] valid choices are NaturalGas, Electricity, Water,
+            None (no heat).
+        supplemental_heating_type: [String] valid choices are Electricity,
+            NaturalGas, None (no heat).
+        hvac_op_sch: [String] name of the HVAC operation schedule or None in
+            which case will be defaulted to always on.
+        oa_damper_sch: [String] name of the oa damper schedule or None in which
+            case will be defaulted to always open.
+    """
+    # hvac operation schedule
+    hvac_op_sch = model_add_schedule(model, hvac_op_sch)
+
+    # oa damper schedule
+    oa_damper_sch = model_add_schedule(model, oa_damper_sch)
+
+    # create a PSZ-AC for each zone
+    air_loops = []
+    for zone in thermal_zones:
+        zone_name = zone.nameString()
+        air_loop = openstudio_model.AirLoopHVAC(model)
+        system_name = '{} PSZ-VAV'.format(zone_name) \
+            if system_name is None else '{} {}'.format(zone_name, system_name)
+        air_loop.setName(system_name)
+        loop_name = air_loop.nameString()
+
+        # default design temperatures used across all air loops
+        dsgn_temps = standard_design_sizing_temperatures()
+
+        # adjusted zone design heating temperature for psz_vav
+        dsgn_temps['htg_dsgn_sup_air_temp_f'] = dsgn_temps['zn_htg_dsgn_sup_air_temp_f']
+        dsgn_temps['htg_dsgn_sup_air_temp_c'] = dsgn_temps['zn_htg_dsgn_sup_air_temp_c']
+
+        # default design settings used across all air loops
+        adjust_sizing_system(air_loop, dsgn_temps)
+
+        # air handler controls
+        # add a setpoint manager single zone reheat to control the supply air temperature
+        setpoint_mgr_single_zone_reheat = \
+            openstudio_model.SetpointManagerSingleZoneReheat(model)
+        setpoint_mgr_single_zone_reheat.setName(
+            '{} Setpoint Manager SZ Reheat'.format(zone_name))
+        setpoint_mgr_single_zone_reheat.setControlZone(zone)
+        setpoint_mgr_single_zone_reheat.setMinimumSupplyAirTemperature(
+            dsgn_temps['zn_clg_dsgn_sup_air_temp_c'])
+        setpoint_mgr_single_zone_reheat.setMaximumSupplyAirTemperature(
+            dsgn_temps['zn_htg_dsgn_sup_air_temp_c'])
+        setpoint_mgr_single_zone_reheat.addToNode(air_loop.supplyOutletNode())
+
+        # zone sizing
+        sizing_zone = zone.sizingZone()
+        sizing_zone.setZoneCoolingDesignSupplyAirTemperature(
+            dsgn_temps['zn_clg_dsgn_sup_air_temp_c'])
+        sizing_zone.setZoneHeatingDesignSupplyAirTemperature(
+            dsgn_temps['zn_htg_dsgn_sup_air_temp_c'])
+
+        # create fan
+        fan = create_fan_by_name(model, fan_type, fan_name='{} Fan'.format(loop_name),
+                                 end_use_subcategory='VAV System Fans')
+        fan.setAvailabilitySchedule(hvac_op_sch)
+
+        # create heating coil
+        if heating_type in ('NaturalGas', 'Gas'):
+            htg_coil = create_coil_heating_gas(
+                model, name='{} Gas Htg Coil'.format(loop_name))
+        elif heating_type in ('Electricity', 'Electric'):
+            htg_coil = create_coil_heating_electric(
+                model, name='{} Electric Htg Coil'.format(loop_name))
+        elif heating_type == 'Water':
+            htg_coil = create_coil_heating_water(
+                model, hot_water_loop, name='{} Water Htg Coil'.format(loop_name))
+        else:  # Zero-capacity, always-off electric heating coil
+            htg_coil = create_coil_heating_electric(
+                model, name='{} No Heat'.format(loop_name),
+                schedule=model.alwaysOffDiscreteSchedule(), nominal_capacity=0.0)
+
+        # create supplemental heating coil
+        if supplemental_heating_type in ('Electricity', 'Electric'):
+            supplemental_htg_coil = create_coil_heating_electric(
+                model, name='{} Electric Backup Htg Coil'.format(loop_name))
+        elif supplemental_heating_type in ('NaturalGas', 'Gas'):
+            supplemental_htg_coil = create_coil_heating_gas(
+                model, name='{} Gas Backup Htg Coil'.format(loop_name))
+        else:  # zero-capacity, always-off electric heating coil
+            supplemental_htg_coil = create_coil_heating_electric(
+                model, name='{} No Backup Heat'.format(loop_name),
+                schedule=model.alwaysOffDiscreteSchedule(), nominal_capacity=0.0)
+
+        # create cooling coil
+        if cooling_type == 'WaterCooled':
+            clg_coil = create_coil_cooling_water(
+                model, chilled_water_loop, name='{} Clg Coil'.format(loop_name))
+        else:  # AirCooled
+            clg_coil = openstudio_model.CoilCoolingDXVariableSpeed(model)
+            clg_coil.setName('{} Var spd DX AC Clg Coil'.format(loop_name))
+            clg_coil.setBasinHeaterCapacity(10.0)
+            clg_coil.setBasinHeaterSetpointTemperature(2.0)
+            # first speed level
+            clg_spd_1 = openstudio_model.CoilCoolingDXVariableSpeedSpeedData(model)
+            clg_coil.addSpeed(clg_spd_1)
+            clg_coil.setNominalSpeedLevel(1)
+
+        # wrap coils in a unitary system
+        unitary_system = openstudio_model.AirLoopHVACUnitarySystem(model)
+        unitary_system.setSupplyFan(fan)
+        unitary_system.setHeatingCoil(htg_coil)
+        unitary_system.setCoolingCoil(clg_coil)
+        unitary_system.setSupplementalHeatingCoil(supplemental_htg_coil)
+        unitary_system.setName('{} Unitary PSZ-VAV'.format(zone_name))
+        # The following control strategy can lead to "Developer Error: Component sizing incomplete."
+        # EnergyPlus severe (not fatal) errors if there is no heating design load
+        unitary_system.setControlType('SingleZoneVAV')
+        unitary_system.setControllingZoneorThermostatLocation(zone)
+        unitary_system.setMaximumSupplyAirTemperature(dsgn_temps['zn_htg_dsgn_sup_air_temp_c'])
+        unitary_system.setFanPlacement('BlowThrough')
+        if model.version() < openstudio.VersionString('3.7.0'):
+            unitary_system.setSupplyAirFlowRateMethodDuringCoolingOperation(
+                'SupplyAirFlowRate')
+            unitary_system.setSupplyAirFlowRateMethodDuringHeatingOperation(
+                'SupplyAirFlowRate')
+            if minimum_volume_setpoint is None:
+                unitary_system.setSupplyAirFlowRateMethodWhenNoCoolingorHeatingisRequired(
+                    'SupplyAirFlowRate')
+            else:
+                us = unitary_system
+                us.setSupplyAirFlowRateMethodWhenNoCoolingorHeatingisRequired(
+                    'FractionOfAutosizedCoolingValue')
+                us.setFractionofAutosizedDesignCoolingSupplyAirFlowRateWhenNoCoolingorHeatingisRequired(
+                    minimum_volume_setpoint)
+        else:
+            unitary_system.autosizeSupplyAirFlowRateDuringCoolingOperation()
+            unitary_system.autosizeSupplyAirFlowRateDuringHeatingOperation()
+            if minimum_volume_setpoint is None:
+                unitary_system.autosizeSupplyAirFlowRateWhenNoCoolingorHeatingisRequired()
+            else:
+                us = unitary_system
+                us.setFractionofAutosizedDesignCoolingSupplyAirFlowRateWhenNoCoolingorHeatingisRequired(
+                    minimum_volume_setpoint)
+        unitary_system.setSupplyAirFanOperatingModeSchedule(model.alwaysOnDiscreteSchedule())
+        unitary_system.addToNode(air_loop.supplyInletNode())
+
+        # create outdoor air system
+        oa_controller = openstudio_model.ControllerOutdoorAir(model)
+        oa_controller.setName('{} OA Sys Controller'.format(loop_name))
+        oa_controller.setMinimumOutdoorAirSchedule(oa_damper_sch)
+        oa_controller.autosizeMinimumOutdoorAirFlowRate()
+        oa_controller.resetEconomizerMinimumLimitDryBulbTemperature()
+        oa_controller.setHeatRecoveryBypassControlType('BypassWhenOAFlowGreaterThanMinimum')
+        oa_system = openstudio_model.AirLoopHVACOutdoorAirSystem(model, oa_controller)
+        oa_system.setName('{} OA System'.format(loop_name))
+        oa_system.addToNode(air_loop.supplyInletNode())
+
+        # set air loop availability controls and night cycle manager, after oa system added
+        air_loop.setAvailabilitySchedule(hvac_op_sch)
+        air_loop.setNightCycleControlType('CycleOnAny')
+
+        # create a VAV no reheat terminal and attach the zone/terminal pair to the air loop
+        diffuser = openstudio_model.AirTerminalSingleDuctVAVNoReheat(
+            model, model.alwaysOnDiscreteSchedule())
+        diffuser.setName('{} Diffuser'.format(loop_name))
+        air_loop.multiAddBranchForZone(zone, diffuser.to_HVACComponent().get())
+        air_loops.append(air_loop)
+
+    return air_loops
 
 
 def model_add_minisplit_hp():
@@ -2555,10 +2730,6 @@ def model_add_ideal_air_loads():
 
 
 def model_add_residential_ventilator():
-    pass
-
-
-def model_get_or_add_ambient_water_loop():
     pass
 
 
@@ -2727,19 +2898,100 @@ def model_get_or_add_heat_pump_loop():
     pass
 
 
-def model_get_or_add_chilled_water_loop():
-    pass
+def model_get_or_add_chilled_water_loop(
+        model, cool_fuel, chilled_water_loop_cooling_type='WaterCooled'):
+    """Get existing chilled water loop or add a new one if there isn't one already.
+    
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        cool_fuel: [String] the cooling fuel. Valid choices are Electricity,
+            DistrictCooling, and HeatPump.
+        chilled_water_loop_cooling_type: [String] Archetype for chilled water
+            loops, AirCooled or WaterCooled.
+    """
+    # retrieve the existing chilled water loop or add a new one if necessary
+    chilled_water_loop = None
+    if model.getPlantLoopByName('Chilled Water Loop').is_initialized():
+        chilled_water_loop = model.getPlantLoopByName('Chilled Water Loop').get()
+    else:
+        if cool_fuel == 'DistrictCooling':
+            chilled_water_loop = model_add_chw_loop(
+                model, chw_pumping_type='const_pri', cooling_fuel=cool_fuel)
+        elif cool_fuel == 'HeatPump':
+            condenser_water_loop = model_get_or_add_ambient_water_loop(model)
+            chilled_water_loop = model_add_chw_loop(
+                model, chw_pumping_type='const_pri_var_sec',
+                chiller_cooling_type='WaterCooled',
+                chiller_compressor_type='Rotary Screw',
+                condenser_water_loop=condenser_water_loop)
+        elif cool_fuel == 'Electricity':
+            if chilled_water_loop_cooling_type == 'AirCooled':
+                chilled_water_loop = model_add_chw_loop(
+                    model, chw_pumping_type='const_pri',
+                    chiller_cooling_type='AirCooled', cooling_fuel=cool_fuel)
+            else:
+                fan_type = 'Variable Speed Fan'
+                condenser_water_loop = model_add_cw_loop(
+                    model, cooling_tower_type='Open Cooling Tower',
+                    cooling_tower_fan_type='Propeller or Axial',
+                    cooling_tower_capacity_control=fan_type,
+                    number_of_cells_per_tower=1, number_cooling_towers=1)
+                chilled_water_loop = model_add_chw_loop(
+                    model, chw_pumping_type='const_pri_var_sec',
+                    chiller_cooling_type='WaterCooled',
+                    chiller_compressor_type='Rotary Screw',
+                    condenser_water_loop=condenser_water_loop)
+        else:
+            print('No cool_fuel specified.')
+
+    return chilled_water_loop
 
 
-def model_get_or_add_hot_water_loop():
-    pass
+def model_get_or_add_hot_water_loop(
+        model, heat_fuel, hot_water_loop_type='HighTemperature'):
+    """Get existing hot water loop or add a new one if there isn't one already.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        heat_fuel: [String] the heating fuel. Valid choices are NaturalGas,
+            Electricity, DistrictHeating, DistrictHeatingWater, DistrictHeatingSteam.
+        hot_water_loop_type: [String] Archetype for hot water loops.
+    """
+    if heat_fuel is None:
+        print('Hot water loop fuel type is nil. Cannot add hot water loop.')
+        return None
+
+    make_new_hot_water_loop = True
+    hot_water_loop = None
+    # retrieve the existing hot water loop or add a new one if not of the correct type
+    if model.getPlantLoopByName('Hot Water Loop').is_initialized():
+        hot_water_loop = model.getPlantLoopByName('Hot Water Loop').get()
+        design_loop_exit_temperature = \
+            hot_water_loop.sizingPlant().designLoopExitTemperature()
+        design_loop_exit_temperature = \
+            TEMPERATURE.to_unit([design_loop_exit_temperature], 'F', 'C')[0]
+        # check that the loop is the correct archetype
+        if hot_water_loop_type == 'HighTemperature':
+            if design_loop_exit_temperature > 130.0:
+                make_new_hot_water_loop = False 
+        elif hot_water_loop_type == 'LowTemperature':
+            if design_loop_exit_temperature <= 130.0:
+                make_new_hot_water_loop = False
+
+    if make_new_hot_water_loop:
+        if hot_water_loop_type == 'HighTemperature':
+            hot_water_loop = model_add_hw_loop(model, heat_fuel)
+        elif hot_water_loop_type == 'LowTemperature':
+            hot_water_loop = model_add_hw_loop(
+                model, heat_fuel, dsgn_sup_wtr_temp=120.0,
+                boiler_draft_type='Condensing')
+        else:
+            print('Hot water loop archetype {} not recognized.'.format(hot_water_loop_type))
+            return None
+    return hot_water_loop
 
 
-def rename_air_loop_nodes():
-    pass
-
-
-def rename_plant_loop_nodes():
+def model_get_or_add_ambient_water_loop():
     pass
 
 
