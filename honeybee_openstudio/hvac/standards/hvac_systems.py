@@ -653,10 +653,6 @@ def model_add_cw_loop(
         design_oat_wb_f = None
         if len(summer_oat_wbs_f) == 0:
             design_oat_wb_f = 78.0
-            msg = 'For condenser loop {}, no design day OATwb conditions found. ' \
-                'CTI rating condition of 78F OATwb will be used for sizing cooling ' \
-                'towers.'.format(condenser_water_loop.nameString())
-            print(msg)
         else:
             design_oat_wb_f = max(summer_oat_wbs_f)  # Take worst case condition
         design_oat_wb_c = TEMPERATURE.to_unit([design_oat_wb_f], 'C', 'F')[0]
@@ -2693,8 +2689,79 @@ def model_add_vrf():
     pass
 
 
-def model_add_four_pipe_fan_coil():
-    pass
+def model_add_four_pipe_fan_coil(
+        model, thermal_zones, chilled_water_loop, hot_water_loop=None,
+        ventilation=False, capacity_control_method='CyclingFan'):
+    """Adds four pipe fan coil units to each zone.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones to
+            add fan coil units.
+        chilled_water_loop: [OpenStudio::Model::PlantLoop] the chilled water loop
+            that serves the fan coils.
+        hot_water_loop: [OpenStudio::Model::PlantLoop] the hot water loop that
+            serves the fan coils. If None, a zero-capacity, electric heating
+            coil set to Always-Off will be included in the unit.
+        ventilation: [Boolean] If true, ventilation will be supplied through
+            the unit. If false, no ventilation will be supplied through the unit,
+            with the expectation that it will be provided by a DOAS or separate system.
+        capacity_control_method: [String] Capacity control method for the fan coil.
+            Options are ConstantFanVariableFlow, CyclingFan, VariableFanVariableFlow,
+            and VariableFanConstantFlow.  If VariableFan, the fan will be VariableVolume.
+    """
+    # default design temperatures used across all air loops
+    dsgn_temps = standard_design_sizing_temperatures()
+
+    # make a fan coil unit for each zone
+    fcus = []
+    for zone in thermal_zones:
+        zone_name = zone.nameString()
+        sizing_zone = zone.sizingZone()
+        sizing_zone.setZoneCoolingDesignSupplyAirTemperature(
+            dsgn_temps['zn_clg_dsgn_sup_air_temp_c'])
+        sizing_zone.setZoneHeatingDesignSupplyAirTemperature(
+            dsgn_temps['zn_htg_dsgn_sup_air_temp_c'])
+
+        if chilled_water_loop:
+            fcu_clg_coil = create_coil_cooling_water(
+                model, chilled_water_loop, name='{} FCU Cooling Coil'.format(zone_name))
+        else:
+            print('Fan coil units require a chilled water loop, but none was provided.')
+            return False
+
+        if hot_water_loop:
+            fcu_htg_coil = create_coil_heating_water(
+                model, hot_water_loop, name='{} FCU Heating Coil'.format(zone_name),
+                rated_outlet_air_temperature=dsgn_temps['zn_htg_dsgn_sup_air_temp_c'])
+        else:  # Zero-capacity, always-off electric heating coil
+            fcu_htg_coil = create_coil_heating_electric(
+                model, name='{} No Heat'.format(zone_name),
+                schedule=model.alwaysOffDiscreteSchedule(), nominal_capacity=0.0)
+
+        if capacity_control_method in ('VariableFanVariableFlow', 'VariableFanConstantFlow'):
+            fcu_fan = create_fan_by_name(
+                model, 'Fan_Coil_VarSpeed_Fan',
+                fan_name='{} Fan Coil Variable Fan'.format(zone_name),
+                end_use_subcategory='FCU Fans')
+        else:
+            fcu_fan = create_fan_by_name(
+                model, 'Fan_Coil_Fan', fan_name='{} Fan Coil fan'.format(zone_name),
+                end_use_subcategory='FCU Fans')
+        fcu_fan.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule())
+        fcu_fan.autosizeMaximumFlowRate()
+
+        fcu = openstudio_model.ZoneHVACFourPipeFanCoil(
+            model, model.alwaysOnDiscreteSchedule(), fcu_fan, fcu_clg_coil, fcu_htg_coil)
+        fcu.setName('{} FCU'.format(zone_name))
+        fcu.setCapacityControlMethod(capacity_control_method)
+        fcu.autosizeMaximumSupplyAirFlowRate()
+        if not ventilation:
+            fcu.setMaximumOutdoorAirFlowRate(0.0)
+        fcu.addToThermalZone(zone)
+        fcus.append(fcu)
+
+    return fcus
 
 
 def model_add_low_temp_radiant():
