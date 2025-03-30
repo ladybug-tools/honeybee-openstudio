@@ -1569,8 +1569,8 @@ def model_add_doas(
 
         # ensure the DOAS takes priority, so ventilation load is included when
         # treated by other zonal systems
-        zone.setCoolingPriority(air_terminal.to_ModelObject().get(), 1)
-        zone.setHeatingPriority(air_terminal.to_ModelObject().get(), 1)
+        zone.setCoolingPriority(air_terminal, 1)
+        zone.setHeatingPriority(air_terminal, 1)
 
         # set the cooling and heating fraction to zero so that if DCV is enabled,
         # the system will lower the ventilation rate rather than trying to meet
@@ -1582,11 +1582,11 @@ def model_add_doas(
                     'OpenStudio versions less than 2.8.0.'
                 print(msg)
         else:
-            zone.setSequentialCoolingFraction(air_terminal.to_ModelObject().get(), 0.0)
-            zone.setSequentialHeatingFraction(air_terminal.to_ModelObject().get(), 0.0)
+            zone.setSequentialCoolingFraction(air_terminal, 0.0)
+            zone.setSequentialHeatingFraction(air_terminal, 0.0)
             # if economizing, override to meet cooling load first with doas supply
             if econo_ctrl_mthd != 'NoEconomizer':
-                zone.setSequentialCoolingFraction(air_terminal.to_ModelObject().get(), 1.0)
+                zone.setSequentialCoolingFraction(air_terminal, 1.0)
 
         # DOAS sizing
         sizing_zone = zone.sizingZone()
