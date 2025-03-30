@@ -6,6 +6,8 @@ lib/openstudio-standards/thermal_zone/thermal_zone.rb
 """
 from __future__ import division
 
+import sys
+
 
 def thermal_zone_get_outdoor_airflow_rate(thermal_zone):
     """Calculates the zone outdoor airflow requirement (Voz).
@@ -33,13 +35,13 @@ def thermal_zone_get_outdoor_airflow_rate(thermal_zone):
 
     # Find common variables for the new space
     for space in spaces:
-        floor_area = space.floorArea()
+        floor_area = space.floorArea() if sys.version_info >= (3, 0) else space.floorArea
         sum_floor_area += floor_area
 
         number_of_people = space.numberOfPeople()
         sum_number_of_people += number_of_people
 
-        volume = space.volume()
+        volume = space.volume() if sys.version_info >= (3, 0) else space.floorArea
         sum_volume += volume
 
         dsn_oa = space.designSpecificationOutdoorAir()

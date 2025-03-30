@@ -53,7 +53,7 @@ def convert_curve_biquadratic(coeffs, ip_to_si=True):
         # Convert SI curves to IP curves
         ip_coeffs = []
         ip_coeffs.append((coeffs[0] - (160.0 / 9.0 * (coeffs[1] + coeffs[3])) +
-                          (25_600.0 / 81.0 * (coeffs[2] + coeffs[4] + coeffs[5]))))
+                          (25600.0 / 81.0 * (coeffs[2] + coeffs[4] + coeffs[5]))))
         ip_coeffs.append((5.0 / 9.0 * (coeffs[1] - (320.0 / 9.0 * coeffs[2]) -
                                        (160.0 / 9.0 * coeffs[5]))))
         ip_coeffs.append((25.0 / 81.0 * coeffs[2]))
