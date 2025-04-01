@@ -574,8 +574,7 @@ def create_coil_cooling_water_to_air_heat_pump_equation_fit(
 
     # add to plant loop
     if plant_loop is None:
-        print('No plant loop supplied for cooling coil')
-        return False
+        raise ValueError('No plant loop supplied for water cooling coil')
     plant_loop.addDemandBranchForComponent(clg_coil)
 
     # set coil cop

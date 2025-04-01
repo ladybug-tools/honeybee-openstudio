@@ -68,7 +68,7 @@ def create_schedule_type_limits(
                 'standard_schedule_type_limit, you must specify all properties ' \
                 'of ScheduleTypeLimits.'
             print(msg)
-            return False
+            return None
 
         schedule_type_limits = openstudio_model.scheduleTypeLimits(model)
         if name is not None:
@@ -131,8 +131,7 @@ def create_schedule_type_limits(
             else:
                 msg = 'Invalid standard_schedule_type_limit for method ' \
                     'create_schedule_type_limits.'
-                print(msg)
-                return False
+                raise ValueError(msg)
         else:
             schedule_type_limits = schedule_type_limits.get()
     return schedule_type_limits
