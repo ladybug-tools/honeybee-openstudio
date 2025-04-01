@@ -2682,8 +2682,36 @@ def model_add_evap_cooler():
     pass
 
 
-def model_add_baseboard():
-    pass
+def model_add_baseboard(
+        model, thermal_zones, hot_water_loop=None):
+    """Adds hydronic or electric baseboard heating to each zone.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones to
+            add baseboards to.
+        hot_water_loop: [OpenStudio::Model::PlantLoop] The hot water loop that
+            serves the baseboards. If None, baseboards are electric.
+    """
+    # Make a baseboard heater for each zone
+    baseboards = []
+    for zone in thermal_zones:
+        zone_name = zone.nameString()
+        if hot_water_loop is None:
+            baseboard = openstudio_model.ZoneHVACBaseboardConvectiveElectric(model)
+            baseboard.setName('{} Electric Baseboard'.format(zone_name))
+            baseboard.addToThermalZone(zone)
+            baseboards.append(baseboard)
+        else:
+            htg_coil = openstudio_model.CoilHeatingWaterBaseboard(model)
+            htg_coil.setName('{} Hydronic Baseboard Coil'.format(zone_name))
+            hot_water_loop.addDemandBranchForComponent(htg_coil)
+            baseboard = openstudio_model.ZoneHVACBaseboardConvectiveWater(
+                model, model.alwaysOnDiscreteSchedule(), htg_coil)
+            baseboard.setName('{} Hydronic Baseboard'.format(zone_name))
+            baseboard.addToThermalZone(zone)
+            baseboards.append(baseboard)
+    return baseboards
 
 
 def model_add_vrf(model, thermal_zones, ventilation=False):
