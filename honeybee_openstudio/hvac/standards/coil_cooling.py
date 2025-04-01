@@ -36,7 +36,7 @@ def create_coil_cooling_water(
     elif isinstance(schedule, str):
         if schedule == 'alwaysOffDiscreteSchedule':
             coil_availability_schedule = model.alwaysOffDiscreteSchedule()
-        elif coil_availability_schedule == 'alwaysOnDiscreteSchedule':
+        elif schedule == 'alwaysOnDiscreteSchedule':
             coil_availability_schedule = model.alwaysOnDiscreteSchedule()
         else:
             coil_availability_schedule = model_add_schedule(model, schedule)
@@ -102,7 +102,7 @@ def create_coil_cooling_dx_single_speed(
     elif isinstance(schedule, str):
         if schedule == 'alwaysOffDiscreteSchedule':
             coil_availability_schedule = model.alwaysOffDiscreteSchedule()
-        elif coil_availability_schedule == 'alwaysOnDiscreteSchedule':
+        elif schedule == 'alwaysOnDiscreteSchedule':
             coil_availability_schedule = model.alwaysOnDiscreteSchedule()
         else:
             coil_availability_schedule = model_add_schedule(model, schedule)
@@ -401,7 +401,7 @@ def create_coil_cooling_dx_two_speed(
     elif isinstance(schedule, str):
         if schedule == 'alwaysOffDiscreteSchedule':
             coil_availability_schedule = model.alwaysOffDiscreteSchedule()
-        elif coil_availability_schedule == 'alwaysOnDiscreteSchedule':
+        elif schedule == 'alwaysOnDiscreteSchedule':
             coil_availability_schedule = model.alwaysOnDiscreteSchedule()
         else:
             coil_availability_schedule = model_add_schedule(model, schedule)
