@@ -30,6 +30,8 @@ from .coil_cooling import create_coil_cooling_water, create_coil_cooling_dx_sing
     create_coil_cooling_dx_two_speed
 from .heat_recovery import create_hx_air_to_air_sensible_and_latent
 from .sizing_system import adjust_sizing_system
+from .air_conditioner_variable_refrigerant_flow import \
+    create_air_conditioner_variable_refrigerant_flow
 
 TEMPERATURE = Temperature()
 TEMP_DELTA = TemperatureDelta()
@@ -2684,8 +2686,56 @@ def model_add_baseboard():
     pass
 
 
-def model_add_vrf():
-    pass
+def model_add_vrf(model, thermal_zones, ventilation=False):
+
+    # create vrf outdoor unit
+    master_zone = thermal_zones[0]
+    vrf_outdoor_unit = create_air_conditioner_variable_refrigerant_flow(
+        model, name='{} Zone VRF System'.format(len(thermal_zones)),
+        master_zone=master_zone)
+
+    # default design temperatures used across all air loops
+    dsgn_temps = standard_design_sizing_temperatures()
+
+    for zone in thermal_zones:
+        zone_name = zone.nameString()
+
+        # zone sizing
+        sizing_zone = zone.sizingZone()
+        sizing_zone.setZoneCoolingDesignSupplyAirTemperature(
+            dsgn_temps['zn_clg_dsgn_sup_air_temp_c'])
+        sizing_zone.setZoneHeatingDesignSupplyAirTemperature(
+            dsgn_temps['zn_htg_dsgn_sup_air_temp_c'])
+
+        # add vrf terminal unit
+        vrf_terminal_unit = \
+            openstudio_model.ZoneHVACTerminalUnitVariableRefrigerantFlow(model)
+        vrf_terminal_unit.setName('{} VRF Terminal Unit'.format(zone_name))
+        vrf_terminal_unit.addToThermalZone(zone)
+        vrf_terminal_unit.setTerminalUnitAvailabilityschedule(
+            model.alwaysOnDiscreteSchedule())
+
+        if ventilation is not None:
+            vrf_terminal_unit.setOutdoorAirFlowRateDuringCoolingOperation(0.0)
+            vrf_terminal_unit.setOutdoorAirFlowRateDuringHeatingOperation(0.0)
+            vrf_terminal_unit.setOutdoorAirFlowRateWhenNoCoolingorHeatingisNeeded(0.0)
+
+        # set fan variables
+        # always off denotes cycling fan
+        vrf_terminal_unit.setSupplyAirFanOperatingModeSchedule(
+            model.alwaysOffDiscreteSchedule())
+        vrf_fan = vrf_terminal_unit.supplyAirFan().to_FanOnOff()
+        if vrf_fan.is_initialized():
+            vrf_fan = vrf_fan.get()
+            vrf_fan.setPressureRise(300.0)
+            vrf_fan.setMotorEfficiency(0.8)
+            vrf_fan.setFanEfficiency(0.6)
+            vrf_fan.setName('{} VRF Unit Cycling Fan'.format(zone_name))
+
+        # add to main condensing unit
+        vrf_outdoor_unit.addTerminal(vrf_terminal_unit)
+
+    return vrf_outdoor_unit
 
 
 def model_add_four_pipe_fan_coil(
@@ -2967,7 +3017,7 @@ def model_get_or_add_heat_pump_loop():
 def model_get_or_add_chilled_water_loop(
         model, cool_fuel, chilled_water_loop_cooling_type='WaterCooled'):
     """Get existing chilled water loop or add a new one if there isn't one already.
-    
+
     Args:
         model: [OpenStudio::Model::Model] OpenStudio model object.
         cool_fuel: [String] the cooling fuel. Valid choices are Electricity,
@@ -3039,7 +3089,7 @@ def model_get_or_add_hot_water_loop(
         # check that the loop is the correct archetype
         if hot_water_loop_type == 'HighTemperature':
             if design_loop_exit_temperature > 130.0:
-                make_new_hot_water_loop = False 
+                make_new_hot_water_loop = False
         elif hot_water_loop_type == 'LowTemperature':
             if design_loop_exit_temperature <= 130.0:
                 make_new_hot_water_loop = False
