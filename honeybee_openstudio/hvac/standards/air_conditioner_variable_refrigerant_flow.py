@@ -94,8 +94,8 @@ def create_air_conditioner_variable_refrigerant_flow(
         vrf_outdoor_unit.setString(56, condenser_type)
         # require condenser_loop
         if not condenser_loop:
-            print('Must specify condenser_loop for vrf_outdoor_unit if WaterCooled')
-            return None
+            msg = 'Must specify condenser_loop for vrf_outdoor_unit if WaterCooled'
+            raise ValueError(msg)
         condenser_loop.addDemandBranchForComponent(vrf_outdoor_unit)
     elif condenser_type == 'EvaporativelyCooled':
         vrf_outdoor_unit.setString(56, condenser_type)

@@ -27,7 +27,7 @@ def prototype_apply_condenser_water_temperatures(condenser_loop, design_wet_bulb
     sizing_plant = condenser_loop.sizingPlant()
     loop_type = sizing_plant.loopType()
     if loop_type != 'Condenser':
-        return False
+        return None
 
     # if values are absent, use the CTI rating condition 78F
     if design_wet_bulb_c is None:

@@ -8,12 +8,40 @@ from __future__ import division
 
 import re
 
+from ladybug.datatype.power import Power
+
 from honeybee_openstudio.openstudio import openstudio_model
+
+POWER = Power()
 
 
 def kw_per_ton_to_cop(kw_per_ton):
     """A helper method to convert from kW/ton to COP."""
     return 3.517 / kw_per_ton
+
+
+def eer_to_cop_no_fan(eer, capacity_w=None):
+    """Convert from EER to COP.
+
+    If capacity is not supplied, use DOE Prototype Building method.
+    If capacity is supplied, use the 90.1-2013 method.
+
+    Args:
+        eer: [Double] Energy Efficiency Ratio (EER).
+        capacity_w: [Double] the heating capacity at AHRI rating conditions, in W.
+    """
+    if capacity_w is None:
+        # From Thornton et al. 2011
+        # r is the ratio of supply fan power to total equipment power at the rating condition,
+        # assumed to be 0.12 for the reference buildings per Thornton et al. 2011.
+        r = 0.12
+        cop = ((eer / POWER.to_unit([1.0], 'Btu/h', 'W')[0]) + r) / (1 - r)
+    else:
+        # The 90.1-2013 method
+        # Convert the capacity to Btu/hr
+        capacity_btu_per_hr = POWER.to_unit([capacity_w], 'Btu/h', 'W')[0]
+        cop = (7.84E-8 * eer * capacity_btu_per_hr) + (0.338 * eer)
+    return cop
 
 
 def ems_friendly_name(name):

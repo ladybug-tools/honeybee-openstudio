@@ -10,9 +10,10 @@ from ladybug.datatype.temperature import Temperature
 from ladybug.datatype.temperaturedelta import TemperatureDelta
 from ladybug.datatype.pressure import Pressure
 from ladybug.datatype.volumeflowrate import VolumeFlowRate
+from ladybug.datatype.power import Power
 
 from honeybee_openstudio.openstudio import openstudio, openstudio_model, os_vector_len
-from .utilities import kw_per_ton_to_cop, ems_friendly_name
+from .utilities import kw_per_ton_to_cop, eer_to_cop_no_fan, ems_friendly_name
 from .schedule import create_constant_schedule_ruleset, model_add_schedule
 from .thermal_zone import thermal_zone_get_outdoor_airflow_rate
 
@@ -37,6 +38,7 @@ TEMPERATURE = Temperature()
 TEMP_DELTA = TemperatureDelta()
 PRESSURE = Pressure()
 FLOW_RATE = VolumeFlowRate()
+POWER = Power()
 
 
 def standard_design_sizing_temperatures():
@@ -842,10 +844,8 @@ def model_add_hp_loop(
             cooling_equipment_stpt_manager.setName(
                 '{} Fluid Cooler Scheduled Dual Setpoint'.format(loop_name))
         else:
-            msg = 'Cooling fuel type {} is not a valid option, no cooling ' \
-                'equipment will be added.'.format(cooling_type)
-            print(msg)
-            return False
+            msg = 'Cooling fuel type "{}" is not a valid option.'.format(cooling_type)
+            raise ValueError(msg)
     equip_out_node = cooling_equipment.outletModelObject().get().to_Node().get()
     cooling_equipment_stpt_manager.addToNode(equip_out_node)
 
@@ -901,9 +901,7 @@ def model_add_hp_loop(
         heating_equipment_stpt_manager.setName(
             '{} Boiler Scheduled Dual Setpoint'.format(loop_name))
     else:
-        print('Boiler fuel type {} is not valid, no heating equipment '
-              'will be added.'.format(heating_fuel))
-        return False
+        raise ValueError('Boiler fuel type "{}" is not valid'.format(heating_fuel))
     equip_out_node = heating_equipment.outletModelObject().get().to_Node().get()
     heating_equipment_stpt_manager.addToNode(equip_out_node)
 
@@ -1181,7 +1179,7 @@ def model_add_doas_cold_supply(
     # If the total OA requirement is zero do not add the DOAS system
     # because the simulations will fail
     if tot_oa_req == 0:
-        return False
+        return None
 
     # create a DOAS air loop
     air_loop = openstudio_model.AirLoopHVAC(model)
@@ -1384,7 +1382,7 @@ def model_add_doas(
     # If the total OA requirement is zero do not add the DOAS system
     # because the simulations will fail
     if tot_oa_req == 0:
-        return False
+        return None
 
     # create a DOAS air loop
     air_loop = openstudio_model.AirLoopHVAC(model)
@@ -2317,7 +2315,7 @@ def model_add_psz_ac(
         elif heating_type == 'Water':
             if hot_water_loop is None:
                 print('No hot water plant loop supplied')
-                return False
+                return None
             htg_coil = create_coil_heating_water(
                 model, hot_water_loop, name='{} Water Htg Coil'.format(loop_name),
                 rated_inlet_water_temperature=hw_temp_c,
@@ -2357,7 +2355,7 @@ def model_add_psz_ac(
         if cooling_type == 'Water':
             if chilled_water_loop is None:
                 print('No chilled water plant loop supplied')
-                return False
+                return None
             clg_coil = create_coil_cooling_water(
                 model, chilled_water_loop, name='{} Water Clg Coil'.format(loop_name))
         elif cooling_type == 'Two Speed DX AC':
@@ -2372,7 +2370,7 @@ def model_add_psz_ac(
         elif cooling_type == 'Water To Air Heat Pump':
             if chilled_water_loop is None:
                 print('No chilled water plant loop supplied')
-                return False
+                return None
             clg_coil = create_coil_cooling_water_to_air_heat_pump_equation_fit(
                 model, chilled_water_loop,
                 name='{} Water-to-Air HP Clg Coil'.format(loop_name))
@@ -2387,16 +2385,14 @@ def model_add_psz_ac(
             fan = create_fan_by_name(model, 'Packaged_RTU_SZ_AC_CAV_OnOff_Fan',
                                      fan_name='{} Fan'.format(loop_name))
         else:
-            print('Invalid fan_type')
-            return False
+            raise ValueError('Invalid PSZ-AC fan_type "{}".'.format(fan_type))
 
         # fan location
         fan_location = 'DrawThrough' if fan_location is None else fan_location
         if fan_location not in ('DrawThrough', 'BlowThrough'):
             msg = 'Invalid fan_location {} for fan {}.'.format(
                 fan_location, fan.nameString())
-            print(msg)
-            return False
+            raise ValueError(msg)
 
         # construct unitary system object
         unitary_system = openstudio_model.AirLoopHVACUnitarySystem(model)
@@ -2658,28 +2654,620 @@ def model_add_psz_vav(
     return air_loops
 
 
-def model_add_minisplit_hp():
-    pass
+def model_add_minisplit_hp(
+        model, thermal_zones,
+        cooling_type='Two Speed DX AC', heating_type='Single Speed DX',
+        hvac_op_sch=None):
+    """Creates a minisplit heatpump system for each zone and adds it to the model.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones
+            to connect to this system.
+        cooling_type: [String] valid choices are Two Speed DX AC, Single
+            Speed DX AC, Single Speed Heat Pump.
+        heating_type: [String] valid choices are Single Speed DX.
+        hvac_op_sch: [String] name of the HVAC operation schedule or None in
+            which case will be defaulted to always on.
+    """
+    # hvac operation schedule
+    hvac_op_sch = model_add_schedule(model, hvac_op_sch)
+
+    # default design temperatures across all air loops
+    dsgn_temps = standard_design_sizing_temperatures()
+
+    # adjusted temperatures for minisplit
+    dsgn_temps['zn_htg_dsgn_sup_air_temp_f'] = 122.0
+    dsgn_temps['zn_htg_dsgn_sup_air_temp_c'] = \
+        TEMPERATURE.to_unit([dsgn_temps['zn_htg_dsgn_sup_air_temp_f']], 'C', 'F')[0]
+    dsgn_temps['htg_dsgn_sup_air_temp_f'] = dsgn_temps['zn_htg_dsgn_sup_air_temp_f']
+    dsgn_temps['htg_dsgn_sup_air_temp_c'] = dsgn_temps['zn_htg_dsgn_sup_air_temp_c']
+
+    minisplit_hps = []
+    for zone in thermal_zones:
+        zone_name = zone.nameString()
+        air_loop = openstudio_model.AirLoopHVAC(model)
+        air_loop.setName('{} Minisplit Heat Pump'.format(zone_name))
+        loop_name = air_loop.nameString()
+
+        # default design settings used across all air loops
+        sizing_system = adjust_sizing_system(
+            air_loop, dsgn_temps, sizing_option='NonCoincident')
+        sizing_system.setAllOutdoorAirinCooling(False)
+        sizing_system.setAllOutdoorAirinHeating(False)
+
+        # create heating coil
+        if heating_type == 'Single Speed DX':
+            htg_coil = create_coil_heating_dx_single_speed(
+                model, name='{} Heating Coil'.format(loop_name),
+                type='Residential Minisplit HP')
+            o_dbt_fco = TEMPERATURE.to_unit([-30.0], 'C', 'F')[0]
+            htg_coil.setMinimumOutdoorDryBulbTemperatureforCompressorOperation(o_dbt_fco)
+            o_dbt_fdo = TEMPERATURE.to_unit([-30.0], 'C', 'F')[0]
+            htg_coil.setMaximumOutdoorDryBulbTemperatureforDefrostOperation(o_dbt_fdo)
+            htg_coil.setCrankcaseHeaterCapacity(0)
+            htg_coil.setDefrostStrategy('ReverseCycle')
+            htg_coil.setDefrostControl('OnDemand')
+            htg_coil.resetDefrostTimePeriodFraction()
+        else:
+            msg = 'No heating coil type selected for minisplit HP: {}.'.format(zone_name)
+            print(msg)
+            htg_coil = None
+
+        # create backup heating coil
+        supplemental_htg_coil = create_coil_heating_electric(
+            model, name='{} Electric Backup Htg Coil'.format(loop_name))
+
+        # create cooling coil
+        if cooling_type == 'Two Speed DX AC':
+            clg_coil = create_coil_cooling_dx_two_speed(
+                model, name='{} 2spd DX AC Clg Coil'.format(loop_name),
+                type='Residential Minisplit HP')
+        elif cooling_type == 'Single Speed DX AC':
+            clg_coil = create_coil_cooling_dx_single_speed(
+                model, name='{} 1spd DX AC Clg Coil'.format(loop_name), type='Split AC')
+        elif cooling_type == 'Single Speed Heat Pump':
+            clg_coil = create_coil_cooling_dx_single_speed(
+                model, name='{} 1spd DX HP Clg Coil'.format(loop_name), type='Heat Pump')
+        else:
+            msg = 'No cooling coil type selected for minisplit HP: {}.'.format(zone_name)
+            print(msg)
+            clg_coil = None
+
+        # create fan
+        fan = create_fan_by_name(
+            model, 'Minisplit_HP_Fan', fan_name='{} Fan'.format(loop_name),
+            end_use_subcategory='Minisplit HP Fans')
+        fan.setAvailabilitySchedule(hvac_op_sch)
+
+        # create unitary system (holds the coils and fan)
+        unitary = openstudio_model.AirLoopHVACUnitarySystem(model)
+        unitary.setName('{} Unitary System'.format(loop_name))
+        unitary.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule())
+        max_sat = TEMPERATURE.to_unit([200.0], 'C', 'F')[0]
+        unitary.setMaximumSupplyAirTemperature(max_sat)
+        max_dbt_sho = TEMPERATURE.to_unit([40.0], 'C', 'F')[0]
+        unitary.setMaximumOutdoorDryBulbTemperatureforSupplementalHeaterOperation(max_dbt_sho)
+        unitary.setControllingZoneorThermostatLocation(zone)
+        unitary.addToNode(air_loop.supplyInletNode())
+        unitary.setSupplyAirFlowRateWhenNoCoolingorHeatingisRequired(0.0)
+
+        # attach the coils and fan
+        if htg_coil is not None:
+            unitary.setHeatingCoil(htg_coil)
+        if clg_coil is not None:
+            unitary.setCoolingCoil(clg_coil)
+        if supplemental_htg_coil is not None:
+            unitary.setSupplementalHeatingCoil(supplemental_htg_coil)
+        unitary.setSupplyFan(fan)
+        unitary.setFanPlacement('BlowThrough')
+        unitary.setSupplyAirFanOperatingModeSchedule(model.alwaysOffDiscreteSchedule())
+
+        # create a diffuser
+        diffuser = openstudio_model.AirTerminalSingleDuctUncontrolled(
+            model, model.alwaysOnDiscreteSchedule())
+        diffuser.setName('{} Direct Air'.format(zone_name))
+        air_loop.multiAddBranchForZone(zone, diffuser.to_HVACComponent().get())
+
+        minisplit_hps.append(air_loop)
+
+    return minisplit_hps
 
 
-def model_add_ptac():
-    pass
+def model_add_ptac(
+        model, thermal_zones, cooling_type='Two Speed DX AC', heating_type='Gas',
+        hot_water_loop=None, fan_type='Cycling', ventilation=True):
+    """Creates a PTAC system for each zone and adds it to the model.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones to
+            connect to this system.
+        cooling_type: [String] valid choices are Two Speed DX AC, Single Speed DX AC.
+        heating_type: [String] valid choices are NaturalGas, Electricity,
+            Water, nil (no heat).
+        hot_water_loop: [OpenStudio::Model::PlantLoop] hot water loop to connect
+            heating coil to. Set to nil for heating types besides water.
+        fan_type: [String] valid choices are ConstantVolume, Cycling.
+        ventilation: [Boolean] If True, ventilation will be supplied through
+            the unit. If False, no ventilation will be supplied through the unit,
+            with the expectation that it will be provided by a DOAS or separate system.
+    """
+    # default design temperatures used across all air loops
+    dsgn_temps = standard_design_sizing_temperatures()
+    if hot_water_loop is not None:
+        hw_temp_c = hot_water_loop.sizingPlant().designLoopExitTemperature()
+        hw_delta_t_k = hot_water_loop.sizingPlant().loopDesignTemperatureDifference()
+
+    # adjusted zone design temperatures for ptac
+    dsgn_temps['zn_htg_dsgn_sup_air_temp_f'] = 122.0
+    dsgn_temps['zn_htg_dsgn_sup_air_temp_c'] = \
+        TEMPERATURE.to_unit([dsgn_temps['zn_htg_dsgn_sup_air_temp_f']], 'C', 'F')[0]
+    dsgn_temps['zn_clg_dsgn_sup_air_temp_f'] = 57.0
+    dsgn_temps['zn_clg_dsgn_sup_air_temp_c'] = \
+        TEMPERATURE.to_unit([dsgn_temps['zn_clg_dsgn_sup_air_temp_f']], 'C', 'F')[0]
+
+    # make a PTAC for each zone
+    ptacs = []
+    for zone in thermal_zones:
+        zone_name = zone.nameString()
+
+        # zone sizing
+        sizing_zone = zone.sizingZone()
+        sizing_zone.setZoneCoolingDesignSupplyAirTemperature(
+            dsgn_temps['zn_clg_dsgn_sup_air_temp_c'])
+        sizing_zone.setZoneHeatingDesignSupplyAirTemperature(
+            dsgn_temps['zn_htg_dsgn_sup_air_temp_c'])
+        sizing_zone.setZoneCoolingDesignSupplyAirHumidityRatio(0.008)
+        sizing_zone.setZoneHeatingDesignSupplyAirHumidityRatio(0.008)
+
+        # add fan
+        if fan_type == 'ConstantVolume':
+            fan = create_fan_by_name(model, 'PTAC_CAV_Fan',
+                                     fan_name='{} PTAC Fan'.format(zone_name))
+        elif fan_type == 'Cycling':
+            fan = create_fan_by_name(model, 'PTAC_Cycling_Fan',
+                                     fan_name='{} PTAC Fan'.format(zone_name))
+        else:
+            raise ValueError('ptac_fan_type "{}" is not recognized.'.format(fan_type))
+        fan.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule())
+
+        # add heating coil
+        if heating_type in ('NaturalGas', 'Gas'):
+            htg_coil = create_coil_heating_gas(
+                model, name='{} PTAC Gas Htg Coil'.format(zone_name))
+        elif heating_type in ('Electricity', 'Electric'):
+            htg_coil = create_coil_heating_electric(
+                model, name='{} PTAC Electric Htg Coil'.format(zone_name))
+        elif heating_type is None:
+            htg_coil = create_coil_heating_electric(
+                model, name='{} PTAC No Heat'.format(zone_name),
+                schedule=model.alwaysOffDiscreteSchedule(), nominal_capacity=0)
+        elif heating_type == 'Water':
+            if hot_water_loop is None:
+                raise ValueError('No hot water plant loop supplied for PTAC water coil.')
+            htg_coil = create_coil_heating_water(
+                model, hot_water_loop,
+                name='{} Water Htg Coil'.format(hot_water_loop.nameString()),
+                rated_inlet_water_temperature=hw_temp_c,
+                rated_outlet_water_temperature=hw_temp_c - hw_delta_t_k)
+        else:
+            msg = 'ptac_heating_type of {} is not recognized.'.format(heating_type)
+            raise ValueError(msg)
+
+        # add cooling coil
+        if cooling_type == 'Two Speed DX AC':
+            clg_coil = create_coil_cooling_dx_two_speed(
+                model, name='{} PTAC 2spd DX AC Clg Coil'.format(zone_name))
+        elif cooling_type == 'Single Speed DX AC':
+            clg_coil = create_coil_cooling_dx_single_speed(
+                model, name='{} PTAC 1spd DX AC Clg Coil'.format(zone_name), type='PTAC')
+        else:
+            msg = 'ptac_cooling_type of "{}" is not recognized.'.format(cooling_type)
+            raise ValueError(msg)
+
+        # wrap coils in a PTAC system
+        ptac_system = openstudio_model.ZoneHVACPackagedTerminalAirConditioner(
+            model, model.alwaysOnDiscreteSchedule(), fan, htg_coil, clg_coil)
+        ptac_system.setName('{} PTAC'.format(zone_name))
+        ptac_system.setFanPlacement('DrawThrough')
+        if fan_type == 'ConstantVolume':
+            ptac_system.setSupplyAirFanOperatingModeSchedule(
+                model.alwaysOnDiscreteSchedule())
+        else:
+            ptac_system.setSupplyAirFanOperatingModeSchedule(
+                model.alwaysOffDiscreteSchedule())
+        if not ventilation:
+            ptac_system.setOutdoorAirFlowRateDuringCoolingOperation(0.0)
+            ptac_system.setOutdoorAirFlowRateDuringHeatingOperation(0.0)
+            ptac_system.setOutdoorAirFlowRateWhenNoCoolingorHeatingisNeeded(0.0)
+        ptac_system.addToThermalZone(zone)
+        ptacs.append(ptac_system)
+
+    return ptacs
 
 
-def model_add_pthp():
-    pass
+def model_add_pthp(model, thermal_zones, fan_type='Cycling', ventilation=True):
+    """Creates a PTHP system for each zone and adds it to the model.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones to
+            connect to this system.
+        fan_type: [String] valid choices are ConstantVolume, Cycling.
+        ventilation: [Boolean] If true, ventilation will be supplied through the unit.
+            If False, no ventilation will be supplied through the unit, with the
+            expectation that it will be provided by a DOAS or separate system.
+    """
+    # default design temperatures used across all air loops
+    dsgn_temps = standard_design_sizing_temperatures()
+
+    # adjusted zone design temperatures for pthp
+    dsgn_temps['zn_htg_dsgn_sup_air_temp_f'] = 122.0
+    dsgn_temps['zn_htg_dsgn_sup_air_temp_c'] = \
+        TEMPERATURE.to_unit([dsgn_temps['zn_htg_dsgn_sup_air_temp_f']], 'C', 'F')[0]
+    dsgn_temps['zn_clg_dsgn_sup_air_temp_f'] = 57.0
+    dsgn_temps['zn_clg_dsgn_sup_air_temp_c'] = \
+        TEMPERATURE.to_unit([dsgn_temps['zn_clg_dsgn_sup_air_temp_f']], 'C', 'F')[0]
+
+    # make a PTHP for each zone
+    pthps = []
+    for zone in thermal_zones:
+        zone_name = zone.nameString()
+
+        # zone sizing
+        sizing_zone = zone.sizingZone()
+        sizing_zone.setZoneCoolingDesignSupplyAirTemperature(
+            dsgn_temps['zn_clg_dsgn_sup_air_temp_c'])
+        sizing_zone.setZoneHeatingDesignSupplyAirTemperature(
+            dsgn_temps['zn_htg_dsgn_sup_air_temp_c'])
+        sizing_zone.setZoneCoolingDesignSupplyAirHumidityRatio(0.008)
+        sizing_zone.setZoneHeatingDesignSupplyAirHumidityRatio(0.008)
+
+        # add fan
+        if fan_type == 'ConstantVolume':
+            fan = create_fan_by_name(model, 'PTAC_CAV_Fan',
+                                     fan_name='{} PTHP Fan'.format(zone_name))
+        elif fan_type == 'Cycling':
+            fan = create_fan_by_name(model, 'PTAC_Cycling_Fan',
+                                     fan_name='{} PTHP Fan'.format(zone_name))
+        else:
+            raise ValueError('PTHP fan_type of {} is not recognized.'.format(fan_type))
+        fan.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule())
+
+        # add heating coil
+        htg_coil = create_coil_heating_dx_single_speed(
+            model, name='{} PTHP Htg Coil'.format(zone_name))
+        # add cooling coil
+        clg_coil = create_coil_cooling_dx_single_speed(
+            model, name='{} PTHP Clg Coil'.format(zone_name), type='Heat Pump')
+        # supplemental heating coil
+        supplemental_htg_coil = create_coil_heating_electric(
+            model, name='{} PTHP Supplemental Htg Coil'.format(zone_name))
+        # wrap coils in a PTHP system
+        pthp_system = openstudio_model.ZoneHVACPackagedTerminalHeatPump(
+            model, model.alwaysOnDiscreteSchedule(), fan, htg_coil, clg_coil,
+            supplemental_htg_coil)
+        pthp_system.setName('{} PTHP'.format(zone_name))
+        pthp_system.setFanPlacement('DrawThrough')
+        pthp_system.setSupplyAirFanOperatingModeSchedule(
+            model.alwaysOffDiscreteSchedule())
+        if fan_type == 'ConstantVolume':
+            pthp_system.setSupplyAirFanOperatingModeSchedule(
+                model.alwaysOnDiscreteSchedule())
+        else:
+            pthp_system.setSupplyAirFanOperatingModeSchedule(
+                model.alwaysOffDiscreteSchedule())
+        if not ventilation:
+            pthp_system.setOutdoorAirFlowRateDuringCoolingOperation(0.0)
+            pthp_system.setOutdoorAirFlowRateDuringHeatingOperation(0.0)
+            pthp_system.setOutdoorAirFlowRateWhenNoCoolingorHeatingisNeeded(0.0)
+        pthp_system.addToThermalZone(zone)
+        pthps.append(pthp_system)
+
+    return pthps
 
 
-def model_add_unitheater():
-    pass
+def model_add_unitheater(
+        model, thermal_zones, hvac_op_sch=None, fan_control_type='ConstantVolume',
+        fan_pressure_rise=0.2, heating_type=None, hot_water_loop=None,
+        rated_inlet_water_temperature=180.0, rated_outlet_water_temperature=160.0,
+        rated_inlet_air_temperature=60.0, rated_outlet_air_temperature=104.0):
+    """Creates a unit heater for each zone and adds it to the model.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones to
+            connect to this system.
+        hvac_op_sch: [String] name of the HVAC operation schedule or None in which
+            case will be defaulted to always on.
+        fan_control_type: [String] valid choices are OnOff, ConstantVolume,
+            VariableVolume.
+        fan_pressure_rise: [Double] fan pressure rise, inH2O.
+        heating_type: [String] valid choices are NaturalGas, Gas, Electricity,
+            Electric, DistrictHeating, DistrictHeatingWater, DistrictHeatingSteam.
+        hot_water_loop: [OpenStudio::Model::PlantLoop] hot water loop to connect
+            to the heating coil.
+        rated_inlet_water_temperature: [Double] rated inlet water temperature in
+            degrees Fahrenheit, default is 180F.
+        rated_outlet_water_temperature: [Double] rated outlet water temperature
+            in degrees Fahrenheit, default is 160F.
+        rated_inlet_air_temperature: [Double] rated inlet air temperature in
+            degrees Fahrenheit, default is 60F.
+        rated_outlet_air_temperature: [Double] rated outlet air temperature in
+            degrees Fahrenheit, default is 100F.
+    """
+    # hvac operation schedule
+    hvac_op_sch = model_add_schedule(model, hvac_op_sch)
+
+    # set defaults if nil
+    fan_control_type = 'ConstantVolume' if fan_control_type is None else fan_control_type
+    fan_pressure_rise = 0.2 if fan_pressure_rise is None else fan_pressure_rise
+
+    # default design temperatures used across all air loops
+    dsgn_temps = standard_design_sizing_temperatures()
+
+    # adjusted zone design heating temperature for unit heater
+    dsgn_temps['zn_htg_dsgn_sup_air_temp_f'] = 122.0
+    dsgn_temps['zn_htg_dsgn_sup_air_temp_c'] = \
+        TEMPERATURE.to_unit([dsgn_temps['zn_htg_dsgn_sup_air_temp_f']], 'C', 'F')[0]
+
+    # make a unit heater for each zone
+    unit_heaters = []
+    for zone in thermal_zones:
+        zone_name = zone.nameString()
+        # zone sizing
+        sizing_zone = zone.sizingZone()
+        sizing_zone.setZoneHeatingDesignSupplyAirTemperature(
+            dsgn_temps['zn_htg_dsgn_sup_air_temp_c'])
+
+        # add fan
+        fan = create_fan_by_name(
+            model, 'Unit_Heater_Fan', fan_name='{} UnitHeater Fan'.format(zone_name),
+            pressure_rise=fan_pressure_rise)
+        fan.setAvailabilitySchedule(hvac_op_sch)
+
+        # add heating coil
+        if heating_type == 'NaturalGas' or heating_type == 'Gas':
+            htg_coil = create_coil_heating_gas(
+                model, name='{} UnitHeater Gas Htg Coil'.format(zone_name),
+                schedule=hvac_op_sch)
+        elif heating_type == 'Electricity' or heating_type == 'Electric':
+            htg_coil = create_coil_heating_electric(
+                model, name='{} UnitHeater Electric Htg Coil'.format(zone_name),
+                schedule=hvac_op_sch)
+        elif 'DistrictHeating' in heating_type and hot_water_loop is not None:
+            # control temperature for hot water loop
+            if rated_inlet_water_temperature is None:
+                rated_inlet_water_temperature_c = \
+                    TEMPERATURE.to_unit([180.0], 'C', 'F')[0]
+            else:
+                rated_inlet_water_temperature_c = \
+                    TEMPERATURE.to_unit([rated_inlet_water_temperature], 'C', 'F')[0]
+
+            if rated_outlet_water_temperature is None:
+                rated_outlet_water_temperature_c = \
+                    TEMPERATURE.to_unit([160.0], 'C', 'F')[0]
+            else:
+                rated_outlet_water_temperature_c = \
+                    TEMPERATURE.to_unit([rated_outlet_water_temperature], 'C', 'F')[0]
+
+            if rated_inlet_air_temperature is None:
+                rated_inlet_air_temperature_c = \
+                    TEMPERATURE.to_unit([60.0], 'C', 'F')[0]
+            else:
+                rated_inlet_air_temperature_c = \
+                    TEMPERATURE.to_unit([rated_inlet_air_temperature], 'C', 'F')[0]
+
+            if rated_outlet_air_temperature is None:
+                rated_outlet_air_temperature_c = \
+                    TEMPERATURE.to_unit([104.0], 'C', 'F')[0]
+            else:
+                rated_outlet_air_temperature_c = \
+                    TEMPERATURE.to_unit([rated_outlet_air_temperature], 'C', 'F')[0]
+
+            htg_coil = create_coil_heating_water(
+                model, hot_water_loop,
+                name='{} UnitHeater Water Htg Coil'.format(zone_name),
+                rated_inlet_water_temperature=rated_inlet_water_temperature_c,
+                rated_outlet_water_temperature=rated_outlet_water_temperature_c,
+                rated_inlet_air_temperature=rated_inlet_air_temperature_c,
+                rated_outlet_air_temperature=rated_outlet_air_temperature_c)
+        else:
+            raise ValueError('No heating type was found when adding unit heater; '
+                             'no unit heater will be created.')
+
+        # create unit heater
+        unit_heater = openstudio_model.ZoneHVACUnitHeater(
+            model, hvac_op_sch, fan, htg_coil)
+        unit_heater.setName('{} Unit Heater'.format(zone_name))
+        unit_heater.setFanControlType(fan_control_type)
+        unit_heater.addToThermalZone(zone)
+        unit_heaters.append(unit_heater)
+
+    return unit_heaters
 
 
-def model_add_high_temp_radiant():
-    pass
+def model_add_evap_cooler(model, thermal_zones):
+    """Creates an evaporative cooler for each zone and adds it to the model.
 
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones to
+            connect to this system.
+    """
+    # default design temperatures used across all air loops
+    dsgn_temps = standard_design_sizing_temperatures()
 
-def model_add_evap_cooler():
-    pass
+    # adjusted design temperatures for evap cooler
+    dsgn_temps['clg_dsgn_sup_air_temp_f'] = 70.0
+    dsgn_temps['clg_dsgn_sup_air_temp_c'] = \
+        TEMPERATURE.to_unit([dsgn_temps['clg_dsgn_sup_air_temp_f']], 'C', 'F')[0]
+    dsgn_temps['max_clg_dsgn_sup_air_temp_f'] = 78.0
+    dsgn_temps['max_clg_dsgn_sup_air_temp_c'] = \
+        TEMPERATURE.to_unit([dsgn_temps['max_clg_dsgn_sup_air_temp_f']], 'C', 'F')[0]
+    dsgn_temps['approach_r'] = 3.0  # wetbulb approach temperature
+    dsgn_temps['approach_k'] = TEMP_DELTA.to_unit(['approach_r'], 'dC', 'dF')[0]
+
+    # EMS programs
+    programs = []
+
+    # Make an evap cooler for each zone
+    evap_coolers = []
+    for zone in thermal_zones:
+        zone_name = zone.nameString()
+        zone_name_clean = zone_name.replace(':', '')
+
+        # Air loop
+        air_loop = openstudio_model.AirLoopHVAC(model)
+        air_loop.setName('{} Evaporative Cooler'.format(zone_name_clean))
+        loop_name = air_loop.nameString()
+
+        # default design settings used across all air loops
+        adjust_sizing_system(air_loop, dsgn_temps)
+
+        # air handler controls
+        # setpoint follows OAT WetBulb
+        evap_stpt_manager = \
+            openstudio_model.SetpointManagerFollowOutdoorAirTemperature(model)
+        evap_stpt_manager.setName('{} F above OATwb'.format(dsgn_temps['approach_r']))
+        evap_stpt_manager.setReferenceTemperatureType('OutdoorAirWetBulb')
+        evap_stpt_manager.setMaximumSetpointTemperature(
+            dsgn_temps['max_clg_dsgn_sup_air_temp_c'])
+        evap_stpt_manager.setMinimumSetpointTemperature(
+            dsgn_temps['clg_dsgn_sup_air_temp_c'])
+        evap_stpt_manager.setOffsetTemperatureDifference(dsgn_temps['approach_k'])
+        evap_stpt_manager.addToNode(air_loop.supplyOutletNode())
+
+        # Schedule to control the airloop availability
+        air_loop_avail_sch = openstudio_model.ScheduleConstant(model)
+        air_loop_avail_sch.setName('{} Availability Sch'.format(loop_name))
+        air_loop_avail_sch.setValue(1)
+        air_loop.setAvailabilitySchedule(air_loop_avail_sch)
+
+        # EMS to turn on Evap Cooler if there is a cooling load in the target zone.
+        # Without this EMS, the airloop runs 24/7-365 even when there is no load in the zone.
+
+        # Create a sensor to read the zone load
+        ems_zone_name = ems_friendly_name(zone_name_clean)
+        zn_load_sensor = openstudio_model.EnergyManagementSystemSensor(
+            model, 'Zone Predicted Sensible Load to Cooling Setpoint Heat Transfer Rate')
+        zn_load_sensor.setName('{} Clg Load Sensor'.format(ems_zone_name))
+        zn_load_sensor.setKeyName(str(zone.handle()))
+
+        # Create an actuator to set the airloop availability
+        ems_loop_name = ems_friendly_name(air_loop.name)
+        air_loop_avail_actuator = openstudio_model.EnergyManagementSystemActuator(
+            air_loop_avail_sch, 'Schedule:Constant', 'Schedule Value')
+        air_loop_avail_actuator.setName('{} Availability Actuator'.format(ems_loop_name))
+
+        # Create a program to turn on Evap Cooler if
+        # there is a cooling load in the target zone.
+        # Load < 0.0 is a cooling load.
+        avail_program = openstudio_model.nergyManagementSystemProgram(model)
+        avail_program.setName('{} Availability Control'.format(ems_loop_name))
+        avail_program_body = \
+            'IF {zn_load_sensor_handle} < 0.0\n' \
+            'SET {air_loop_avail_actuator_handle} = 1\n' \
+            'ELSE\n' \
+            'SET {air_loop_avail_actuator_handle} = 0\n' \
+            'ENDIF'.format(
+                zn_load_sensor_handle=zn_load_sensor.handle(),
+                air_loop_avail_actuator_handle=air_loop_avail_actuator.handle()
+            )
+        avail_program.setBody(avail_program_body)
+
+        programs.append(avail_program)
+
+        # Direct Evap Cooler
+        # @todo better assumptions for fan pressure rise
+        evap = openstudio_model.EvaporativeCoolerDirectResearchSpecial(
+            model, model.alwaysOnDiscreteSchedule())
+        evap.setName('{} Evap Media'.format(zone_name))
+        # assume 90% design effectiveness from
+        # https://basc.pnnl.gov/resource-guides/evaporative-cooling-systems#edit-group-description
+        evap.setCoolerDesignEffectiveness(0.90)
+        evap.autosizePrimaryAirDesignFlowRate()
+        evap.autosizeRecirculatingWaterPumpPowerConsumption()
+        # use suggested E+ default values of 90.0 W-s/m^3 for pump sizing factor
+        # and 3.0 for blowdown concentration
+        evap.setWaterPumpPowerSizingFactor(90.0)
+        evap.setBlowdownConcentrationRatio(3.0)
+        evap.addToNode(air_loop.supplyInletNode())
+
+        # Fan (cycling), must be inside unitary system to cycle on airloop
+        fan = create_fan_by_name(
+            model, 'Evap_Cooler_Supply_Fan',
+            fan_name='{} Evap Cooler Supply Fan'.format(zone_name))
+        fan.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule())
+
+        # Dummy zero-capacity cooling coil
+        clg_coil = create_coil_cooling_dx_single_speed(
+            model, name='Dummy Always Off DX Coil',
+            schedule=model.alwaysOffDiscreteSchedule())
+        unitary_system = openstudio_model.AirLoopHVACUnitarySystem(model)
+        unitary_system.setName('{} Evap Cooler Cycling Fan'.format(zone_name))
+        unitary_system.setSupplyFan(fan)
+        unitary_system.setCoolingCoil(clg_coil)
+        unitary_system.setControllingZoneorThermostatLocation(zone)
+        unitary_system.setMaximumSupplyAirTemperature(
+            dsgn_temps['zn_htg_dsgn_sup_air_temp_c'])
+        unitary_system.setFanPlacement('BlowThrough')
+        if model.version() < openstudio.VersionString('3.7.0'):
+            unitary_system.setSupplyAirFlowRateMethodDuringCoolingOperation(
+                'SupplyAirFlowRate')
+            unitary_system.setSupplyAirFlowRateMethodDuringHeatingOperation(
+                'SupplyAirFlowRate')
+            unitary_system.setSupplyAirFlowRateMethodWhenNoCoolingorHeatingisRequired(
+                'SupplyAirFlowRate')
+        else:
+            unitary_system.autosizeSupplyAirFlowRateDuringCoolingOperation()
+            unitary_system.autosizeSupplyAirFlowRateDuringHeatingOperation()
+            unitary_system.autosizeSupplyAirFlowRateWhenNoCoolingorHeatingisRequired()
+        unitary_system.setSupplyAirFanOperatingModeSchedule(
+            model.alwaysOffDiscreteSchedule())
+        unitary_system.addToNode(air_loop.supplyInletNode())
+
+        # Outdoor air intake system
+        oa_intake_controller = openstudio_model.ControllerOutdoorAir(model)
+        oa_intake_controller.setName('{} OA Controller'.format(loop_name))
+        oa_intake_controller.setMinimumLimitType('FixedMinimum')
+        oa_intake_controller.autosizeMinimumOutdoorAirFlowRate()
+        oa_intake_controller.resetEconomizerMinimumLimitDryBulbTemperature()
+        oa_intake_controller.setMinimumFractionofOutdoorAirSchedule(
+            model.alwaysOnDiscreteSchedule())
+        controller_mv = oa_intake_controller.controllerMechanicalVentilation()
+        controller_mv.setName('{} Vent Controller'.format(loop_name))
+        controller_mv.setSystemOutdoorAirMethod('ZoneSum')
+
+        oa_intake = openstudio_model.AirLoopHVACOutdoorAirSystem(
+            model, oa_intake_controller)
+        oa_intake.setName('{} OA System'.format(loop_name))
+        oa_intake.addToNode(air_loop.supplyInletNode())
+
+        # make an air terminal for the zone
+        air_terminal = openstudio_model.AirTerminalSingleDuctUncontrolled(
+            model, model.alwaysOnDiscreteSchedule())
+        air_terminal.setName('{} Air Terminal'.format(zone_name))
+
+        # attach new terminal to the zone and to the airloop
+        air_loop.multiAddBranchForZone(zone, air_terminal.to_HVACComponent().get())
+
+        sizing_zone = zone.sizingZone()
+        sizing_zone.setCoolingDesignAirFlowMethod('DesignDay')
+        sizing_zone.setZoneCoolingDesignSupplyAirTemperature(
+            dsgn_temps['zn_clg_dsgn_sup_air_temp_c'])
+
+        evap_coolers.append(air_loop)
+
+    # Create a programcallingmanager
+    avail_pcm = openstudio_model.EnergyManagementSystemProgramCallingManager(model)
+    avail_pcm.setName('EvapCoolerAvailabilityProgramCallingManager')
+    avail_pcm.setCallingPoint('AfterPredictorAfterHVACManagers')
+    for program in programs:
+        avail_pcm.addProgram(program)
+
+    return evap_coolers
 
 
 def model_add_baseboard(
@@ -2715,7 +3303,16 @@ def model_add_baseboard(
 
 
 def model_add_vrf(model, thermal_zones, ventilation=False):
+    """Adds Variable Refrigerant Flow system and terminal units for each zone
 
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones
+            to add fan coil units.
+        ventilation: [Boolean] If True, ventilation will be supplied through the unit.
+            If False, no ventilation will be supplied through the unit, with the
+            expectation that it will be provided by a DOAS or separate system.
+    """
     # create vrf outdoor unit
     master_zone = thermal_zones[0]
     vrf_outdoor_unit = create_air_conditioner_variable_refrigerant_flow(
@@ -2804,8 +3401,8 @@ def model_add_four_pipe_fan_coil(
             fcu_clg_coil = create_coil_cooling_water(
                 model, chilled_water_loop, name='{} FCU Cooling Coil'.format(zone_name))
         else:
-            print('Fan coil units require a chilled water loop, but none was provided.')
-            return False
+            raise ValueError('Fan coil units require a chilled water loop, '
+                             'but none was provided.')
 
         if hot_water_loop:
             fcu_htg_coil = create_coil_heating_water(
@@ -2841,16 +3438,252 @@ def model_add_four_pipe_fan_coil(
     return fcus
 
 
+def model_add_high_temp_radiant(
+        model, thermal_zones, heating_type='NaturalGas',
+        combustion_efficiency=0.8, control_type='MeanAirTemperature'):
+    """Creates a high temp radiant heater for each zone and adds it to the model.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones to
+            connect to this system.
+        heating_type: [String] valid choices are Gas, Electric.
+        combustion_efficiency: [Double] combustion efficiency as decimal.
+        control_type: [String] control type.
+    """
+    heating_type == 'NaturalGas' if heating_type is None else heating_type
+    # make a high temp radiant heater for each zone
+    radiant_heaters = []
+    for zone in thermal_zones:
+        zone_name = zone.nameString()
+        high_temp_radiant = openstudio_model.ZoneHVACHighTemperatureRadiant(model)
+        high_temp_radiant.setName('{} High Temp Radiant'.format(zone_name))
+
+        if heating_type == 'NaturalGas' or heating_type == 'Gas':
+            high_temp_radiant.setFuelType('NaturalGas')
+        else:
+            high_temp_radiant.setFuelType(heating_type)
+
+        if combustion_efficiency is None:
+            if heating_type == 'NaturalGas' or heating_type == 'Gas':
+                high_temp_radiant.setCombustionEfficiency(0.8)
+            elif heating_type == 'Electric':
+                high_temp_radiant.setCombustionEfficiency(1.0)
+        else:
+            high_temp_radiant.setCombustionEfficiency(combustion_efficiency)
+
+        # set heating setpoint schedule
+        htg_sch = None
+        tstat = zone.thermostatSetpointDualSetpoint()
+        if tstat.is_initialized():
+            tstat = tstat.get()
+            if tstat.heatingSetpointTemperatureSchedule().is_initialized():
+                htg_sch = tstat.heatingSetpointTemperatureSchedule().get()
+        if htg_sch is None:
+            msg = 'For {}: Cannot find a heating setpoint schedule for this zone, ' \
+                'cannot apply high temp radiant system.'.format(zone_name)
+            raise ValueError(msg)
+
+        # set defaults
+        high_temp_radiant.setHeatingSetpointTemperatureSchedule(htg_sch)
+        high_temp_radiant.setTemperatureControlType(control_type)
+        high_temp_radiant.setFractionofInputConvertedtoRadiantEnergy(0.8)
+        high_temp_radiant.setHeatingThrottlingRange(2)
+        high_temp_radiant.addToThermalZone(zone)
+        radiant_heaters.append(high_temp_radiant)
+
+    return radiant_heaters
+
+
 def model_add_low_temp_radiant():
     pass
 
 
-def model_add_window_ac():
-    pass
+def model_add_window_ac(model, thermal_zones):
+    """Adds a window air conditioner to each zone. Code adapted from.
+
+    https://github.com/NREL/OpenStudio-BEopt/blob/master/measures/
+    ResidentialHVACRoomAirConditioner/measure.rb
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones
+            to add window AC units to.
+    """
+    # Defaults
+    eer = 8.5  # Btu/W-h
+    cop = POWER.to_unit([eer], 'W', 'Btu/h')[0]
+    # ratio of the sensible portion of the load to the total load:
+    shr = 0.65  # sensible heat ratio at the nominal rated capacity
+
+    acs = []
+    for zone in thermal_zones:
+        zone_name = zone.nameString()
+        clg_coil = create_coil_cooling_dx_single_speed(
+            model, name='{} Window AC Cooling Coil'.format(zone_name),
+            type='Window AC', cop=cop)
+        clg_coil.setRatedSensibleHeatRatio(shr)
+        clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate(773.3)
+        clg_coil.setEvaporativeCondenserEffectiveness(0.9)
+        clg_coil.setMaximumOutdoorDryBulbTemperatureForCrankcaseHeaterOperation(10)
+        clg_coil.setBasinHeaterSetpointTemperature(2)
+
+        fan = create_fan_by_name(
+            model, 'Window_AC_Supply_Fan',
+            fan_name='{} Window AC Supply Fan'.format(zone_name),
+            end_use_subcategory='Window AC Fans')
+        fan.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule())
+
+        htg_coil = create_coil_heating_electric(
+            model, name='{} Window AC Always Off Htg Coil'.format(zone_name),
+            schedule=model.alwaysOffDiscreteSchedule(), nominal_capacity=0)
+        ptac = openstudio_model.ZoneHVACPackagedTerminalAirConditioner(
+            model, model.alwaysOnDiscreteSchedule(), fan, htg_coil, clg_coil)
+        ptac.setName('{} Window AC'.format(zone_name))
+        ptac.setSupplyAirFanOperatingModeSchedule(model.alwaysOffDiscreteSchedule())
+        ptac.addToThermalZone(zone)
+        acs.append(ptac)
+
+    return acs
 
 
-def model_add_furnace_central_ac():
-    pass
+def model_add_furnace_central_ac(
+        model, thermal_zones, heating=True, cooling=False, ventilation=False):
+    """Adds a forced air furnace or central AC to each zone.
+
+    Default is a forced air furnace without outdoor air. Code adapted from.
+
+    https://github.com/NREL/OpenStudio-BEopt/blob/master/measures/
+    ResidentialHVACFurnaceFuel/measure.rb
+
+    Args:
+        model [OpenStudio::Model::Model] OpenStudio model object
+        thermal_zones [Array<OpenStudio::Model::ThermalZone>] array of zones to add fan coil units to.
+        heating [Boolean] if true, the unit will include a NaturalGas heating coil
+        cooling [Boolean] if true, the unit will include a DX cooling coil
+        ventilation [Boolean] if true, the unit will include an OA intake
+    """
+
+    if heating and cooling:
+        equip_name = 'Central Heating and AC'
+    elif heating and not cooling:
+        equip_name = 'Furnace'
+    elif cooling and not heating:
+        equip_name = 'Central AC'
+    else:
+        msg = 'Heating and cooling both disabled, not a valid Furnace or ' \
+            'Central AC selection, no equipment was added.'
+        print(msg)
+        return None
+
+    # defaults
+    afue = 0.78
+    # seer = 13.0
+    eer = 11.1
+    shr = 0.73
+    ac_w_per_cfm = 0.365
+    crank_case_heat_w = 0.0
+    crank_case_max_temp_f = 55.0
+
+    furnaces = []
+    for zone in thermal_zones:
+        zone_name = zone.nameString()
+        air_loop = openstudio_model.AirLoopHVAC(model)
+        air_loop.setName('{} {}'.format(zone_name, equip_name))
+        loop_name = air_loop.nameString()
+
+        # default design temperatures across all air loops
+        dsgn_temps = standard_design_sizing_temperatures()
+
+        # adjusted temperatures for furnace_central_ac
+        dsgn_temps['zn_htg_dsgn_sup_air_temp_f'] = 122.0
+        dsgn_temps['zn_htg_dsgn_sup_air_temp_c'] = \
+            TEMPERATURE.to_unit([dsgn_temps['zn_htg_dsgn_sup_air_temp_f']], 'C', 'F')[0]
+        dsgn_temps['htg_dsgn_sup_air_temp_f'] = dsgn_temps['zn_htg_dsgn_sup_air_temp_f']
+        dsgn_temps['htg_dsgn_sup_air_temp_c'] = dsgn_temps['zn_htg_dsgn_sup_air_temp_c']
+
+        # default design settings used across all air loops
+        sizing_system = adjust_sizing_system(
+            air_loop, dsgn_temps, sizing_option='NonCoincident')
+        sizing_system.setAllOutdoorAirinCooling(True)
+        sizing_system.setAllOutdoorAirinHeating(True)
+
+        # create heating coil
+        htg_coil = None
+        if heating:
+            htg_coil = create_coil_heating_gas(
+                model, name='{} Heating Coil'.format(loop_name), efficiency=afue)
+
+        # create cooling coil
+        clg_coil = None
+        if cooling:
+            clg_coil = create_coil_cooling_dx_single_speed(
+                model, name='{} Cooling Coil'.format(loop_name),
+                type='Residential Central AC')
+            clg_coil.setRatedSensibleHeatRatio(shr)
+            clg_coil.setRatedCOP(eer_to_cop_no_fan(eer))
+            clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate(
+                ac_w_per_cfm / FLOW_RATE.to_unit([1.0], 'm3/s', 'cfm')[0])
+            clg_coil.setNominalTimeForCondensateRemovalToBegin(1000.0)
+            clg_coil.setRatioOfInitialMoistureEvaporationRateAndSteadyStateLatentCapacity(1.5)
+            clg_coil.setMaximumCyclingRate(3.0)
+            clg_coil.setLatentCapacityTimeConstant(45.0)
+            clg_coil.setCondenserType('AirCooled')
+            clg_coil.setCrankcaseHeaterCapacity(crank_case_heat_w)
+            clg_coil.setMaximumOutdoorDryBulbTemperatureForCrankcaseHeaterOperation(
+                TEMPERATURE.to_unit([crank_case_max_temp_f], 'C', 'F')[0])
+
+        # create fan
+        fan = create_fan_by_name(
+            model, 'Residential_HVAC_Fan', fan_name='{} Supply Fan'.format(loop_name),
+            end_use_subcategory='Residential HVAC Fans')
+        fan.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule)
+
+        if ventilation:
+            # create outdoor air intake
+            oa_intake_controller = openstudio_model.ControllerOutdoorAir(model)
+            oa_intake_controller.setName('{} OA Controller'.format(loop_name))
+            oa_intake_controller.autosizeMinimumOutdoorAirFlowRate()
+            oa_intake_controller.resetEconomizerMinimumLimitDryBulbTemperature()
+            oa_intake = openstudio_model.AirLoopHVACOutdoorAirSystem(
+                model, oa_intake_controller)
+            oa_intake.setName('{} OA System'.format(loop_name))
+            oa_intake.addToNode(air_loop.supplyInletNode())
+
+        # create unitary system (holds the coils and fan)
+        unitary = openstudio_model.AirLoopHVACUnitarySystem(model)
+        unitary.setName('{} Unitary System'.format(loop_name))
+        unitary.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule())
+        unitary.setMaximumSupplyAirTemperature(dsgn_temps['zn_htg_dsgn_sup_air_temp_c'])
+        unitary.setControllingZoneorThermostatLocation(zone)
+        unitary.addToNode(air_loop.supplyInletNode())
+
+        # set flow rates during different conditions
+        if not heating:
+            unitary.setSupplyAirFlowRateDuringHeatingOperation(0.0)
+        if not cooling:
+            unitary.setSupplyAirFlowRateDuringCoolingOperation(0.0)
+        if not ventilation:
+            unitary.setSupplyAirFlowRateWhenNoCoolingorHeatingisRequired(0.0)
+
+        # attach the coils and fan
+        if htg_coil is not None:
+            unitary.setHeatingCoil(htg_coil)
+        if clg_coil is not None:
+            unitary.setCoolingCoil(clg_coil)
+        unitary.setSupplyFan(fan)
+        unitary.setFanPlacement('BlowThrough')
+        unitary.setSupplyAirFanOperatingModeSchedule(model.alwaysOffDiscreteSchedule())
+
+        # create a diffuser
+        diffuser = openstudio_model.AirTerminalSingleDuctUncontrolled(
+            model, model.alwaysOnDiscreteSchedule())
+        diffuser.setName('{} Direct Air'.format(zone_name))
+        air_loop.multiAddBranchForZone(zone, diffuser.to_HVACComponent().get())
+
+        furnaces.append(air_loop)
+
+    return furnaces
 
 
 def model_add_central_air_source_heat_pump():
@@ -3102,8 +3935,7 @@ def model_get_or_add_hot_water_loop(
         hot_water_loop_type: [String] Archetype for hot water loops.
     """
     if heat_fuel is None:
-        print('Hot water loop fuel type is nil. Cannot add hot water loop.')
-        return None
+        raise ValueError('Hot water loop fuel type is None. Cannot add hot water loop.')
 
     make_new_hot_water_loop = True
     hot_water_loop = None
@@ -3130,8 +3962,8 @@ def model_get_or_add_hot_water_loop(
                 model, heat_fuel, dsgn_sup_wtr_temp=120.0,
                 boiler_draft_type='Condensing')
         else:
-            print('Hot water loop archetype {} not recognized.'.format(hot_water_loop_type))
-            return None
+            msg = 'Hot water loop archetype {} not recognized.'.format(hot_water_loop_type)
+            raise ValueError(msg)
     return hot_water_loop
 
 
@@ -3375,9 +4207,7 @@ def model_add_hvac_system(
         elif main_heat_fuel == 'Electricity':
             hot_water_loop = None
         else:
-            print('Baseboards must have heating_type specified.')
-            return False
-
+            raise ValueError('Baseboards must have heating_type specified.')
         model_add_baseboard(model, zones, hot_water_loop=hot_water_loop)
 
     elif system_type == 'Unit Heaters':
@@ -3448,8 +4278,7 @@ def model_add_hvac_system(
                 msg = 'zone_heat_fuel "{}" is not supported with main_heat_fuel "{}" ' \
                     'for a "VAV Reheat" system type.'.format(
                        zone_heat_fuel, main_heat_fuel)
-                print(msg)
-                return False
+                raise ValueError(msg)
         else:
             reheat_type = 'Water'
 
@@ -3578,7 +4407,7 @@ def model_add_hvac_system(
                 msg = 'air_loop_heating_type "{}" is not supported with main_heat_fuel ' \
                     '"{}" for a "DOAS" system type.'.format(
                         air_loop_heating_type, main_heat_fuel)
-                return False
+                raise ValueError(msg)
             else:
                 hot_water_loop = model_get_or_add_hot_water_loop(
                     model, main_heat_fuel, hot_water_loop_type=hot_water_loop_type)
@@ -3729,5 +4558,4 @@ def model_add_hvac_system(
                 zone_equipment_ventilation=False,
                 fan_coil_capacity_control_method=fan_coil_capacity_control_method)
         else:
-            print('HVAC system type "{}" not recognized'.format(system_type))
-            return False
+            raise ValueError('HVAC system type "{}" not recognized'.format(system_type))

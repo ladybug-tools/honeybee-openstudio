@@ -39,7 +39,7 @@ def pump_variable_speed_set_control_type(pump_variable_speed, control_type):
         msg = 'Pump control type {} not recognized, pump coefficients will not ' \
             'be changed.'.format(control_type)
         print(msg)
-        return False
+        return None
 
     # Set the coefficients
     pump_variable_speed.setCoefficient1ofthePartLoadPerformanceCurve(coeff_a)
