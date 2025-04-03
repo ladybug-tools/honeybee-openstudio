@@ -23,9 +23,6 @@ def thermal_zone_get_outdoor_airflow_rate(thermal_zone):
     """
     tot_oa_flow_rate = 0.0
     spaces = thermal_zone.spaces()
-    sum_floor_area = 0.0
-    sum_number_of_people = 0.0
-    sum_volume = 0.0
 
     # Variables for merging outdoor air
     sum_oa_for_people = 0.0
@@ -36,13 +33,8 @@ def thermal_zone_get_outdoor_airflow_rate(thermal_zone):
     # Find common variables for the new space
     for space in spaces:
         floor_area = space.floorArea() if sys.version_info >= (3, 0) else space.floorArea
-        sum_floor_area += floor_area
-
         number_of_people = space.numberOfPeople()
-        sum_number_of_people += number_of_people
-
         volume = space.volume() if sys.version_info >= (3, 0) else space.floorArea
-        sum_volume += volume
 
         dsn_oa = space.designSpecificationOutdoorAir()
         if not dsn_oa.is_initialized():
@@ -71,3 +63,25 @@ def thermal_zone_get_outdoor_airflow_rate(thermal_zone):
     tot_oa_flow_rate += sum_oa_for_volume
 
     return tot_oa_flow_rate
+
+
+def thermal_zone_get_outdoor_airflow_rate_per_area(thermal_zone):
+    """Calculates the zone outdoor airflow requirement and divides by the zone area.
+
+    Args:
+        thermal_zone: [OpenStudio::Model::ThermalZone] OpenStudio ThermalZone object.
+
+    Returns:
+        [Double] the zone outdoor air flow rate in cubic meters per second
+        per floor area(m3/s/m2).
+    """
+    # Find total area of the zone
+    sum_floor_area = 0.0
+    for space in thermal_zone.spaces():
+        floor_area = space.floorArea() if sys.version_info >= (3, 0) else space.floorArea
+        sum_floor_area += floor_area
+    # Get the OA flow rate
+    tot_oa_flow_rate = thermal_zone_get_outdoor_airflow_rate(thermal_zone)
+    # Calculate the per-area value
+    tot_oa_flow_rate_per_area = tot_oa_flow_rate / sum_floor_area
+    return tot_oa_flow_rate_per_area
