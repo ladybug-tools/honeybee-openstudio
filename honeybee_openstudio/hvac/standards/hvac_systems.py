@@ -11,10 +11,11 @@ from ladybug.datatype.temperaturedelta import TemperatureDelta
 from ladybug.datatype.pressure import Pressure
 from ladybug.datatype.volumeflowrate import VolumeFlowRate
 from ladybug.datatype.power import Power
+from ladybug.datatype.distance import Distance
 
 from honeybee_openstudio.openstudio import openstudio, openstudio_model, os_vector_len
 from .utilities import kw_per_ton_to_cop, eer_to_cop_no_fan, hspf_to_cop_no_fan, \
-    ems_friendly_name
+    ems_friendly_name, rename_plant_loop_nodes
 from .schedule import create_constant_schedule_ruleset, model_add_schedule
 from .thermal_zone import thermal_zone_get_outdoor_airflow_rate, \
     thermal_zone_get_outdoor_airflow_rate_per_area
@@ -35,12 +36,15 @@ from .heat_recovery import create_hx_air_to_air_sensible_and_latent
 from .sizing_system import adjust_sizing_system
 from .air_conditioner_variable_refrigerant_flow import \
     create_air_conditioner_variable_refrigerant_flow
+from .radiant_system_controls import model_add_radiant_proportional_controls, \
+    model_add_radiant_basic_controls
 
 TEMPERATURE = Temperature()
 TEMP_DELTA = TemperatureDelta()
 PRESSURE = Pressure()
 FLOW_RATE = VolumeFlowRate()
 POWER = Power()
+DISTANCE = Distance()
 
 
 def standard_design_sizing_temperatures():
@@ -3515,8 +3519,636 @@ def model_add_high_temp_radiant(
     return radiant_heaters
 
 
-def model_add_low_temp_radiant():
-    pass
+def model_add_low_temp_radiant(
+        model, thermal_zones, hot_water_loop, chilled_water_loop,
+        plant_supply_water_temperature_control=False,
+        plant_supply_water_temperature_control_strategy='outdoor_air',
+        hwsp_at_oat_low=120.0, hw_oat_low=55.0, hwsp_at_oat_high=80.0, hw_oat_high=70.0,
+        chwsp_at_oat_low=70.0, chw_oat_low=65.0, chwsp_at_oat_high=55.0, chw_oat_high=75.0,
+        radiant_type='floor', radiant_temperature_control_type='SurfaceFaceTemperature',
+        radiant_setpoint_control_type='ZeroFlowPower',
+        include_carpet=True, carpet_thickness_in=0.25,
+        control_strategy='proportional_control',
+        use_zone_occupancy_for_control=True, occupied_percentage_threshold=0.10,
+        model_occ_hr_start=6.0, model_occ_hr_end=18.0,
+        proportional_gain=0.3, switch_over_time=24.0,
+        slab_sp_at_oat_low=73, slab_oat_low=65,
+        slab_sp_at_oat_high=68, slab_oat_high=80,
+        radiant_availability_type='precool', radiant_lockout=False,
+        radiant_lockout_start_time=12.0, radiant_lockout_end_time=20.0):
+    """Adds low temperature radiant loop systems to each zone.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones to
+            add radiant loops.
+        hot_water_loop: [OpenStudio::Model::PlantLoop] the hot water loop that
+            serves the radiant loop.
+        chilled_water_loop: [OpenStudio::Model::PlantLoop] the chilled water loop
+            that serves the radiant loop.
+        plant_supply_water_temperature_control: [Bool] Set to True if the plant
+            supply water temperature is to be controlled else it is held constant,
+            default to false.
+        plant_supply_water_temperature_control_strategy: [String] Method to determine
+            how to control the plant's supply water temperature. Options include.
+            outdoor_air - Set the supply water temperature based on the outdoor
+                air temperature.
+            zone_demand - Set the supply water temperature based on the preponderance
+                of zone demand.
+        hwsp_at_oat_low: [Double] hot water plant supply water temperature setpoint,
+            in F, at the outdoor low temperature.
+        hw_oat_low: [Double] hot water plant supply water temperature setpoint,
+            in F, at the outdoor high temperature.
+        hw_oat_high: [Double] outdoor drybulb air temperature, in F, for high
+            setpoint for hot water plant.
+        chwsp_at_oat_low: [Double] chilled water plant supply water temperature
+            setpoint, in F, at the outdoor low temperature.
+        chw_oat_low: [Double] outdoor drybulb air  temperature, in F, for low
+            setpoint for chilled water plant.
+        chwsp_at_oat_high: [Double] chilled water plant supply water temperature
+            setpoint, in F, at the outdoor high temperature.
+        chw_oat_high: [Double] outdoor drybulb air temperature, in F, for high
+            setpoint for chilled water plant.
+        radiant_type: [String] type of radiant system to create in zone. Valid options
+            incllude the following.
+
+            * floor
+            * ceiling
+            * ceilingmetalpanel
+            * floorwithhardwood
+
+        radiant_temperature_control_type: [String] determines the controlled
+            temperature for the radiant system options include the following.
+
+            * MeanAirTemperature
+            * MeanRadiantTemperature
+            * OperativeTemperature
+            * OutdoorDryBulbTemperature
+            * OutdoorWetBulbTemperature
+            * SurfaceFaceTemperature
+            * SurfaceInteriorTemperature
+
+        radiant_setpoint_control_type: [String] determines the response of the
+            radiant system at setpoint temperature options include the following.
+
+            * ZeroFlowPower
+            * HalfFlowPower
+
+        include_carpet: [Boolean] boolean to include thin carpet tile over
+            radiant slab, default to true.
+        carpet_thickness_in: [Double] thickness of carpet in inches.
+        control_strategy: [String] name of control strategy. Options include
+            the following.
+
+            * proportional_control
+            * oa_based_control
+            * constant_control
+            * none
+
+            If control strategy is proportional_control, the method will apply
+            the CBE radiant control sequences detailed in Raftery et al. (2017)
+            'A new control strategy for high thermal mass radiant systems'.
+            If control strategy is oa_based_control, the method will apply native
+            EnergyPlus objects/parameters to vary slab setpoint based on outdoor weather.
+            If control strategy is constant_control, the method will apply native
+            EnergyPlus objects/parameters to maintain a constant slab setpoint.
+            Otherwise no control strategy will be applied and the radiant system
+            will assume the EnergyPlus default controls.
+        use_zone_occupancy_for_control: [Boolean] Set to true if radiant system is
+            to use specific zone occupancy objects for CBE control strategy. If False,
+            then it will use values in model_occ_hr_start and model_occ_hr_end
+            for all radiant zones. default to True.
+        occupied_percentage_threshold: [Double] the minimum fraction (0 to 1) that
+            counts as occupied if this parameter is set, the returned ScheduleRuleset
+            will be 0 = unoccupied, 1 = occupied. Otherwise the ScheduleRuleset
+            will be the weighted fractional occupancy schedule. Only used if
+            use_zone_occupancy_for_control is set to true.
+        model_occ_hr_start: [Double] (Optional) Only applies if control_strategy
+            is proportional_control. Starting hour of building occupancy.
+        model_occ_hr_end: [Double] (Optional) Only applies if control_strategy
+            is proportional_control. Ending hour of building occupancy.
+        proportional_gain: [Double] (Optional) Only applies if control_strategy
+            is proportional_control. Proportional gain constant (recommended 0.3 or less).
+        switch_over_time: [Double] Time limitation for when the system can switch
+            between heating and cooling
+        slab_sp_at_oat_low: [Double] radiant slab temperature setpoint, in F,
+            at the outdoor high temperature.
+        slab_oat_low: [Double] outdoor drybulb air temperature, in F, for low
+            radiant slab setpoint.
+        slab_sp_at_oat_high: [Double] radiant slab temperature setpoint, in F,
+            at the outdoor low temperature.
+        slab_oat_high: [Double] outdoor drybulb air temperature, in F, for high
+            radiant slab setpoint.
+        radiant_availability_type: [String] a preset that determines the availability
+            of the radiant system. Options include the following.
+
+            * all_day - radiant system is available 24 hours a day
+            * precool - primarily operates radiant system during night-time hours
+            * afternoon_shutoff - avoids operation during peak grid demand
+            * occupancy - operates radiant system during building occupancy hours
+
+        radiant_lockout: [Boolean] True if system contains a radiant lockout.
+            If true, it will overwrite radiant_availability_type.
+        radiant_lockout_start_time: [double] decimal hour of when radiant lockout starts.
+            Only used if radiant_lockout is True.
+        radiant_lockout_end_time: [double] decimal hour of when radiant lockout ends.
+            Only used if radiant_lockout is True.
+    """
+    # determine construction insulation thickness by climate zone
+    climate_zone_obj = model.getClimateZones.getClimateZone('ASHRAE', 2006)
+    if not climate_zone_obj.is_initialized():
+        climate_zone_obj = model.getClimateZones.getClimateZone('ASHRAE', 2013)
+    if not climate_zone_obj.is_initialized() or climate_zone_obj.value() == '':
+        climate_zone = None
+    else:
+        climate_zone = climate_zone_obj.value()
+
+    if climate_zone is None:
+        msg = 'Unable to determine climate zone for radiant slab insulation ' \
+            'determination. Defaulting to climate zone 5, R-20 insulation, 110F ' \
+            'heating design supply water temperature.'
+        print(msg)
+        cz_mult = 4
+        radiant_htg_dsgn_sup_wtr_temp_f = 110
+    else:
+        if climate_zone in ('0', '1'):
+            cz_mult = 2
+            radiant_htg_dsgn_sup_wtr_temp_f = 90
+        elif climate_zone in ('2', '2A', '2B'):
+            cz_mult = 2
+            radiant_htg_dsgn_sup_wtr_temp_f = 100
+        elif climate_zone in ('3', '3A', '3B', '3C'):
+            cz_mult = 3
+            radiant_htg_dsgn_sup_wtr_temp_f = 100
+        elif climate_zone in ('4', '4A', '4B', '4C'):
+            cz_mult = 4
+            radiant_htg_dsgn_sup_wtr_temp_f = 100
+        elif climate_zone in ('5', '5A', '5B', '5C'):
+            cz_mult = 4
+            radiant_htg_dsgn_sup_wtr_temp_f = 110
+        elif climate_zone in ('6', '6A', '6B'):
+            cz_mult = 4
+            radiant_htg_dsgn_sup_wtr_temp_f = 120
+        elif climate_zone in ('7', '8'):
+            cz_mult = 5
+            radiant_htg_dsgn_sup_wtr_temp_f = 120
+        else:  # default to 4
+            cz_mult = 4
+            radiant_htg_dsgn_sup_wtr_temp_f = 100
+
+    # create materials
+    mat_concrete_3_5in = openstudio_model.StandardOpaqueMaterial(
+        model, 'MediumRough', 0.0889, 2.31, 2322, 832)
+    mat_concrete_3_5in.setName('Radiant Slab Concrete - 3.5 in.')
+
+    mat_concrete_1_5in = openstudio_model.StandardOpaqueMaterial(
+        model, 'MediumRough', 0.0381, 2.31, 2322, 832)
+    mat_concrete_1_5in.setName('Radiant Slab Concrete - 1.5 in')
+
+    metal_mat = None
+    air_gap_mat = None
+    wood_mat = None
+    wood_floor_insulation = None
+    gypsum_ceiling_mat = None
+    if radiant_type == 'ceilingmetalpanel':
+        metal_mat = openstudio_model.StandardOpaqueMaterial(
+            model, 'MediumSmooth', 0.003175, 30, 7680, 418)
+        metal_mat.setName('Radiant Metal Layer - 0.125 in')
+        air_gap_mat = openstudio_model.MasslessOpaqueMaterial(model, 'Smooth', 0.004572)
+        air_gap_mat.setName('Generic Ceiling Air Gap - R 0.025')
+    elif radiant_type == 'floorwithhardwood':
+        wood_mat = openstudio_model.StandardOpaqueMaterial(
+            model, 'MediumSmooth', 0.01905, 0.15, 608, 1629)
+        wood_mat.setName('Radiant Hardwood Flooring - 0.75 in')
+        wood_floor_insulation = openstudio_model.StandardOpaqueMaterial(
+            model, 'Rough', 0.0508, 0.02, 56.06, 1210)
+        wood_floor_insulation.setName('Radiant Subfloor Insulation - 4.0 in')
+        gypsum_ceiling_mat = openstudio_model.StandardOpaqueMaterial(
+            model, 'Smooth', 0.0127, 0.16, 800, 1089)
+        gypsum_ceiling_mat.setName('Gypsum Ceiling for Radiant Hardwood Flooring - 0.5 in')
+
+    mat_refl_roof_membrane = model.getStandardOpaqueMaterialByName(
+        'Roof Membrane - Highly Reflective')
+    if mat_refl_roof_membrane.is_initialized():
+        mat_refl_roof_membrane = mat_refl_roof_membrane.get()
+    else:
+        mat_refl_roof_membrane = openstudio_model.StandardOpaqueMaterial(
+            model, 'VeryRough', 0.0095, 0.16, 1121.29, 1460)
+        mat_refl_roof_membrane.setThermalAbsorptance(0.75)
+        mat_refl_roof_membrane.setSolarAbsorptance(0.45)
+        mat_refl_roof_membrane.setVisibleAbsorptance(0.7)
+        mat_refl_roof_membrane.setName('Roof Membrane - Highly Reflective')
+
+    if include_carpet:
+        carpet_thickness_m = TEMPERATURE.to_unit([carpet_thickness_in / 12.0], 'm', 'ft')[0]
+        conductivity_si = 0.06
+        mat_thin_carpet_tile = openstudio_model.StandardOpaqueMaterial(
+            model, 'MediumRough', carpet_thickness_m, conductivity_si, 288, 1380)
+        mat_thin_carpet_tile.setThermalAbsorptance(0.9)
+        mat_thin_carpet_tile.setSolarAbsorptance(0.7)
+        mat_thin_carpet_tile.setVisibleAbsorptance(0.8)
+        mat_thin_carpet_tile.setName('Radiant Slab Thin Carpet Tile')
+
+    # set exterior slab insulation thickness based on climate zone
+    slab_insulation_thickness_m = 0.0254 * cz_mult
+    mat_slab_insulation = openstudio_model.StandardOpaqueMaterial(
+        model, 'Rough', slab_insulation_thickness_m, 0.02, 56.06, 1210)
+    slab_in_name = 'Radiant Ground Slab Insulation - {} in.'.format(cz_mult)
+    mat_slab_insulation.setName(slab_in_name)
+
+    ext_insulation_thickness_m = 0.0254 * (cz_mult + 1)
+    mat_ext_insulation = openstudio_model.StandardOpaqueMaterial(
+        model, 'Rough', ext_insulation_thickness_m, 0.02, 56.06, 1210)
+    ext_in_name = 'Radiant Exterior Slab Insulation - {} in.'.format(cz_mult + 1)
+    mat_ext_insulation.setName(ext_in_name)
+
+    roof_insulation_thickness_m = 0.0254 * (cz_mult + 1) * 2
+    mat_roof_insulation = openstudio_model.StandardOpaqueMaterial(
+        model, 'Rough', roof_insulation_thickness_m, 0.02, 56.06, 1210)
+    rf_in_name = 'Radiant Exterior Ceiling Insulation - {} in.'.format((cz_mult + 1) * 2)
+    mat_roof_insulation.setName(rf_in_name)
+
+    # create radiant internal source constructions
+    # create radiant internal source constructions
+    radiant_ground_slab_construction = None
+    radiant_exterior_slab_construction = None
+    radiant_interior_floor_slab_construction = None
+    radiant_interior_ceiling_slab_construction = None
+    radiant_ceiling_slab_construction = None
+    radiant_interior_ceiling_metal_construction = None
+    radiant_ceiling_metal_construction = None
+
+    if radiant_type == 'floor':
+        layers = [mat_slab_insulation, mat_concrete_3_5in, mat_concrete_1_5in]
+        if include_carpet:
+            layers.append(mat_thin_carpet_tile)
+        radiant_ground_slab_construction = \
+            openstudio_model.ConstructionWithInternalSource(layers)
+        radiant_ground_slab_construction.setName('Radiant Ground Slab Construction')
+        radiant_ground_slab_construction.setSourcePresentAfterLayerNumber(2)
+        radiant_ground_slab_construction.setTemperatureCalculationRequestedAfterLayerNumber(3)
+        radiant_ground_slab_construction.setTubeSpacing(0.2286)  # 9 inches
+
+        layers = [mat_ext_insulation, mat_concrete_3_5in, mat_concrete_1_5in]
+        if include_carpet:
+            layers.append(mat_thin_carpet_tile)
+        radiant_exterior_slab_construction = \
+            openstudio_model.ConstructionWithInternalSource(layers)
+        radiant_exterior_slab_construction.setName('Radiant Exterior Slab Construction')
+        radiant_exterior_slab_construction.setSourcePresentAfterLayerNumber(2)
+        radiant_exterior_slab_construction.setTemperatureCalculationRequestedAfterLayerNumber(3)
+        radiant_exterior_slab_construction.setTubeSpacing(0.2286)  # 9 inches
+
+        layers = [mat_concrete_3_5in, mat_concrete_1_5in]
+        if include_carpet:
+            layers.append(mat_thin_carpet_tile)
+        radiant_interior_floor_slab_construction = \
+            openstudio_model.ConstructionWithInternalSource(layers)
+        radiant_interior_floor_slab_construction.setName(
+            'Radiant Interior Floor Slab Construction')
+        radiant_interior_floor_slab_construction.setSourcePresentAfterLayerNumber(1)
+        radiant_interior_floor_slab_construction.setTemperatureCalculationRequestedAfterLayerNumber(2)
+        radiant_interior_floor_slab_construction.setTubeSpacing(0.2286)  # 9 inches
+
+    elif radiant_type == 'ceiling':
+        layers = [mat_concrete_3_5in, mat_concrete_1_5in]
+        if include_carpet:
+            layers.insert(0, mat_thin_carpet_tile)
+        radiant_interior_ceiling_slab_construction = \
+            openstudio_model.ConstructionWithInternalSource(layers)
+        radiant_interior_ceiling_slab_construction.setName(
+            'Radiant Interior Ceiling Slab Construction')
+        slab_src_loc = 2 if include_carpet else 1
+        radiant_interior_ceiling_slab_construction.setSourcePresentAfterLayerNumber(slab_src_loc)
+        radiant_interior_ceiling_slab_construction.setTemperatureCalculationRequestedAfterLayerNumber(slab_src_loc + 1)
+        radiant_interior_ceiling_slab_construction.setTubeSpacing(0.2286)  # 9 inches
+
+        layers = [mat_refl_roof_membrane, mat_roof_insulation,
+                  mat_concrete_3_5in, mat_concrete_1_5in]
+        radiant_ceiling_slab_construction = \
+            openstudio_model.ConstructionWithInternalSource(layers)
+        radiant_ceiling_slab_construction.setName(
+            'Radiant Exterior Ceiling Slab Construction')
+        radiant_ceiling_slab_construction.setSourcePresentAfterLayerNumber(3)
+        radiant_ceiling_slab_construction.setTemperatureCalculationRequestedAfterLayerNumber(4)
+        radiant_ceiling_slab_construction.setTubeSpacing(0.2286)  # 9 inches
+
+    elif radiant_type == 'ceilingmetalpanel':
+        layers = [mat_concrete_3_5in, air_gap_mat, metal_mat, metal_mat]
+        radiant_interior_ceiling_metal_construction = \
+            openstudio_model.ConstructionWithInternalSource(layers)
+        radiant_interior_ceiling_metal_construction.setName(
+            'Radiant Interior Ceiling Metal Construction')
+        radiant_interior_ceiling_metal_construction.setSourcePresentAfterLayerNumber(3)
+        radiant_interior_ceiling_metal_construction.setTemperatureCalculationRequestedAfterLayerNumber(4)
+        radiant_interior_ceiling_metal_construction.setTubeSpacing(0.1524)  # 6 inches
+
+        layers = [mat_refl_roof_membrane, mat_roof_insulation, mat_concrete_3_5in,
+                  air_gap_mat, metal_mat, metal_mat]
+        radiant_ceiling_metal_construction = \
+            openstudio_model.ConstructionWithInternalSource(layers)
+        radiant_ceiling_metal_construction.setName('Radiant Ceiling Metal Construction')
+        radiant_ceiling_metal_construction.setSourcePresentAfterLayerNumber(5)
+        radiant_ceiling_metal_construction.setTemperatureCalculationRequestedAfterLayerNumber(6)
+        radiant_ceiling_metal_construction.setTubeSpacing(0.1524)  # 6 inches
+
+    elif radiant_type == 'floorwithhardwood':
+        layers = [mat_slab_insulation, mat_concrete_3_5in, wood_mat]
+        if include_carpet:
+            layers.append(mat_thin_carpet_tile)
+        radiant_ground_wood_construction = \
+            openstudio_model.ConstructionWithInternalSource(layers)
+        radiant_ground_wood_construction.setName(
+            'Radiant Ground Slab Wood Floor Construction')
+        radiant_ground_wood_construction.setSourcePresentAfterLayerNumber(2)
+        radiant_ground_wood_construction.setTemperatureCalculationRequestedAfterLayerNumber(3)
+        radiant_ground_wood_construction.setTubeSpacing(0.2286)  # 9 inches
+
+        layers = [mat_ext_insulation, wood_mat]
+        if include_carpet:
+            layers.append(mat_thin_carpet_tile)
+        radiant_exterior_wood_construction = \
+            openstudio_model.ConstructionWithInternalSource.new(layers)
+        radiant_exterior_wood_construction.setName(
+            'Radiant Exterior Wood Floor Construction')
+        radiant_exterior_wood_construction.setSourcePresentAfterLayerNumber(1)
+        radiant_exterior_wood_construction.setTemperatureCalculationRequestedAfterLayerNumber(2)
+        radiant_exterior_wood_construction.setTubeSpacing(0.2286)  # 9 inches
+
+        layers = [gypsum_ceiling_mat, wood_floor_insulation, wood_mat]
+        if include_carpet:
+            layers.append(mat_thin_carpet_tile)
+        radiant_interior_wood_floor_construction = \
+            openstudio_model.ConstructionWithInternalSource(layers)
+        radiant_interior_wood_floor_construction.setName(
+            'Radiant Interior Wooden Floor Construction')
+        radiant_interior_wood_floor_construction.setSourcePresentAfterLayerNumber(2)
+        radiant_interior_wood_floor_construction.setTemperatureCalculationRequestedAfterLayerNumber(3)
+        radiant_interior_wood_floor_construction.setTubeSpacing(0.2286)  # 9 inches
+
+    # adjust hot and chilled water loop temperatures and set new setpoint schedules
+    radiant_htg_dsgn_sup_wtr_temp_delt_r = 10.0
+    radiant_htg_dsgn_sup_wtr_temp_c = \
+        TEMPERATURE.to_unit([radiant_htg_dsgn_sup_wtr_temp_f], 'C', 'F')[0]
+    radiant_htg_dsgn_sup_wtr_temp_delt_k = \
+        TEMP_DELTA.to_unit([radiant_htg_dsgn_sup_wtr_temp_delt_r], 'dC', 'dF')[0]
+    hot_water_loop.sizingPlant().setDesignLoopExitTemperature(
+        radiant_htg_dsgn_sup_wtr_temp_c)
+    hot_water_loop.sizingPlant().setLoopDesignTemperatureDifference(
+        radiant_htg_dsgn_sup_wtr_temp_delt_k)
+    hw_sch_name = '{} Temp - {}F'.format(
+        hot_water_loop.nameString(), round(radiant_htg_dsgn_sup_wtr_temp_f))
+    hw_temp_sch = create_constant_schedule_ruleset(
+        model, radiant_htg_dsgn_sup_wtr_temp_c, name=hw_sch_name,
+        schedule_type_limit='Temperature')
+    for spm in hot_water_loop.supplyOutletNode().setpointManagers():
+        if spm.to_SetpointManagerScheduled().is_initialized():
+            spm = spm.to_SetpointManagerScheduled().get()
+            spm.setSchedule(hw_temp_sch)
+
+    radiant_clg_dsgn_sup_wtr_temp_f = 55.0
+    radiant_clg_dsgn_sup_wtr_temp_delt_r = 5.0
+    radiant_clg_dsgn_sup_wtr_temp_c = \
+        TEMPERATURE.to_unit([radiant_clg_dsgn_sup_wtr_temp_f], 'C', 'F')[0]
+    radiant_clg_dsgn_sup_wtr_temp_delt_k = \
+        TEMP_DELTA.to_unit([radiant_clg_dsgn_sup_wtr_temp_delt_r], 'dC', 'dF')[0]
+    chilled_water_loop.sizingPlant().setDesignLoopExitTemperature(
+        radiant_clg_dsgn_sup_wtr_temp_c)
+    chilled_water_loop.sizingPlant().setLoopDesignTemperatureDifference(
+        radiant_clg_dsgn_sup_wtr_temp_delt_k)
+    chw_sch_name = '{} Temp - {}F'.format(
+        chilled_water_loop.nameString(), round(radiant_clg_dsgn_sup_wtr_temp_f))
+    chw_temp_sch = create_constant_schedule_ruleset(
+        model, radiant_clg_dsgn_sup_wtr_temp_c, name=chw_sch_name,
+        schedule_type_limit='Temperature')
+    for spm in chilled_water_loop.supplyOutletNode().setpointManagers():
+        if spm.to_SetpointManagerScheduled().is_initialized():
+            spm = spm.to_SetpointManagerScheduled().get()
+            spm.setSchedule(chw_temp_sch)
+
+    # default temperature controls for radiant system
+    zn_radiant_htg_dsgn_temp_f = 68.0
+    zn_radiant_htg_dsgn_temp_c = \
+        TEMPERATURE.to_unit([zn_radiant_htg_dsgn_temp_f], 'C', 'F')[0]
+    zn_radiant_clg_dsgn_temp_f = 74.0
+    zn_radiant_clg_dsgn_temp_c = \
+        TEMPERATURE.to_unit([zn_radiant_clg_dsgn_temp_f], 'C', 'F')[0]
+
+    htg_sch_name = 'Zone Radiant Loop Heating Threshold Temperature Schedule ' \
+        '- {}F'.format(round(zn_radiant_htg_dsgn_temp_f))
+    htg_control_temp_sch = create_constant_schedule_ruleset(
+        model, zn_radiant_htg_dsgn_temp_c, name=htg_sch_name,
+        schedule_type_limit='Temperature')
+    clg_sch_name = 'Zone Radiant Loop Cooling Threshold Temperature Schedule ' \
+        '- {}F'.format(round(zn_radiant_clg_dsgn_temp_f))
+    clg_control_temp_sch = create_constant_schedule_ruleset(
+        model, zn_radiant_clg_dsgn_temp_c, name=clg_sch_name,
+        schedule_type_limit='Temperature')
+    throttling_range_f = 4.0  # 2 degF on either side of control temperature
+    throttling_range_c = TEMP_DELTA.to_unit([throttling_range_f], 'dC', 'dF')[0]
+
+    # create preset availability schedule for radiant loop
+    radiant_avail_sch = openstudio_model.ScheduleRuleset(model)
+    radiant_avail_sch.setName('Radiant System Availability Schedule')
+
+    if not radiant_lockout:
+        radiant_availability_type = radiant_availability_type.lower()
+        if radiant_availability_type == 'all_day':
+            start_hour = 24
+            start_minute = 0
+            end_hour = 24
+            end_minute = 0
+        elif radiant_availability_type == 'afternoon_shutoff':
+            start_hour = 15
+            start_minute = 0
+            end_hour = 22
+            end_minute = 0
+        elif radiant_availability_type == 'precool':
+            start_hour = 10
+            start_minute = 0
+            end_hour = 22
+            end_minute = 0
+        elif radiant_availability_type == 'occupancy':
+            start_hour = model_occ_hr_end.to_i
+            start_minute = int((model_occ_hr_end % 1) * 60)
+            end_hour = model_occ_hr_start.to_i
+            end_minute = int((model_occ_hr_start % 1) * 60)
+        else:
+            msg = 'Unsupported radiant availability preset "{}"' \
+                ' Defaulting to all day operation.'.format(radiant_availability_type)
+            print(msg)
+            start_hour = 24
+            start_minute = 0
+            end_hour = 24
+            end_minute = 0
+
+    # create custom availability schedule for radiant loop
+    if radiant_lockout:
+        start_hour = int(radiant_lockout_start_time)
+        start_minute = int((radiant_lockout_start_time % 1) * 60)
+        end_hour = radiant_lockout_end_time.to_i
+        end_minute = int((radiant_lockout_end_time % 1) * 60)
+
+    # create availability schedules
+    if end_hour > start_hour:
+        radiant_avail_sch.defaultDaySchedule.addValue(
+            openstudio.Time(0, start_hour, start_minute, 0), 1.0)
+        radiant_avail_sch.defaultDaySchedule.addValue(
+            openstudio.Time(0, end_hour, end_minute, 0), 0.0)
+        if end_hour < 24:
+            radiant_avail_sch.defaultDaySchedule.addValue(openstudio.Time(0, 24, 0, 0), 1.0)
+    elif start_hour > end_hour:
+        radiant_avail_sch.defaultDaySchedule.addValue(
+            openstudio.Time(0, end_hour, end_minute, 0), 0.0)
+        radiant_avail_sch.defaultDaySchedule.addValue(
+            openstudio.Time(0, start_hour, start_minute, 0), 1.0)
+        if start_hour < 24:
+            radiant_avail_sch.defaultDaySchedule.addValue(openstudio.Time(0, 24, 0, 0), 0.0)
+    else:
+        radiant_avail_sch.defaultDaySchedule.addValue(openstudio.Time(0, 24, 0, 0), 1.0)
+
+    # add supply water temperature control if enabled
+    if plant_supply_water_temperature_control:
+        # add supply water temperature for heating plant loop
+        model_add_plant_supply_water_temperature_control(
+            model, hot_water_loop,
+            control_strategy=plant_supply_water_temperature_control_strategy,
+            sp_at_oat_low=hwsp_at_oat_low, oat_low=hw_oat_low,
+            sp_at_oat_high=hwsp_at_oat_high, oat_high=hw_oat_high,
+            thermal_zones=thermal_zones)
+
+        # add supply water temperature for cooling plant loop
+        model_add_plant_supply_water_temperature_control(
+            model, chilled_water_loop,
+            control_strategy=plant_supply_water_temperature_control_strategy,
+            sp_at_oat_low=chwsp_at_oat_low, oat_low=chw_oat_low,
+            sp_at_oat_high=chwsp_at_oat_high, oat_high=chw_oat_high,
+            thermal_zones=thermal_zones)
+
+    # make a low temperature radiant loop for each zone
+    radiant_loops = []
+    for zone in thermal_zones:
+        zone_name = zone.nameString()
+        if ':' in zone_name:
+            msg = 'Thermal zone "{}" has a restricted character ":" in the name and ' \
+                'will not work with some EMS and output reporting objects. '\
+                'Please rename the zone'.format(zone_name)
+            print(msg)
+
+        # assign internal source construction to floors in zone
+        srf_count = 0
+        for space in zone.spaces():
+            for surface in space.surfaces():
+                if surface.isAirWall():
+                    continue
+                elif radiant_type == 'floor':
+                    if surface.surfaceType() == 'Floor':
+                        srf_count += 1
+                        if surface.outsideBoundaryCondition() == 'Ground':
+                            surface.setConstruction(radiant_ground_slab_construction)
+                        elif surface.outsideBoundaryCondition() == 'Outdoors':
+                            surface.setConstruction(radiant_exterior_slab_construction)
+                        else:  # interior floor
+                            surface.setConstruction(radiant_interior_floor_slab_construction)
+                elif radiant_type == 'ceiling':
+                    if surface.surfaceType() == 'RoofCeiling':
+                        srf_count += 1
+                        if surface.outsideBoundaryCondition == 'Outdoors':
+                            surface.setConstruction(radiant_ceiling_slab_construction)
+                        else:  # interior ceiling
+                            surface.setConstruction(radiant_interior_ceiling_slab_construction)
+                elif radiant_type == 'ceilingmetalpanel':
+                    if surface.surfaceType() == 'RoofCeiling':
+                        srf_count += 1
+                        if surface.outsideBoundaryCondition() == 'Outdoors':
+                            surface.setConstruction(radiant_ceiling_metal_construction)
+                        else:  # interior ceiling
+                            surface.setConstruction(radiant_interior_ceiling_metal_construction)
+                elif radiant_type == 'floorwithhardwood':
+                    if surface.surfaceType == 'Floor':
+                        srf_count += 1
+                        if surface.outsideBoundaryCondition() == 'Ground':
+                            surface.setConstruction(radiant_ground_wood_construction)
+                        elif surface.outsideBoundaryCondition() == 'Outdoors':
+                            surface.setConstruction(radiant_exterior_wood_construction)
+                        else:  # interior floor
+                            surface.setConstruction(radiant_interior_wood_floor_construction)
+
+        # ignore the Zone if it has not thermally active Faces
+        if srf_count == 0:
+            continue
+
+        # create radiant coils
+        radiant_loop_htg_coil = openstudio_model.CoilHeatingLowTempRadiantVarFlow(
+            model, htg_control_temp_sch)
+        radiant_loop_htg_coil.setName('{} Radiant Loop Heating Coil'.format(zone_name))
+        radiant_loop_htg_coil.setHeatingControlThrottlingRange(throttling_range_c)
+        hot_water_loop.addDemandBranchForComponent(radiant_loop_htg_coil)
+
+        radiant_loop_clg_coil = openstudio_model.CoilCoolingLowTempRadiantVarFlow(
+            model, clg_control_temp_sch)
+        radiant_loop_clg_coil.setName('{} Radiant Loop Cooling Coil'.format(zone_name))
+        radiant_loop_clg_coil.setCoolingControlThrottlingRange(throttling_range_c)
+        chilled_water_loop.addDemandBranchForComponent(radiant_loop_clg_coil)
+
+        radiant_loop = openstudio_model.ZoneHVACLowTempRadiantVarFlow(
+            model, radiant_avail_sch, radiant_loop_htg_coil, radiant_loop_clg_coil)
+
+        # radiant loop surfaces
+        radiant_loop.setName('{} Radiant Loop'.format(zone_name))
+        if radiant_type == 'floor':
+            radiant_loop.setRadiantSurfaceType('Floors')
+        elif radiant_type == 'ceiling':
+            radiant_loop.setRadiantSurfaceType('Ceilings')
+        elif radiant_type == 'ceilingmetalpanel':
+            radiant_loop.setRadiantSurfaceType('Ceilings')
+        elif radiant_type == 'floorwithhardwood':
+            radiant_loop.setRadiantSurfaceType('Floors')
+
+        # radiant loop layout details
+        radiant_loop.setHydronicTubingInsideDiameter(0.015875)  # 5/8 in. ID, 3/4 in. OD
+        radiant_loop.setNumberofCircuits('CalculateFromCircuitLength')
+        radiant_loop.setCircuitLength(106.7)
+
+        # radiant loop temperature controls
+        radiant_loop.setTemperatureControlType(radiant_temperature_control_type)
+
+        # radiant loop setpoint temperature response
+        radiant_loop.setSetpointControlType(radiant_setpoint_control_type)
+        radiant_loop.addToThermalZone(zone)
+        radiant_loops.append(radiant_loop)
+
+        # rename nodes before adding EMS code
+        rename_plant_loop_nodes(model)
+
+        # set radiant loop controls
+        control_strategy = control_strategy.lower()
+        if control_strategy == 'proportional_control':
+            # slab setpoint varies based on previous day zone conditions
+            model_add_radiant_proportional_controls(
+                model, zone, radiant_loop,
+                radiant_temperature_control_type=radiant_temperature_control_type,
+                use_zone_occupancy_for_control=use_zone_occupancy_for_control,
+                occupied_percentage_threshold=occupied_percentage_threshold,
+                model_occ_hr_start=model_occ_hr_start, model_occ_hr_end=model_occ_hr_end,
+                proportional_gain=proportional_gain, switch_over_time=switch_over_time)
+        elif control_strategy == 'oa_based_control':
+            # slab setpoint varies based on outdoor weather
+            model_add_radiant_basic_controls(
+                model, zone, radiant_loop,
+                radiant_temperature_control_type=radiant_temperature_control_type,
+                slab_setpoint_oa_control=True, switch_over_time=switch_over_time,
+                slab_sp_at_oat_low=slab_sp_at_oat_low, slab_oat_low=slab_oat_low,
+                slab_sp_at_oat_high=slab_sp_at_oat_high, slab_oat_high=slab_oat_high)
+        elif control_strategy == 'constant_control':
+            # constant slab setpoint control
+            model_add_radiant_basic_controls(
+                model, zone, radiant_loop,
+                radiant_temperature_control_type=radiant_temperature_control_type,
+                slab_setpoint_oa_control=False, switch_over_time=switch_over_time,
+                slab_sp_at_oat_low=slab_sp_at_oat_low, slab_oat_low=slab_oat_low,
+                slab_sp_at_oat_high=slab_sp_at_oat_high, slab_oat_high=slab_oat_high)
+    return radiant_loops
 
 
 def model_add_window_ac(model, thermal_zones):
@@ -4197,6 +4829,360 @@ def model_add_waterside_economizer(
     return heat_exchanger
 
 
+def model_add_zone_heat_cool_request_count_program(model, thermal_zones):
+    """Make EMS program that will compare 'measured' zone air temperatures to setpoints.
+
+    This can be used to determine if zone needs cooling or heating. Program will
+    output the total zones needing heating and cooling and the their ratio using
+    the total number of zones.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones to
+            dictate cooling or heating mode of water plant.
+    """
+    # create container schedules to hold number of zones needing heating and cooling
+    sch_zones_needing_heating = create_constant_schedule_ruleset(
+        model, 0, name='Zones Needing Heating Count Schedule',
+        schedule_type_limit='Dimensionless')
+    zone_needing_heating_actuator = openstudio_model.EnergyManagementSystemActuator(
+        sch_zones_needing_heating, 'Schedule:Year', 'Schedule Value')
+    zone_needing_heating_actuator.setName('Zones_Needing_Heating')
+
+    sch_zones_needing_cooling = create_constant_schedule_ruleset(
+        model, 0, name='Zones Needing Cooling Count Schedule',
+        schedule_type_limit='Dimensionless')
+
+    zone_needing_cooling_actuator = openstudio_model.EnergyManagementSystemActuator(
+        sch_zones_needing_cooling, 'Schedule:Year', 'Schedule Value')
+    zone_needing_cooling_actuator.setName('Zones_Needing_Cooling')
+
+    # create container schedules to hold ratio of zones needing heating and cooling
+    sch_zones_needing_heating_ratio = create_constant_schedule_ruleset(
+        model, 0, name='Zones Needing Heating Ratio Schedule',
+        schedule_type_limit='Dimensionless')
+
+    zone_needing_heating_ratio_actuator = openstudio_model.EnergyManagementSystemActuator(
+        sch_zones_needing_heating_ratio, 'Schedule:Year', 'Schedule Value')
+    zone_needing_heating_ratio_actuator.setName('Zone_Heating_Ratio')
+
+    sch_zones_needing_cooling_ratio = create_constant_schedule_ruleset(
+        model, 0, name='Zones Needing Cooling Ratio Schedule',
+        schedule_type_limit='Dimensionless')
+
+    zone_needing_cooling_ratio_actuator = openstudio_model.EnergyManagementSystemActuator(
+        sch_zones_needing_cooling_ratio, 'Schedule:Year', 'Schedule Value')
+    zone_needing_cooling_ratio_actuator.setName('Zone_Cooling_Ratio')
+
+    #####
+    # Create EMS program to check comfort exceedances
+    ####
+
+    # initalize inner body for heating and cooling requests programs
+    determine_zone_cooling_needs_prg_inner_body = ''
+    determine_zone_heating_needs_prg_inner_body = ''
+
+    for zone in thermal_zones:
+        # get existing 'sensors'
+        exisiting_ems_sensors = model.getEnergyManagementSystemSensors()
+        exisiting_ems_sensors_names = []
+        for sen in exisiting_ems_sensors:
+            sen_desc = '{}-{}'.format(sen.nameString(), sen.outputVariableOrMeterName())
+            exisiting_ems_sensors_names.append(sen_desc)
+
+        # Create zone air temperature 'sensor' for the zone.
+        zone_name = ems_friendly_name(zone.nameString())
+        zone_air_sensor_name = '{}_ctrl_temperature'.format(zone_name)
+
+        if '{}-Zone Air Temperature'.format(zone_air_sensor_name) \
+                not in exisiting_ems_sensors_names:
+            zone_ctrl_temperature = openstudio_model.EnergyManagementSystemSensor(
+                model, 'Zone Air Temperature')
+            zone_ctrl_temperature.setName(zone_air_sensor_name)
+            zone_ctrl_temperature.setKeyName(zone.nameString())
+
+        # check for zone thermostats
+        zone_thermostat = zone.thermostatSetpointDualSetpoint()
+        if not zone_thermostat.is_initialized():
+            raise ValueError('Zone {} does not have thermostats.'.format(zone.nameString()))
+
+        zone_thermostat = zone.thermostatSetpointDualSetpoint().get()
+        zone_clg_thermostat = zone_thermostat.coolingSetpointTemperatureSchedule().get()
+        zone_htg_thermostat = zone_thermostat.heatingSetpointTemperatureSchedule.get()
+
+        # create new sensor for zone thermostat if it does not exist already
+        zone_clg_thermostat_sensor_name = '{}_upper_comfort_limit'.format(zone_name)
+        zone_htg_thermostat_sensor_name = '{}_lower_comfort_limit'.format(zone_name)
+
+        if '{}-Schedule Value'.format(zone_clg_thermostat_sensor_name) \
+                not in exisiting_ems_sensors_names:
+            # Upper comfort limit for the zone. Taken from existing thermostat
+            zone_upper_comfort_limit = openstudio_model.EnergyManagementSystemSensor(
+                model, 'Schedule Value')
+            zone_upper_comfort_limit.setName(zone_clg_thermostat_sensor_name)
+            zone_upper_comfort_limit.setKeyName(zone_clg_thermostat.nameString())
+
+        if '{}-Schedule Value'.format(zone_htg_thermostat_sensor_name) \
+                not in exisiting_ems_sensors_names:
+            # Lower comfort limit for the zone. Taken from existing thermostat schedules in the zone.
+            zone_lower_comfort_limit = openstudio_model.EnergyManagementSystemSensor(
+                model, 'Schedule Value')
+            zone_lower_comfort_limit.setName(zone_htg_thermostat_sensor_name)
+            zone_lower_comfort_limit.setKeyName(zone_htg_thermostat.nameString())
+
+        # create program inner body for determining zone cooling needs
+        z_cool_need = \
+            'IF {zone_air_sensor_name} > {zone_clg_thermostat_sensor_name},\n' \
+            'SET Zones_Needing_Cooling = Zones_Needing_Cooling + 1,\n' \
+            'ENDIF,\n'.format(
+                zone_air_sensor_name=zone_air_sensor_name,
+                zone_clg_thermostat_sensor_name=zone_clg_thermostat_sensor_name
+            )
+        determine_zone_cooling_needs_prg_inner_body += z_cool_need
+
+        # create program inner body for determining zone cooling needs
+        z_heat_need = \
+            'IF {zone_air_sensor_name} < {zone_htg_thermostat_sensor_name},\n' \
+            'SET Zones_Needing_Heating = Zones_Needing_Heating + 1,\n' \
+            'ENDIF,\n'.format(
+                zone_air_sensor_name=zone_air_sensor_name,
+                zone_htg_thermostat_sensor_name=zone_htg_thermostat_sensor_name
+            )
+        determine_zone_heating_needs_prg_inner_body += z_heat_need
+
+    # create program for determining zone cooling needs
+    determine_zone_cooling_needs_prg = \
+        openstudio_model.EnergyManagementSystemProgram(model)
+    determine_zone_cooling_needs_prg.setName('Determine_Zone_Cooling_Needs')
+    determine_zone_cooling_needs_prg_body = \
+        'SET Zones_Needing_Cooling = 0,\n' \
+        '{zone_cooling_prg_inner_body}' \
+        'SET Total_Zones = {thermal_zones_length}\n,' \
+        'SET Zone_Cooling_Ratio = Zones_Needing_Cooling/Total_Zones'.format(
+            zone_cooling_prg_inner_body=determine_zone_cooling_needs_prg_inner_body,
+            thermal_zones_length=len(thermal_zones)
+        )
+    determine_zone_cooling_needs_prg.setBody(determine_zone_cooling_needs_prg_body)
+
+    # create program for determining zone heating needs
+    determine_zone_heating_needs_prg = \
+        openstudio_model.EnergyManagementSystemProgram(model)
+    determine_zone_heating_needs_prg.setName('Determine_Zone_Heating_Needs')
+    determine_zone_heating_needs_prg_body = \
+        'SET Zones_Needing_Heating = 0,\n' \
+        '{zone_heating_prg_inner_body}\n' \
+        'SET Total_Zones = {thermal_zones_length},\n' \
+        'SET Zone_Heating_Ratio = Zones_Needing_Heating/Total_Zones'.format(
+            zone_heating_prg_inner_body=determine_zone_heating_needs_prg_inner_body,
+            thermal_zones_length=len(thermal_zones)
+        )
+    determine_zone_heating_needs_prg.setBody(determine_zone_heating_needs_prg_body)
+
+    # create EMS program manager objects
+    programs_at_beginning_of_timestep = \
+        openstudio_model.EnergyManagementSystemProgramCallingManager(model)
+    programs_at_beginning_of_timestep.setName(
+        'Heating_Cooling_Request_Programs_At_End_Of_Timestep')
+    programs_at_beginning_of_timestep.setCallingPoint(
+        'EndOfZoneTimestepAfterZoneReporting')
+    programs_at_beginning_of_timestep.addProgram(determine_zone_cooling_needs_prg)
+    programs_at_beginning_of_timestep.addProgram(determine_zone_heating_needs_prg)
+
+
+def model_add_plant_supply_water_temperature_control(
+        model, plant_water_loop, control_strategy='outdoor_air',
+        sp_at_oat_low=None, oat_low=None, sp_at_oat_high=None, oat_high=None,
+        thermal_zones=()):
+    """Adds supply water temperature control on specified plant water loops.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        plant_water_loop: [OpenStudio::Model::PlantLoop] plant water loop to add
+            supply water temperature control.
+        control_strategy: [String] Method to determine how to control the plant's
+            supply water temperature (swt). Options include the following.
+            outdoor_air -- The plant's swt will be proportional to the outdoor
+                air based on the next 4 parameters.
+            zone_demand -- The plant's swt will be determined by preponderance
+                of zone demand.
+        sp_at_oat_low: [Double] supply water temperature setpoint, in F, at the
+            outdoor low temperature.
+        oat_low: [Double] outdoor drybulb air  temperature, in F, for low setpoint.
+        sp_at_oat_high: [Double] supply water temperature setpoint, in F, at
+            the outdoor high temperature.
+        oat_high: [Double] outdoor drybulb air temperature, in F, for high setpoint.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones.
+    """
+    loop_name = plant_water_loop.nameString()
+    # check that all required temperature parameters are defined
+    if all(val is None for val in (sp_at_oat_low, oat_low, sp_at_oat_high, oat_high)):
+        print('At least one of the required temperature parameter is nil.')
+
+    # remove any existing setpoint manager on the plant water loop
+    exisiting_setpoint_managers = plant_water_loop.loopTemperatureSetpointNode().setpointManagers()
+    for spm in exisiting_setpoint_managers:
+        spm.disconnect()
+
+    if control_strategy == 'outdoor_air':
+        # create supply water temperature setpoint managers for plant based on outdoor temperature
+        water_loop_setpoint_manager = openstudio_model.SetpointManagerOutdoorAirReset(model)
+        water_loop_setpoint_manager.setName(
+            '{} Supply Water Temperature Control'.format(loop_name))
+        water_loop_setpoint_manager.setControlVariable('Temperature')
+        water_loop_setpoint_manager.setSetpointatOutdoorLowTemperature(
+            TEMPERATURE.to_unit([sp_at_oat_low], 'C', 'F')[0])
+        water_loop_setpoint_manager.setOutdoorLowTemperature(
+            TEMPERATURE.to_unit([oat_low], 'C', 'F')[0])
+        water_loop_setpoint_manager.setSetpointatOutdoorHighTemperature(
+            TEMPERATURE.to_unit([sp_at_oat_high], 'C', 'F')[0])
+        water_loop_setpoint_manager.setOutdoorHighTemperature(
+            TEMPERATURE.to_unit([oat_high], 'C', 'F')[0])
+        water_loop_setpoint_manager.addToNode(
+            plant_water_loop.loopTemperatureSetpointNode())
+    else:
+        # create supply water temperature setpoint managers for plant based on
+        # zone heating and cooling demand
+        # check if zone heat and cool requests program exists, if not create it
+        determine_zone_cooling_needs_prg = \
+            model.getEnergyManagementSystemProgramByName('Determine_Zone_Cooling_Needs')
+        determine_zone_heating_needs_prg = \
+            model.getEnergyManagementSystemProgramByName('Determine_Zone_Heating_Needs')
+        if not determine_zone_cooling_needs_prg.is_initialized() and not \
+                determine_zone_heating_needs_prg.is_initialized():
+            model_add_zone_heat_cool_request_count_program(model, thermal_zones)
+
+        plant_water_loop_name = ems_friendly_name(loop_name)
+
+        if plant_water_loop.componentType().valueName() == 'Heating':
+            sp_at_oat_low = 120 if sp_at_oat_low is None else sp_at_oat_low
+            swt_upper_limit = TEMPERATURE.to_unit([sp_at_oat_low], 'C', 'F')[0]
+            sp_at_oat_high = 80 if sp_at_oat_high is None else sp_at_oat_high
+            swt_lower_limit = TEMPERATURE.to_unit([sp_at_oat_high], 'C', 'F')[0]
+            swt_init = TEMPERATURE.to_unit([100], 'C', 'F')[0]
+            zone_demand_var = 'Zone_Heating_Ratio'
+            swt_inc_condition_var = '> 0.70'
+            swt_dec_condition_var = '< 0.30'
+        else:
+            sp_at_oat_low = 70 if sp_at_oat_low is None else sp_at_oat_low
+            swt_upper_limit = TEMPERATURE.to_unit([sp_at_oat_low], 'C', 'F')[0]
+            sp_at_oat_high = 55 if sp_at_oat_high is None else sp_at_oat_high
+            swt_lower_limit = TEMPERATURE.to_unit([sp_at_oat_high], 'C', 'F')[0]
+            swt_init = TEMPERATURE.to_unit([62], 'C', 'F')[0]
+            zone_demand_var = 'Zone_Cooling_Ratio'
+            swt_inc_condition_var = '< 0.30'
+            swt_dec_condition_var = '> 0.70'
+
+        # plant loop supply water control actuator
+        sch_plant_swt_ctrl = create_constant_schedule_ruleset(
+            model, swt_init,
+            name='{}_Sch_Supply_Water_Temperature'.format(plant_water_loop_name),
+            schedule_type_limit='Temperature')
+
+        cmd_plant_water_ctrl = openstudio_model.EnergyManagementSystemActuator(
+            sch_plant_swt_ctrl, 'Schedule:Year', 'Schedule Value')
+        cmd_plant_water_ctrl.setName('{}_supply_water_ctrl'.format(plant_water_loop_name))
+
+        # create plant loop setpoint manager
+        water_loop_setpoint_manager = \
+            openstudio_model.SetpointManagerScheduled(model, sch_plant_swt_ctrl)
+        water_loop_setpoint_manager.setName(
+            '{} Supply Water Temperature Control'.format(loop_name))
+        water_loop_setpoint_manager.setControlVariable('Temperature')
+        water_loop_setpoint_manager.addToNode(
+            plant_water_loop.loopTemperatureSetpointNode())
+
+        # add uninitialized variables into constant program
+        set_constant_values_prg_body = \
+            'SET {}_supply_water_ctrl = {}'.format(plant_water_loop_name, swt_init)
+
+        set_constant_values_prg = model.getEnergyManagementSystemProgramByName(
+            'Set_Plant_Constant_Values')
+        if set_constant_values_prg.is_initialized():
+            set_constant_values_prg = set_constant_values_prg.get()
+            set_constant_values_prg.addLine(set_constant_values_prg_body)
+        else:
+            set_constant_values_prg = \
+                openstudio_model.EnergyManagementSystemProgram(model)
+            set_constant_values_prg.setName('Set_Plant_Constant_Values')
+            set_constant_values_prg.setBody(set_constant_values_prg_body)
+
+        # program for supply water temperature control in the plot
+        determine_plant_swt_prg = openstudio_model.EnergyManagementSystemProgram(model)
+        swt_prg_name = 'Determine_{}_Supply_Water_Temperature'.format(plant_water_loop_name)
+        determine_plant_swt_prg.setName(swt_prg_name)
+        determine_plant_swt_prg_body = \
+            'SET SWT_Increase = 1,\n' \
+            'SET SWT_Decrease = 1,\n' \
+            'SET SWT_upper_limit = {swt_upper_limit},\n' \
+            'SET SWT_lower_limit = {swt_lower_limit},\n' \
+            'IF {zone_demand_var} {swt_inc_cond_var} && (@Mod CurrentTime 1) == 0,\n' \
+            'SET {loop_name}_supply_water_ctrl = {loop_name}_supply_water_ctrl + SWT_Increase,\n' \
+            'ELSEIF {zone_demand_var} {swt_dec_cond_var} && (@Mod CurrentTime 1) == 0,\n' \
+            'SET {loop_name}_supply_water_ctrl = {loop_name}_supply_water_ctrl - SWT_Decrease,\n' \
+            'ELSE,\n' \
+            'SET {loop_name}_supply_water_ctrl = {loop_name}_supply_water_ctrl,\n' \
+            'ENDIF,\n' \
+            'IF {loop_name}_supply_water_ctrl > SWT_upper_limit,\n' \
+            'SET {loop_name}_supply_water_ctrl = SWT_upper_limit\n' \
+            'ENDIF,\n' \
+            'IF {loop_name}_supply_water_ctrl < SWT_lower_limit,\n' \
+            'SET {loop_name}_supply_water_ctrl = SWT_lower_limit\n' \
+            'ENDIF'.format(
+                swt_upper_limit=swt_upper_limit, swt_lower_limit=swt_lower_limit,
+                zone_demand_var=zone_demand_var, loop_name=plant_water_loop_name,
+                swt_inc_cond_var=swt_inc_condition_var, swt_dec_cond_var=swt_dec_condition_var
+            )
+        determine_plant_swt_prg.setBody(determine_plant_swt_prg_body)
+
+        # create EMS program manager objects
+        programs_at_beginning_of_timestep = \
+            openstudio_model.EnergyManagementSystemProgramCallingManager(model)
+        prg_man_name = '{}_Demand_Based_Supply_Water_Temperature_At_Beginning_'\
+            'Of_Timestep'.format(plant_water_loop_name)
+        programs_at_beginning_of_timestep.setName(prg_man_name)
+        programs_at_beginning_of_timestep.setCallingPoint('BeginTimestepBeforePredictor')
+        programs_at_beginning_of_timestep.addProgram(determine_plant_swt_prg)
+
+        initialize_constant_parameters = \
+            model.getEnergyManagementSystemProgramCallingManagerByName(
+                'Initialize_Constant_Parameters')
+        if initialize_constant_parameters.is_initialized():
+            initialize_constant_parameters = initialize_constant_parameters.get()
+            # add program if it does not exist in manager
+            existing_program_names = []
+            for prg in initialize_constant_parameters.programs():
+                existing_program_names.append(prg.nameString().lower())
+            if set_constant_values_prg.nameString().lower() not in existing_program_names:
+                initialize_constant_parameters.addProgram(set_constant_values_prg)
+        else:
+            initialize_constant_parameters = \
+                openstudio_model.EnergyManagementSystemProgramCallingManager(model)
+            initialize_constant_parameters.setName('Initialize_Constant_Parameters')
+            initialize_constant_parameters.setCallingPoint('BeginNewEnvironment')
+            initialize_constant_parameters.addProgram(set_constant_values_prg)
+
+        initialize_constant_parameters_after_warmup = \
+            model.getEnergyManagementSystemProgramCallingManagerByName(
+                'Initialize_Constant_Parameters_After_Warmup')
+        if initialize_constant_parameters_after_warmup.is_initialized():
+            initialize_constant_parameters_after_warmup = \
+                initialize_constant_parameters_after_warmup.get()
+            # add program if it does not exist in manager
+            existing_program_names = []
+            for prg in initialize_constant_parameters_after_warmup.programs():
+                existing_program_names.append(prg.nameString().lower())
+            if set_constant_values_prg.nameString().lower() not in existing_program_names:
+                initialize_constant_parameters_after_warmup.addProgram(set_constant_values_prg)
+        else:
+            initialize_constant_parameters_after_warmup = \
+                openstudio_model.EnergyManagementSystemProgramCallingManager(model)
+            initialize_constant_parameters_after_warmup.setName(
+                'Initialize_Constant_Parameters_After_Warmup')
+            initialize_constant_parameters_after_warmup.setCallingPoint(
+                'AfterNewEnvironmentWarmUpIsComplete')
+            initialize_constant_parameters_after_warmup.addProgram(set_constant_values_prg)
+
+
 def model_get_or_add_chilled_water_loop(
         model, cool_fuel, chilled_water_loop_cooling_type='WaterCooled'):
     """Get existing chilled water loop or add a new one if there isn't one already.
@@ -4289,16 +5275,47 @@ def model_get_or_add_hot_water_loop(
     return hot_water_loop
 
 
-def model_get_or_add_ambient_water_loop():
-    pass
+def model_get_or_add_ambient_water_loop(model):
+    """Get the existing ambient water loop or add a new one if there isn't one already.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+    """
+    # retrieve the existing hot water loop or add a new one if necessary
+    exist_loop = model.getPlantLoopByName('Ambient Loop')
+    if exist_loop.is_initialized():
+        ambient_water_loop = exist_loop.get()
+    else:
+        model_add_district_ambient_loop(model)
+    return ambient_water_loop
 
 
-def model_get_or_add_ground_hx_loop():
-    pass
+def model_get_or_add_ground_hx_loop(model):
+    """Get the existing ground heat exchanger loop or add a new one if there isn't one.
+
+    Args:
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+    """
+    # retrieve the existing ground HX loop or add a new one if necessary
+    exist_loop = model.getPlantLoopByName('Ground HX Loop')
+    if exist_loop.is_initialized():
+        ground_hx_loop = exist_loop.get()
+    else:
+        model_add_ground_hx_loop(model)
+    return ground_hx_loop
 
 
-def model_get_or_add_heat_pump_loop():
-    pass
+def model_get_or_add_heat_pump_loop(
+        model, heat_fuel, cool_fuel,
+        heat_pump_loop_cooling_type='EvaporativeFluidCooler'):
+    # retrieve the existing heat pump loop or add a new one if necessary
+    exist_loop = model.getPlantLoopByName('Heat Pump Loop')
+    if exist_loop.is_initialized():
+        heat_pump_loop = exist_loop.get()
+    else:
+        model_add_hp_loop(model, heating_fuel=heat_fuel, cooling_fuel=cool_fuel,
+                          cooling_type=heat_pump_loop_cooling_type)
+    return heat_pump_loop
 
 
 def model_add_hvac_system(
