@@ -44,6 +44,18 @@ def eer_to_cop_no_fan(eer, capacity_w=None):
     return cop
 
 
+def hspf_to_cop_no_fan(hspf):
+    """Convert from HSPF to COP (no fan) for heat pump heating coils.
+
+    References - ASHRAE 90.1-2013. Appendix G.
+
+    Args:
+        hspf: [Double] heating seasonal performance factor (HSPF).
+    """
+    cop = (-0.0296 * hspf * hspf) + (0.7134 * hspf)
+    return cop
+
+
 def ems_friendly_name(name):
     """Converts existing string to ems friendly string."""
     # replace white space and special characters with underscore

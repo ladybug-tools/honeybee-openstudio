@@ -240,3 +240,65 @@ def _apply_base_fan_variables(fan, fan_name=None, fan_efficiency=None,
     if end_use_subcategory is not None:
         fan.setEndUseSubcategory(end_use_subcategory)
     return fan
+
+
+def fan_change_impeller_efficiency(fan, impeller_eff):
+    """Changes the fan impeller efficiency and also the fan total efficiency.
+
+    Motor efficiency is preserved.
+
+    Args:
+        fan: [OpenStudio::Model::StraightComponent] Fan object. Allowable types include
+            FanConstantVolume, FanOnOff, FanVariableVolume, and FanZoneExhaust.
+        impeller_eff: [Double] impeller efficiency (0.0 to 1.0).
+    """
+    # Get the existing motor efficiency
+    existing_motor_eff = 0.7
+    if fan.to_FanZoneExhaust().is_initialized():
+        existing_motor_eff = fan.motorEfficiency()
+    # Calculate the new total efficiency
+    new_total_eff = existing_motor_eff * impeller_eff
+    # Set the revised motor and total fan efficiencies
+    fan.setFanEfficiency(new_total_eff)
+
+
+def fan_baseline_impeller_efficiency(fan):
+    """Assume that the fan efficiency is 65% for normal fans and 55% for small fans."""
+    fan_impeller_eff = 0.65
+    if is_small_fan(fan):
+        fan_impeller_eff = 0.55
+    return fan_impeller_eff
+
+
+def is_small_fan(fan):
+    """Zone exhaust fans, FCU fans, and VAV terminal fans all count as small fans.
+
+    Small fans get different impeller efficiencies and motor efficiencies than
+    other fans.
+
+    Args:
+        fan: [OpenStudio::Model::StraightComponent] Fan object. Allowable types
+            includeFanConstantVolume, FanOnOff, FanVariableVolume, and FanZoneExhaust
+    """
+    is_small = False
+    # Exhaust fan
+    if fan.to_FanZoneExhaust().is_initialized():
+        is_small = True
+    # Fan coil unit, unit heater, PTAC, PTHP, VRF terminals, WSHP, ERV
+    elif fan.containingZoneHVACComponent().is_initialized():
+        zone_hvac = fan.containingZoneHVACComponent().get()
+        if zone_hvac.to_ZoneHVACFourPipeFanCoil().is_initialized():
+            is_small = True
+        elif zone_hvac.to_ZoneHVACPackagedTerminalAirConditioner().is_initialized() or \
+                zone_hvac.to_ZoneHVACPackagedTerminalHeatPump().is_initialized() or \
+                zone_hvac.to_ZoneHVACTerminalUnitVariableRefrigerantFlow().is_initialized() or \
+                zone_hvac.to_ZoneHVACWaterToAirHeatPump().is_initialized() or \
+                zone_hvac.to_ZoneHVACEnergyRecoveryVentilator().is_initialized():
+            is_small = True
+    # Powered VAV terminal
+    elif fan.containingHVACComponent().is_initialized():
+        zone_hvac = fan.containingHVACComponent().get()
+        if zone_hvac.to_AirTerminalSingleDuctParallelPIUReheat().is_initialized() or \
+                zone_hvac.to_AirTerminalSingleDuctSeriesPIUReheat().is_initialized():
+            is_small = True
+    return is_small
