@@ -3820,7 +3820,8 @@ def model_add_low_temp_radiant(
             'Radiant Interior Ceiling Slab Construction')
         slab_src_loc = 2 if include_carpet else 1
         radiant_interior_ceiling_slab_construction.setSourcePresentAfterLayerNumber(slab_src_loc)
-        radiant_interior_ceiling_slab_construction.setTemperatureCalculationRequestedAfterLayerNumber(slab_src_loc + 1)
+        radiant_interior_ceiling_slab_construction.setTemperatureCalculationRequestedAfterLayerNumber(
+            slab_src_loc + 1)
         radiant_interior_ceiling_slab_construction.setTubeSpacing(0.2286)  # 9 inches
 
         layers = [mat_refl_roof_membrane, mat_roof_insulation,

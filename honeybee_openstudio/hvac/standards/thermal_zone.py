@@ -85,3 +85,37 @@ def thermal_zone_get_outdoor_airflow_rate_per_area(thermal_zone):
     # Calculate the per-area value
     tot_oa_flow_rate_per_area = tot_oa_flow_rate / sum_floor_area
     return tot_oa_flow_rate_per_area
+
+
+def thermal_zone_get_occupancy_schedule(model, thermal_zone):
+    """Get the occupancy schedule of the zone.
+
+    Args:
+        thermal_zone: [OpenStudio::Model::ThermalZone] OpenStudio ThermalZone object.
+    """
+    # Get all the occupancy schedules in spaces.
+    # Check people added via the SpaceType and hard-assigned to the Space itself.
+    occupancy_sch = None
+    for space in thermal_zone.spaces():
+        # From the space type
+        if space.spaceType().is_initialized():
+            for people in space.spaceType().get().people():
+                num_ppl_sch = people.numberofPeopleSchedule()
+                if not num_ppl_sch.is_initialized():
+                    continue
+                occupancy_sch = num_ppl_sch.get()
+                break
+
+    if num_ppl_sch is None:  # From the space
+        for space in thermal_zone.spaces():
+            for people in space.people():
+                num_ppl_sch = people.numberofPeopleSchedule()
+                if not num_ppl_sch.is_initialized():
+                    continue
+                occupancy_sch = num_ppl_sch.get()
+                break
+
+    # if there is no occupancy, use always off
+    if occupancy_sch is None:
+        return model.alwaysOffDiscreteSchedule()
+    return occupancy_sch
