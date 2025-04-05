@@ -13,10 +13,8 @@ def create_hx_air_to_air_sensible_and_latent(
         model, name=None, type=None, economizer_lockout=None,
         supply_air_outlet_temperature_control=None, frost_control_type=None,
         nominal_electric_power=None,
-        sensible_heating_100_eff=None, sensible_heating_75_eff=None,
-        latent_heating_100_eff=None, latent_heating_75_eff=None,
-        sensible_cooling_100_eff=None, sensible_cooling_75_eff=None,
-        latent_cooling_100_eff=None, latent_cooling_75_eff=None):
+        sensible_heating_100_eff=None, latent_heating_100_eff=None,
+        sensible_cooling_100_eff=None, latent_cooling_100_eff=None):
     """Creates HeatExchangerAirToAirSensibleAndLatent object."""
     hx = openstudio_model.HeatExchangerAirToAirSensibleAndLatent(model)
     if name is not None:
@@ -37,19 +35,11 @@ def create_hx_air_to_air_sensible_and_latent(
 
     if sensible_heating_100_eff is not None:
         hx.setSensibleEffectivenessat100HeatingAirFlow(sensible_heating_100_eff)
-    if sensible_heating_75_eff is not None:
-        hx.setSensibleEffectivenessat75HeatingAirFlow(sensible_heating_75_eff)
     if latent_heating_100_eff is not None:
         hx.setLatentEffectivenessat100HeatingAirFlow(latent_heating_100_eff)
-    if latent_heating_75_eff is not None:
-        hx.setLatentEffectivenessat75HeatingAirFlow(latent_heating_75_eff)
     if sensible_cooling_100_eff is not None:
         hx.setSensibleEffectivenessat100CoolingAirFlow(sensible_cooling_100_eff)
-    if sensible_cooling_75_eff is not None:
-        hx.setSensibleEffectivenessat75CoolingAirFlow(sensible_cooling_75_eff)
     if latent_cooling_100_eff is not None:
         hx.setLatentEffectivenessat100CoolingAirFlow(latent_cooling_100_eff)
-    if latent_cooling_75_eff is not None:
-        hx.setLatentEffectivenessat75CoolingAirFlow(latent_cooling_75_eff)
 
     return hx
