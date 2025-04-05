@@ -438,7 +438,7 @@ def model_add_chw_loop(
             chiller.setMinimumUnloadingRatio(0.25)
             chiller.setChillerFlowMode('ConstantFlow')
             chiller.setSizingFactor(chiller_sizing_factor)
-            chiller.setReferenceCOP(default_cop)
+            chiller.setReferenceCOP(round(default_cop, 3))
 
             # connect the chiller to the condenser loop if one was supplied
             if condenser_water_loop is None:
@@ -1302,10 +1302,8 @@ def model_add_doas_cold_supply(
         erv = create_hx_air_to_air_sensible_and_latent(
             model, name='{} ERV HX'.format(loop_name),
             type="Rotary", economizer_lockout=True,
-            sensible_heating_100_eff=0.76, sensible_heating_75_eff=0.81,
-            latent_heating_100_eff=0.68, latent_heating_75_eff=0.73,
-            sensible_cooling_100_eff=0.76, sensible_cooling_75_eff=0.81,
-            latent_cooling_100_eff=0.68, latent_cooling_75_eff=0.73)
+            sensible_heating_100_eff=0.76, latent_heating_100_eff=0.68,
+            sensible_cooling_100_eff=0.76, latent_cooling_100_eff=0.68)
         erv.addToNode(oa_system.outboardOANode().get())
 
         # increase fan static pressure to account for ERV
@@ -1536,10 +1534,8 @@ def model_add_doas(
         erv = create_hx_air_to_air_sensible_and_latent(
             model, name='{} ERV HX'.format(loop_name),
             type="Rotary", economizer_lockout=True,
-            sensible_heating_100_eff=0.76, sensible_heating_75_eff=0.81,
-            latent_heating_100_eff=0.68, latent_heating_75_eff=0.73,
-            sensible_cooling_100_eff=0.76, sensible_cooling_75_eff=0.81,
-            latent_cooling_100_eff=0.68, latent_cooling_75_eff=0.73)
+            sensible_heating_100_eff=0.76, latent_heating_100_eff=0.68,
+            sensible_cooling_100_eff=0.76, latent_cooling_100_eff=0.68,)
         erv.addToNode(oa_system.outboardOANode().get())
 
         # increase fan static pressure to account for ERV
@@ -1683,8 +1679,8 @@ def model_add_vav_reheat(
     if vav_sizing_option is not None:
         sizing_system.setSizingOption(vav_sizing_option)
     if hot_water_loop is not None:
-        hw_temp_c = hot_water_loop.sizingPlant.designLoopExitTemperature()
-        hw_delta_t_k = hot_water_loop.sizingPlant.loopDesignTemperatureDifference()
+        hw_temp_c = hot_water_loop.sizingPlant().designLoopExitTemperature()
+        hw_delta_t_k = hot_water_loop.sizingPlant().loopDesignTemperatureDifference()
 
     # air handler controls
     sa_temp_sch = create_constant_schedule_ruleset(
@@ -1700,8 +1696,8 @@ def model_add_vav_reheat(
         model, 'VAV_System_Fan', fan_name='{} Fan'.format(loop_name),
         fan_efficiency=fan_efficiency, pressure_rise=fan_pressure_rise,
         motor_efficiency=fan_motor_efficiency, end_use_subcategory='VAV System Fans')
-    fan.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule)
-    fan.addToNode(air_loop.supplyInletNode)
+    fan.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule())
+    fan.addToNode(air_loop.supplyInletNode())
 
     # create heating coil
     if hot_water_loop is None:
@@ -3471,7 +3467,7 @@ def model_add_high_temp_radiant(
         model: [OpenStudio::Model::Model] OpenStudio model object.
         thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones to
             connect to this system.
-        heating_type: [String] valid choices are Gas, Electric.
+        heating_type: [String] valid choices are NaturalGas, Electric.
         combustion_efficiency: [Double] combustion efficiency as decimal.
         control_type: [String] control type.
     """
@@ -4201,7 +4197,8 @@ def model_add_window_ac(model, thermal_zones):
 
 
 def model_add_furnace_central_ac(
-        model, thermal_zones, heating=True, cooling=False, ventilation=False):
+        model, thermal_zones, heating=True, cooling=False, ventilation=False,
+        heating_type='NaturalGas'):
     """Adds a forced air furnace or central AC to each zone.
 
     Default is a forced air furnace without outdoor air. Code adapted from.
@@ -4210,11 +4207,13 @@ def model_add_furnace_central_ac(
     ResidentialHVACFurnaceFuel/measure.rb
 
     Args:
-        model [OpenStudio::Model::Model] OpenStudio model object
-        thermal_zones [Array<OpenStudio::Model::ThermalZone>] array of zones to add fan coil units to.
-        heating [Boolean] if true, the unit will include a NaturalGas heating coil
-        cooling [Boolean] if true, the unit will include a DX cooling coil
-        ventilation [Boolean] if true, the unit will include an OA intake
+        model: [OpenStudio::Model::Model] OpenStudio model object.
+        thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones to
+            add furnace to.
+        heating: [Boolean] if true, the unit will include a heating coil.
+        cooling: [Boolean] if true, the unit will include a DX cooling coil.
+        ventilation: [Boolean] if true, the unit will include an OA intake.
+        heating_type: [String] valid choices are NaturalGas, Gas, Electricity, Electric.
     """
 
     if heating and cooling:
@@ -4264,8 +4263,13 @@ def model_add_furnace_central_ac(
         # create heating coil
         htg_coil = None
         if heating:
-            htg_coil = create_coil_heating_gas(
-                model, name='{} Heating Coil'.format(loop_name), efficiency=afue)
+            heating_type = 'NaturalGas' if heating_type is None else heating_type
+            if heating_type in ('NaturalGas', 'Gas'):
+                htg_coil = create_coil_heating_gas(
+                    model, name='{} Heating Coil'.format(loop_name), efficiency=afue)
+            else:  # electric coil
+                htg_coil = create_coil_heating_electric(
+                    model, name='{} Heating Coil'.format(loop_name))
 
         # create cooling coil
         clg_coil = None
@@ -4350,7 +4354,7 @@ def model_add_central_air_source_heat_pump(
         model: [OpenStudio::Model::Model] OpenStudio model object.
         thermal_zones: [Array<OpenStudio::Model::ThermalZone>] array of zones
             to add fan coil units to.
-        heating: [Boolean] if true, the unit will include a NaturalGas heating coil.
+        heating: [Boolean] if true, the unit will include a heating coil.
         cooling: [Boolean] if true, the unit will include a DX cooling coil.
         ventilation: [Boolean] if true, the unit will include an OA intake.
     """
@@ -4558,10 +4562,8 @@ def model_add_zone_erv(model, thermal_zones):
         heat_exchanger = create_hx_air_to_air_sensible_and_latent(
             model, name='{} ERV HX'.format(zone_name), type='Plate',
             economizer_lockout=False, supply_air_outlet_temperature_control=False,
-            sensible_heating_100_eff=0.76, sensible_heating_75_eff=0.81,
-            latent_heating_100_eff=0.68, latent_heating_75_eff=0.73,
-            sensible_cooling_100_eff=0.76, sensible_cooling_75_eff=0.81,
-            latent_cooling_100_eff=0.68, latent_cooling_75_eff=0.73)
+            sensible_heating_100_eff=0.76, latent_heating_100_eff=0.68,
+            sensible_cooling_100_eff=0.76, latent_cooling_100_eff=0.68,)
 
         zone_hvac = openstudio_model.ZoneHVACEnergyRecoveryVentilator(
             model, heat_exchanger, supply_fan, exhaust_fan)
@@ -5410,9 +5412,10 @@ def model_add_hvac_system(
 
     # don't do anything if there are no zones
     if len(zones) == 0:
-        return True
+        return None
 
     # add the different types of systems
+    air_loop = None
     if system_type == 'PTAC':
         water_types = ('NaturalGas', 'DistrictHeating',
                        'DistrictHeatingWater', 'DistrictHeatingSteam')
@@ -5476,21 +5479,21 @@ def model_add_hvac_system(
             chilled_water_loop = None
             cooling_type = 'Single Speed DX AC'
 
-        model_add_psz_ac(
+        air_loop = model_add_psz_ac(
             model, zones, cooling_type=cooling_type, chilled_water_loop=chilled_water_loop,
             hot_water_loop=hot_water_loop, heating_type=heating_type,
             supplemental_heating_type=supplemental_heating_type,
             fan_location='DrawThrough', fan_type='ConstantVolume')
 
     elif system_type == 'PSZ-HP':
-        model_add_psz_ac(
+        air_loop = model_add_psz_ac(
             model, zones, system_name='PSZ-HP', cooling_type='Single Speed Heat Pump',
             heating_type='Single Speed Heat Pump', supplemental_heating_type='Electricity',
             fan_location='DrawThrough', fan_type='ConstantVolume')
 
     elif system_type == 'PSZ-VAV':
         supplemental_heating_type = None if main_heat_fuel is None else 'Electricity'
-        model_add_psz_vav(
+        air_loop = model_add_psz_vav(
             model, zones, system_name='PSZ-VAV', heating_type=main_heat_fuel,
             supplemental_heating_type=supplemental_heating_type,
             hvac_op_sch=None, oa_damper_sch=None)
@@ -5576,7 +5579,8 @@ def model_add_hvac_system(
 
     elif system_type == 'Forced Air Furnace':
         model_add_furnace_central_ac(
-            model, zones, heating=True, cooling=False, ventilation=True)
+            model, zones, heating=True, cooling=False, ventilation=True,
+            heating_type=main_heat_fuel)
 
     elif system_type == 'Residential Forced Air Furnace':
         model_add_furnace_central_ac(
@@ -5630,7 +5634,7 @@ def model_add_hvac_system(
         else:
             reheat_type = 'Water'
 
-        model_add_vav_reheat(
+        air_loop = model_add_vav_reheat(
             model, zones, heating_type=heating_type, reheat_type=reheat_type,
             hot_water_loop=hot_water_loop, chilled_water_loop=chilled_water_loop,
             fan_efficiency=0.62, fan_motor_efficiency=0.9, fan_pressure_rise=4.0)
@@ -5657,7 +5661,7 @@ def model_add_hvac_system(
         else:
             chilled_water_loop = None
 
-        model_add_vav_reheat(
+        air_loop = model_add_vav_reheat(
             model, zones, heating_type=heating_type, reheat_type=None,
             hot_water_loop=hot_water_loop, chilled_water_loop=chilled_water_loop,
             fan_efficiency=0.62, fan_motor_efficiency=0.9, fan_pressure_rise=4.0)
@@ -5670,7 +5674,7 @@ def model_add_hvac_system(
         else:
             chilled_water_loop = None
 
-        model_add_vav_reheat(
+        air_loop = model_add_vav_reheat(
             model, zones, heating_type='NaturalGas', reheat_type='NaturalGas',
             chilled_water_loop=chilled_water_loop, fan_efficiency=0.62,
             fan_motor_efficiency=0.9, fan_pressure_rise=4.0)
@@ -5695,7 +5699,7 @@ def model_add_hvac_system(
 
         electric_reheat = True if zone_heat_fuel == 'Electricity' else False
 
-        model_add_pvav(
+        air_loop = model_add_pvav(
             model, zones,
             hot_water_loop=hot_water_loop, chilled_water_loop=chilled_water_loop,
             heating_type=heating_type, electric_reheat=electric_reheat)
@@ -5705,7 +5709,7 @@ def model_add_hvac_system(
             chilled_water_loop = model_get_or_add_chilled_water_loop(model, cool_fuel)
         else:
             chilled_water_loop = None
-        model_add_pvav_pfp_boxes(
+        air_loop = model_add_pvav_pfp_boxes(
             model, zones, chilled_water_loop=chilled_water_loop,
             fan_efficiency=0.62, fan_motor_efficiency=0.9, fan_pressure_rise=4.0)
 
@@ -5713,7 +5717,7 @@ def model_add_hvac_system(
         chilled_water_loop = model_get_or_add_chilled_water_loop(
             model, cool_fuel,
             chilled_water_loop_cooling_type=chilled_water_loop_cooling_type)
-        model_add_vav_pfp_boxes(
+        air_loop = model_add_vav_pfp_boxes(
             model, zones, chilled_water_loop=chilled_water_loop,
             fan_efficiency=0.62, fan_motor_efficiency=0.9, fan_pressure_rise=4.0)
 
@@ -5740,7 +5744,7 @@ def model_add_hvac_system(
         chilled_water_loop = model_get_or_add_chilled_water_loop(
             model, cool_fuel,
             chilled_water_loop_cooling_type=chilled_water_loop_cooling_type)
-        model_add_doas_cold_supply(
+        air_loop = model_add_doas_cold_supply(
             model, zones,
             hot_water_loop=hot_water_loop, chilled_water_loop=chilled_water_loop)
 
@@ -5769,7 +5773,7 @@ def model_add_hvac_system(
         else:
             chilled_water_loop = None
 
-        model_add_doas(
+        air_loop = model_add_doas(
             model, zones, hot_water_loop=hot_water_loop,
             chilled_water_loop=chilled_water_loop)
 
@@ -5793,7 +5797,7 @@ def model_add_hvac_system(
         else:
             chilled_water_loop = None
 
-        model_add_doas(
+        air_loop = model_add_doas(
             model, zones,
             hot_water_loop=hot_water_loop, chilled_water_loop=chilled_water_loop,
             doas_type='DOASVAV', demand_control_ventilation=True)
@@ -5818,7 +5822,7 @@ def model_add_hvac_system(
         else:
             chilled_water_loop = None
 
-        model_add_doas(
+        air_loop = model_add_doas(
             model, zones,
             hot_water_loop=hot_water_loop, chilled_water_loop=chilled_water_loop,
             doas_type='DOASVAV', econo_ctrl_mthd='FixedDryBulb')
@@ -5838,7 +5842,7 @@ def model_add_hvac_system(
     else:  # Combination Systems
         if 'with DOAS with DCV' in system_type:
             # add DOAS DCV system
-            model_add_hvac_system(
+            air_loop = model_add_hvac_system(
                 model, 'DOAS with DCV', main_heat_fuel, zone_heat_fuel, cool_fuel, zones,
                 hot_water_loop_type=hot_water_loop_type,
                 chilled_water_loop_cooling_type=chilled_water_loop_cooling_type,
@@ -5860,7 +5864,7 @@ def model_add_hvac_system(
                 fan_coil_capacity_control_method=fan_coil_capacity_control_method)
         elif 'with DOAS' in system_type:
             # add DOAS system
-            model_add_hvac_system(
+            air_loop = model_add_hvac_system(
                 model, 'DOAS', main_heat_fuel, zone_heat_fuel, cool_fuel, zones,
                 hot_water_loop_type=hot_water_loop_type,
                 chilled_water_loop_cooling_type=chilled_water_loop_cooling_type,
@@ -5904,3 +5908,5 @@ def model_add_hvac_system(
                 fan_coil_capacity_control_method=fan_coil_capacity_control_method)
         else:
             raise ValueError('HVAC system type "{}" not recognized'.format(system_type))
+
+    return air_loop
