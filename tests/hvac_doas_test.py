@@ -194,7 +194,3 @@ def test_low_temp_radiant_metal_panel_with_doas():
     assert os_vector_len(air_loops) == 1
     assert os_vector_len(plant_loops) == 2
     assert os_vector_len(rad_heats) == 2
-
-    from honeybee.config import folders
-    osm = os.path.join(folders.default_simulation_folder, 'in.osm')
-    os_model.save(osm, overwrite=True)

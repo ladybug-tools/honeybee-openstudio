@@ -125,7 +125,7 @@ def test_hvac_ptac():
 
 
 def test_hvac_furnace():
-    """Test the translation of a model with a VAV system."""
+    """Test the translation of a model with a Furnace system."""
     first_floor = Room.from_box('First_Floor', 10, 10, 3, origin=Point3D(0, 0, 0))
     second_floor = Room.from_box('Second_Floor', 10, 10, 3, origin=Point3D(0, 0, 3))
     first_floor.properties.energy.program_type = office_program

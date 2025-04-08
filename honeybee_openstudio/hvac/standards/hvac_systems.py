@@ -3125,7 +3125,7 @@ def model_add_evap_cooler(model, thermal_zones):
     dsgn_temps['max_clg_dsgn_sup_air_temp_c'] = \
         TEMPERATURE.to_unit([dsgn_temps['max_clg_dsgn_sup_air_temp_f']], 'C', 'F')[0]
     dsgn_temps['approach_r'] = 3.0  # wetbulb approach temperature
-    dsgn_temps['approach_k'] = TEMP_DELTA.to_unit(['approach_r'], 'dC', 'dF')[0]
+    dsgn_temps['approach_k'] = TEMP_DELTA.to_unit([dsgn_temps['approach_r']], 'dC', 'dF')[0]
 
     # EMS programs
     programs = []
@@ -3182,7 +3182,7 @@ def model_add_evap_cooler(model, thermal_zones):
         # Create a program to turn on Evap Cooler if
         # there is a cooling load in the target zone.
         # Load < 0.0 is a cooling load.
-        avail_program = openstudio_model.nergyManagementSystemProgram(model)
+        avail_program = openstudio_model.EnergyManagementSystemProgram(model)
         avail_program.setName('{} Availability Control'.format(ems_loop_name))
         avail_program_body = \
             'IF {zn_load_sensor_handle} < 0.0\n' \
@@ -3863,7 +3863,7 @@ def model_add_low_temp_radiant(
         if include_carpet:
             layers.append(mat_thin_carpet_tile)
         radiant_exterior_wood_construction = \
-            openstudio_model.ConstructionWithInternalSource.new(layers)
+            openstudio_model.ConstructionWithInternalSource(layers)
         radiant_exterior_wood_construction.setName(
             'Radiant Exterior Wood Floor Construction')
         radiant_exterior_wood_construction.setSourcePresentAfterLayerNumber(1)
@@ -4063,7 +4063,7 @@ def model_add_low_temp_radiant(
                         else:  # interior ceiling
                             surface.setConstruction(radiant_interior_ceiling_metal_construction)
                 elif radiant_type == 'floorwithhardwood':
-                    if surface.surfaceType == 'Floor':
+                    if surface.surfaceType() == 'Floor':
                         srf_count += 1
                         if surface.outsideBoundaryCondition() == 'Ground':
                             surface.setConstruction(radiant_ground_wood_construction)
@@ -4173,7 +4173,7 @@ def model_add_window_ac(model, thermal_zones):
             model, name='{} Window AC Cooling Coil'.format(zone_name),
             type='Window AC', cop=cop)
         clg_coil.setRatedSensibleHeatRatio(shr)
-        clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate(773.3)
+        clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate2017(773.3)
         clg_coil.setEvaporativeCondenserEffectiveness(0.9)
         clg_coil.setMaximumOutdoorDryBulbTemperatureForCrankcaseHeaterOperation(10)
         clg_coil.setBasinHeaterSetpointTemperature(2)
@@ -4280,7 +4280,7 @@ def model_add_furnace_central_ac(
                 type='Residential Central AC')
             clg_coil.setRatedSensibleHeatRatio(shr)
             clg_coil.setRatedCOP(eer_to_cop_no_fan(eer))
-            clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate(
+            clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate2017(
                 ac_w_per_cfm / FLOW_RATE.to_unit([1.0], 'm3/s', 'cfm')[0])
             clg_coil.setNominalTimeForCondensateRemovalToBegin(1000.0)
             clg_coil.setRatioOfInitialMoistureEvaporationRateAndSteadyStateLatentCapacity(1.5)
@@ -4428,7 +4428,7 @@ def model_add_central_air_source_heat_pump(
                 model, name='{} Cooling Coil'.format(loop_name),
                 type='Residential Central ASHP', cop=cop)
             clg_coil.setRatedSensibleHeatRatio(shr)
-            clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate(
+            clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate2017(
                 ac_w_per_cfm / FLOW_RATE.to_unit([1.0], 'm3/s', 'cfm')[0])
             clg_coil.setNominalTimeForCondensateRemovalToBegin(1000.0)
             clg_coil.setRatioOfInitialMoistureEvaporationRateAndSteadyStateLatentCapacity(1.5)

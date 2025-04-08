@@ -230,10 +230,10 @@ def ventilation_control_to_openstudio_afn(
     if control.schedule.identifier != 'Always On':
         vent_sch = os_model.getScheduleByName(control.schedule.identifier)
         if vent_sch.is_initialized():
-            sch_var = OSOutputVariable.new('Schedule Value', os_model)
+            sch_var = OSOutputVariable('Schedule Value', os_model)
             sch_var.setReportingFrequency('Timestep')
             sch_var.setKeyValue(control.schedule.identifier)
-            sch_sensor = OSEnergyManagementSystemSensor.new(os_model, sch_var)
+            sch_sensor = OSEnergyManagementSystemSensor(os_model, sch_var)
             sch_sen_id = 'SensorSch{}'.format(re.sub('[^A-Za-z0-9]', '', room_id))
             sch_sensor.setName(sch_sen_id)
 
