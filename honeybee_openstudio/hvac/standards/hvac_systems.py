@@ -922,15 +922,15 @@ def model_add_hp_loop(
 
     supply_outlet_pipe = openstudio_model.PipeAdiabatic(model)
     supply_outlet_pipe.setName('{} Supply Outlet'.format(loop_name))
-    supply_outlet_pipe.addToNode(heat_pump_water_loop.supplyOutletNode)
+    supply_outlet_pipe.addToNode(heat_pump_water_loop.supplyOutletNode())
 
     demand_inlet_pipe = openstudio_model.PipeAdiabatic(model)
     demand_inlet_pipe.setName('{} Demand Inlet'.format(loop_name))
-    demand_inlet_pipe.addToNode(heat_pump_water_loop.demandInletNode)
+    demand_inlet_pipe.addToNode(heat_pump_water_loop.demandInletNode())
 
     demand_outlet_pipe = openstudio_model.PipeAdiabatic(model)
     demand_outlet_pipe.setName('{} Demand Outlet'.format(loop_name))
-    demand_outlet_pipe.addToNode(heat_pump_water_loop.demandOutletNode)
+    demand_outlet_pipe.addToNode(heat_pump_water_loop.demandOutletNode())
 
     return heat_pump_water_loop
 
@@ -969,7 +969,7 @@ def model_add_ground_hx_loop(model, system_name='Ground HX Loop'):
     slope_c_per_c = (max_outlet_c - min_outlet_c) / (max_inlet_c - min_inlet_c)
     intercept_c = min_outlet_c - (slope_c_per_c * min_inlet_c)
 
-    sizing_plant = ground_hx_loop.sizingPlant
+    sizing_plant = ground_hx_loop.sizingPlant()
     sizing_plant.setLoopType('Heating')
     sizing_plant.setDesignLoopExitTemperature(max_outlet_c)
     sizing_plant.setLoopDesignTemperatureDifference(delta_t_k)
@@ -1010,7 +1010,7 @@ def model_add_ground_hx_loop(model, system_name='Ground HX Loop'):
     inlet_temp_sensor = openstudio_model.EnergyManagementSystemSensor(
         model, 'System Node Temperature')
     inlet_temp_sensor.setName('{} Inlet Temp Sensor'.format(ground_hx_ems_name))
-    inlet_temp_sensor.setKeyName(ground_hx_loop.supplyInletNode().handle().to_s())
+    inlet_temp_sensor.setKeyName(str(ground_hx_loop.supplyInletNode().handle()))
 
     # actuator to set supply outlet temperature
     outlet_temp_actuator = openstudio_model.EnergyManagementSystemActuator(
@@ -3649,10 +3649,10 @@ def model_add_low_temp_radiant(
             Only used if radiant_lockout is True.
     """
     # determine construction insulation thickness by climate zone
-    climate_zone_obj = model.getClimateZones.getClimateZone('ASHRAE', 2006)
-    if not climate_zone_obj.is_initialized():
-        climate_zone_obj = model.getClimateZones.getClimateZone('ASHRAE', 2013)
-    if not climate_zone_obj.is_initialized() or climate_zone_obj.value() == '':
+    climate_zone_obj = model.getClimateZones().getClimateZone('ASHRAE', 2006)
+    if climate_zone_obj.value() == '':
+        climate_zone_obj = model.getClimateZones().getClimateZone('ASHRAE', 2013)
+    if climate_zone_obj.value() == '':
         climate_zone = None
     else:
         climate_zone = climate_zone_obj.value()
@@ -3986,21 +3986,24 @@ def model_add_low_temp_radiant(
 
     # create availability schedules
     if end_hour > start_hour:
-        radiant_avail_sch.defaultDaySchedule.addValue(
+        radiant_avail_sch.defaultDaySchedule().addValue(
             openstudio.Time(0, start_hour, start_minute, 0), 1.0)
-        radiant_avail_sch.defaultDaySchedule.addValue(
+        radiant_avail_sch.defaultDaySchedule().addValue(
             openstudio.Time(0, end_hour, end_minute, 0), 0.0)
         if end_hour < 24:
-            radiant_avail_sch.defaultDaySchedule.addValue(openstudio.Time(0, 24, 0, 0), 1.0)
+            radiant_avail_sch.defaultDaySchedule().addValue(
+                openstudio.Time(0, 24, 0, 0), 1.0)
     elif start_hour > end_hour:
-        radiant_avail_sch.defaultDaySchedule.addValue(
+        radiant_avail_sch.defaultDaySchedule().addValue(
             openstudio.Time(0, end_hour, end_minute, 0), 0.0)
-        radiant_avail_sch.defaultDaySchedule.addValue(
+        radiant_avail_sch.defaultDaySchedule().addValue(
             openstudio.Time(0, start_hour, start_minute, 0), 1.0)
         if start_hour < 24:
-            radiant_avail_sch.defaultDaySchedule.addValue(openstudio.Time(0, 24, 0, 0), 0.0)
+            radiant_avail_sch.defaultDaySchedule().addValue(
+                openstudio.Time(0, 24, 0, 0), 0.0)
     else:
-        radiant_avail_sch.defaultDaySchedule.addValue(openstudio.Time(0, 24, 0, 0), 1.0)
+        radiant_avail_sch.defaultDaySchedule().addValue(
+            openstudio.Time(0, 24, 0, 0), 1.0)
 
     # add supply water temperature control if enabled
     if plant_supply_water_temperature_control:
@@ -5287,7 +5290,7 @@ def model_get_or_add_ambient_water_loop(model):
     if exist_loop.is_initialized():
         ambient_water_loop = exist_loop.get()
     else:
-        model_add_district_ambient_loop(model)
+        ambient_water_loop = model_add_district_ambient_loop(model)
     return ambient_water_loop
 
 
@@ -5302,7 +5305,7 @@ def model_get_or_add_ground_hx_loop(model):
     if exist_loop.is_initialized():
         ground_hx_loop = exist_loop.get()
     else:
-        model_add_ground_hx_loop(model)
+        ground_hx_loop = model_add_ground_hx_loop(model)
     return ground_hx_loop
 
 
@@ -5314,8 +5317,9 @@ def model_get_or_add_heat_pump_loop(
     if exist_loop.is_initialized():
         heat_pump_loop = exist_loop.get()
     else:
-        model_add_hp_loop(model, heating_fuel=heat_fuel, cooling_fuel=cool_fuel,
-                          cooling_type=heat_pump_loop_cooling_type)
+        heat_pump_loop = model_add_hp_loop(
+            model, heating_fuel=heat_fuel, cooling_fuel=cool_fuel,
+            cooling_type=heat_pump_loop_cooling_type)
     return heat_pump_loop
 
 
