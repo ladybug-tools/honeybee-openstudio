@@ -172,16 +172,6 @@ def create_fan_variable_volume_from_json(
     if fan_power_minimum_flow_rate_fraction is None:
         fan_power_minimum_flow_rate_fraction = \
             fan_json['fan_power_minimum_flow_rate_fraction']
-    if fan_power_coefficient_1 is None:
-        fan_power_coefficient_1 = fan_json['fan_power_coefficient_1']
-    if fan_power_coefficient_2 is None:
-        fan_power_coefficient_2 = fan_json['fan_power_coefficient_2']
-    if fan_power_coefficient_3 is None:
-        fan_power_coefficient_3 = fan_json['fan_power_coefficient_3']
-    if fan_power_coefficient_4 is None:
-        fan_power_coefficient_4 = fan_json['fan_power_coefficient_4']
-    if fan_power_coefficient_5 is None and 'fan_power_coefficient_5' in fan_json:
-        fan_power_coefficient_5 = fan_json['fan_power_coefficient_5']
 
     pressure_rise = PRESSURE.to_unit([pressure_rise], 'Pa', 'inH2O')[0]
 
