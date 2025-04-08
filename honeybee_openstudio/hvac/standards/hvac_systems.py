@@ -2488,7 +2488,7 @@ def model_add_psz_ac(
 
         # create a diffuser and attach the zone/diffuser pair to the air loop
         diffuser = openstudio_model.AirTerminalSingleDuctUncontrolled(
-            model, model.alwaysOnDiscreteSchedule)
+            model, model.alwaysOnDiscreteSchedule())
         diffuser.setName('{} Diffuser'.format(loop_name))
         air_loop.multiAddBranchForZone(zone, diffuser.to_HVACComponent().get())
         air_loops.append(air_loop)
@@ -2970,8 +2970,6 @@ def model_add_pthp(model, thermal_zones, fan_type='Cycling', ventilation=True):
             supplemental_htg_coil)
         pthp_system.setName('{} PTHP'.format(zone_name))
         pthp_system.setFanPlacement('DrawThrough')
-        pthp_system.setSupplyAirFanOperatingModeSchedule(
-            model.alwaysOffDiscreteSchedule())
         if fan_type == 'ConstantVolume':
             pthp_system.setSupplyAirFanOperatingModeSchedule(
                 model.alwaysOnDiscreteSchedule())
@@ -4294,7 +4292,7 @@ def model_add_furnace_central_ac(
         fan = create_fan_by_name(
             model, 'Residential_HVAC_Fan', fan_name='{} Supply Fan'.format(loop_name),
             end_use_subcategory='Residential HVAC Fans')
-        fan.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule)
+        fan.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule())
 
         if ventilation:
             # create outdoor air intake
@@ -5702,7 +5700,7 @@ def model_add_hvac_system(
         air_loop = model_add_pvav(
             model, zones,
             hot_water_loop=hot_water_loop, chilled_water_loop=chilled_water_loop,
-            heating_type=heating_type, electric_reheat=electric_reheat)
+            heating_type=main_heat_fuel, electric_reheat=electric_reheat)
 
     elif system_type == 'PVAV PFP Boxes':
         if cool_fuel == 'DistrictCooling':
