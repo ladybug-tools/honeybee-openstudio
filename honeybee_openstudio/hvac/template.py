@@ -268,26 +268,26 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
 
     elif isinstance(hvac, RadiantwithDOAS):
         chilled_water_loop_cooling_type = 'WaterCooled'
-        if equip == 'Radiant_Chiller_Boiler':
+        if equip == 'DOAS_Radiant_Chiller_Boiler':
             main_heat_fuel, cool_fuel = 'NaturalGas', 'Electricity'
-        elif equip == 'Radiant_Chiller_ASHP':
+        elif equip == 'DOAS_Radiant_Chiller_ASHP':
             main_heat_fuel, cool_fuel = 'AirSourceHeatPump', 'Electricity'
-        elif equip == 'Radiant_Chiller_DHW':
+        elif equip == 'DOAS_Radiant_Chiller_DHW':
             main_heat_fuel, cool_fuel = 'DistrictHeating', 'Electricity'
-        elif equip == 'Radiant_ACChiller_Boiler':
+        elif equip == 'DOAS_Radiant_ACChiller_Boiler':
             main_heat_fuel, cool_fuel = 'NaturalGas', 'Electricity'
             chilled_water_loop_cooling_type = 'AirCooled'
-        elif equip == 'Radiant_ACChiller_ASHP':
+        elif equip == 'DOAS_Radiant_ACChiller_ASHP':
             main_heat_fuel, cool_fuel = 'AirSourceHeatPump', 'Electricity'
             chilled_water_loop_cooling_type = 'AirCooled'
-        elif equip == 'Radiant_ACChiller_DHW':
+        elif equip == 'DOAS_Radiant_ACChiller_DHW':
             main_heat_fuel, cool_fuel = 'DistrictHeating', 'Electricity'
             chilled_water_loop_cooling_type = 'AirCooled'
-        elif equip == 'Radiant_DCW_Boiler':
+        elif equip == 'DOAS_Radiant_DCW_Boiler':
             main_heat_fuel, cool_fuel = 'NaturalGas', 'DistrictCooling'
-        elif equip == 'Radiant_DCW_ASHP':
+        elif equip == 'DOAS_Radiant_DCW_ASHP':
             main_heat_fuel, cool_fuel = 'AirSourceHeatPump', 'DistrictCooling'
-        elif equip == 'Radiant_DCW_DHW':
+        elif equip == 'DOAS_Radiant_DCW_DHW':
             main_heat_fuel, cool_fuel = 'DistrictHeating', 'DistrictCooling'
 
         hot_water_loop = model_get_or_add_hot_water_loop(
@@ -311,7 +311,8 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
         model_add_low_temp_radiant(
             os_model, zones, hot_water_loop, chilled_water_loop, radiant_type=radiant_type,
             include_carpet=include_carpet, control_strategy=control_strategy,
-            radiant_temperature_control_type=radiant_temperature_control_type)
+            radiant_temperature_control_type=radiant_temperature_control_type,
+            radiant_availability_type='all_day')
 
     elif isinstance(hvac, VRFwithDOAS):
         if equip == 'DOAS_VRF':
@@ -480,7 +481,8 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
         model_add_low_temp_radiant(
             os_model, zones, hot_water_loop, chilled_water_loop, radiant_type=radiant_type,
             include_carpet=include_carpet, control_strategy=control_strategy,
-            radiant_temperature_control_type=radiant_temperature_control_type)
+            radiant_temperature_control_type=radiant_temperature_control_type,
+            radiant_availability_type='all_day')
 
     elif isinstance(hvac, ForcedAirFurnace):
         if equip == 'Furnace':
@@ -929,7 +931,7 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
         if isinstance(hvac, _DOASBase):
             if hvac.doas_availability_schedule is not None:
                 sch_id = hvac.doas_availability_schedule.identifier
-                schedule = openstudio_model.getScheduleByName(sch_id)
+                schedule = os_model.getScheduleByName(sch_id)
                 if schedule.is_initialized():
                     avail_sch = schedule.get()
                     for os_air_loop in os_air_loops:
