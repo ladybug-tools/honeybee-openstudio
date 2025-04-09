@@ -421,6 +421,7 @@ def room_to_openstudio(room, os_model, adj_map=None, include_infiltration=True):
         os_space.setDisplayName(room.display_name)
     if room.exclude_floor_area:
         os_space.setPartofTotalFloorArea(False)
+    os_space.setVolume(room.volume)
 
     # assign the construction set if specified
     if room.properties.energy._construction_set is not None:
@@ -522,7 +523,7 @@ def room_to_openstudio(room, os_model, adj_map=None, include_infiltration=True):
 def model_to_openstudio(
     model, seed_model=None, schedule_directory=None,
     use_geometry_names=False, use_resource_names=False,
-    triangulate_non_planar_orphaned=False, enforce_rooms=False
+    triangulate_non_planar_orphaned=False, enforce_rooms=False, print_progress=False
 ):
     """Create an OpenStudio Model from a Honeybee Model.
 
@@ -564,6 +565,8 @@ def model_to_openstudio(
         enforce_rooms: Boolean to note whether this method should enforce the
             presence of Rooms in the Model, which is as necessary prerequisite
             for simulation in EnergyPlus. (Default: False).
+        print_progress: Set to True to have the progress of the translation
+            printed as it is completed.
 
     Usage:
 
@@ -645,6 +648,8 @@ def model_to_openstudio(
     else:
         os_building.setName(model.identifier)
     os_model.setDayofWeekforStartDay('Sunday')  # this avoids lots of warnings
+    if print_progress:
+        print('Model prepared for translation')
 
     # write all of the schedules and type limits
     schedules, type_limits = [], []
@@ -665,6 +670,8 @@ def model_to_openstudio(
         schedule_type_limits_to_openstudio(stl, os_model)
     for sch in schedules:
         schedule_to_openstudio(sch, os_model, schedule_directory)
+    if print_progress:
+        print('Translated {} Schedules'.format(len(schedules)))
 
     # write all of the materials, constructions, and construction sets
     materials, constructions, dynamic_cons = [], [], []
@@ -690,30 +697,49 @@ def model_to_openstudio(
                 pass  # ShadeConstruction; no need to write it
     for mat in set(materials):
         material_to_openstudio(mat, os_model)
+    if print_progress:
+        print('Translated {} Materials'.format(len(materials)))
     for constr in constructions:
         construction_to_openstudio(constr, os_model)
+    if print_progress:
+        print('Translated {} Constructions'.format(len(constructions)))
     os_generic_c_set = construction_set_to_openstudio(generic_construction_set, os_model)
     os_building.setDefaultConstructionSet(os_generic_c_set)
-    for con_set in model.properties.energy.construction_sets:
+    c_sets = model.properties.energy.construction_sets
+    for con_set in c_sets:
         construction_set_to_openstudio(con_set, os_model)
+    if print_progress:
+        print('Translated {} Construction Sets'.format(len(c_sets)))
 
     # translate all of the programs
-    for program in model.properties.energy.program_types:
+    p_types = model.properties.energy.program_types
+    for program in p_types:
         program_type_to_openstudio(program, os_model, use_simple_vent)
+    if print_progress:
+        print('Translated {} Program Types'.format(len(p_types)))
 
     # create all of the spaces with all of their geometry
+    if print_progress:
+        print('Translating Rooms')
     space_map, story_map = {}, {}
     adj_map = {'faces': {}, 'sub_faces': {}}
-    for room in model.rooms:
+    rooms = model.rooms
+    for i, room in enumerate(rooms):
         os_space = room_to_openstudio(room, os_model, adj_map, use_simple_vent)
         space_map[room.identifier] = os_space
         try:
             story_map[room.story].append(os_space)
         except KeyError:  # first room found on the story
             story_map[room.story] = [os_space]
+        if print_progress and (i + 1) % 100 == 0:
+            print('  Translated {} out of {} Rooms'.format(i + 1, len(rooms)))
+    if print_progress:
+        print('Translated all {} Rooms'.format(len(rooms)))
 
     # create all of the zones
-    zone_map = {}
+    if print_progress:
+        print('Translating Zones')
+    zone_map, zone_count = {}, 0
     for room in single_zones:
         os_zone = OSThermalZone(os_model)
         os_zone.setName(room.identifier)
@@ -739,6 +765,9 @@ def model_to_openstudio(
                 os_zone.setPrimaryDaylightingControl(os_daylight)
                 os_zone.setFractionofZoneControlledbyPrimaryDaylightingControl(
                     daylight.control_fraction)
+        zone_count += 1
+        if print_progress and zone_count % 100 == 0:
+            print('  Translated {} Zones'.format(zone_count))
     for zone_id, zone_data in zone_dict.items():
         rooms, z_prop, set_pt, vent = zone_data
         mult, ceil_hgt, vol, _, _ = z_prop
@@ -758,6 +787,11 @@ def model_to_openstudio(
             humid = setpoint_to_openstudio_humidistat(set_pt, os_model, zone_id)
             if humid is not None:
                 os_zone.setZoneControlHumidistat(humid)
+        zone_count += 1
+        if print_progress and zone_count % 100 == 0:
+            print('  Translated {} Zones'.format(zone_count))
+    if print_progress:
+        print('Translated all {} Zones'.format(zone_count))
 
     # triangulate any apertures or doors with more than 4 vertices
     tri_apertures, _ = model.triangulated_apertures()
@@ -880,6 +914,11 @@ def model_to_openstudio(
                     zone_node, os_model, room.identifier)
                 prog_manager.addProgram(os_ems_program)
 
+    if print_progress:
+        print('Assigned adjacencies to all Rooms')
+    if print_progress:
+        print('Translating Systems')
+
     # write any ventilation fan definitions
     for room in model.rooms:
         for fan in room.properties.energy.fans:
@@ -894,6 +933,7 @@ def model_to_openstudio(
             if room.properties.energy.hvac is not None:
                 zone_rooms[zone_id] = room
                 break
+    ideal_air_count = 0
     template_zones, template_hvac_dict, detailed_hvac_dict = {}, {}, {}
     for zone_id, room in zone_rooms.items():
         hvac = room.properties.energy.hvac
@@ -903,6 +943,7 @@ def model_to_openstudio(
             if room.identifier != zone_id:
                 os_hvac.setName('{} Ideal Loads Air System'.format(zone_id))
             os_hvac.addToThermalZone(os_zone)
+            ideal_air_count += 1
         elif isinstance(hvac, _TemplateSystem):
             template_hvac_dict[hvac.identifier] = hvac
             set_pt = room.properties.energy.setpoint
@@ -918,13 +959,18 @@ def model_to_openstudio(
                     zone_list['cooled_zones'].append(os_zone)
         elif isinstance(hvac, DetailedHVAC):
             detailed_hvac_dict[hvac.identifier] = hvac
+    if print_progress and ideal_air_count != 0:
+        print('  Assigned {} Ideal Air Systems'.format(ideal_air_count))
     # translate template HVAC systems
-    for hvac_id, os_zones in template_zones.items():
-        hvac = template_hvac_dict[hvac_id]
-        template_hvac_to_openstudio(hvac, os_zones, os_model)
-    if len(template_zones) != 0:  # rename air loop and plant loop nodes for readability
-        rename_air_loop_nodes(os_model)
-        rename_plant_loop_nodes(os_model)
+    if len(template_hvac_dict) != 0:
+        for hvac_id, os_zones in template_zones.items():
+            hvac = template_hvac_dict[hvac_id]
+            template_hvac_to_openstudio(hvac, os_zones, os_model)
+            if print_progress:
+                print('  Assigned template HVAC: {}'.format(hvac.display_name))
+        if len(template_zones) != 0:  # rename air and plant loop nodes for readability
+            rename_air_loop_nodes(os_model)
+            rename_plant_loop_nodes(os_model)
     # translate detailed HVAC systems
     if len(detailed_hvac_dict) != 0:
         assert hbe_folders.ironbug_exe is not None, 'Detailed Ironbug HVAC System was ' \
@@ -948,6 +994,8 @@ def model_to_openstudio(
                 msg = 'Failed to apply Detailed HVAC "{}"\n{}\n{}'.format(
                     hvac_id, result[0], result[1])
                 raise ValueError(msg)
+            if print_progress:
+                print('  Assigned detailed HVAC: {}'.format(hvac.display_name))
 
     # write service hot water and any SHW systems
     shw_sys_dict = {}
@@ -974,6 +1022,10 @@ def model_to_openstudio(
         for shw_sys_props in shw_sys_dict.values():
             shw_sys, os_shw_conns, total_flow, w_temp = shw_sys_props
             shw_system_to_openstudio(shw_sys, os_shw_conns, total_flow, w_temp, os_model)
+            if print_progress:
+                shw_sys_name = shw_sys.display_name \
+                    if shw_sys is not None else 'Default_District_SHW'
+                print('  Assigned SHW System: {}'.format(shw_sys_name))
 
     # write any EMS programs for dynamic constructions
     if len(dynamic_cons) != 0:
@@ -1005,16 +1057,24 @@ def model_to_openstudio(
         electric_load_center_to_openstudio(load_center, os_pv_gens, os_model)
 
     # add the orphaned objects
+    shade_count = 0
     for face in model.orphaned_faces:
         face_to_openstudio(face, os_model)
+        shade_count += 1
     for aperture in model.orphaned_apertures:
         aperture_to_openstudio(aperture, os_model)
+        shade_count += 1
     for door in model.orphaned_doors:
         door_to_openstudio(door, os_model)
+        shade_count += 1
     for shade in model.orphaned_shades:
         shade_to_openstudio(shade, os_model)
+        shade_count += 1
     for shade_mesh in model.shade_meshes:
         shade_mesh_to_openstudio(shade_mesh, os_model)
+        shade_count += 1
+    if print_progress and shade_count != 0:
+        print('Translated {} Shades'.format(shade_count))
 
     # return the Model object
     return os_model
