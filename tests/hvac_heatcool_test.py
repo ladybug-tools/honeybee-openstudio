@@ -195,10 +195,6 @@ def test_window_ac():
     assert os_vector_len(air_loops) == 0
     assert os_vector_len(plant_loops) == 1
 
-    from honeybee.config import folders
-    osm = os.path.join(folders.default_simulation_folder, 'in.osm')
-    os_model.save(osm, overwrite=True)
-
 
 def test_wshp():
     """Test the translation of a model with a WSHP system."""

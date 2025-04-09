@@ -572,7 +572,6 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
                                   None, None, heated_only_zones)
 
     elif isinstance(hvac, PSZ):
-        print(system_zones)
         if equip == 'PSZAC_ElectricBaseboard':
             air_loop = model_add_hvac_system(os_model, 'PSZ-AC', None, None,
                                              'Electricity', system_zones)
@@ -898,7 +897,7 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
                                   'Electricity', cooled_zones)
 
     else:
-        print('HVAC system type "{}" not recognized'.format(equip))
+        raise ValueError('HVAC system type "{}" not recognized'.format(equip))
 
     # assign all of the properties associated with the air loop
     if air_loop is not None:

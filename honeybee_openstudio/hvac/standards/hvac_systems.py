@@ -5,6 +5,7 @@ https://github.com/NREL/openstudio-standards/blob/master/
 lib/openstudio-standards/prototypes/common/objects/Prototype.hvac_systems.rb
 """
 from __future__ import division
+import sys
 
 from ladybug.datatype.temperature import Temperature
 from ladybug.datatype.temperaturedelta import TemperatureDelta
@@ -13,7 +14,8 @@ from ladybug.datatype.volumeflowrate import VolumeFlowRate
 from ladybug.datatype.power import Power
 from ladybug.datatype.distance import Distance
 
-from honeybee_openstudio.openstudio import openstudio, openstudio_model, os_vector_len
+from honeybee_openstudio.openstudio import openstudio, openstudio_model, \
+    os_vector_len, os_create_vector
 from .utilities import kw_per_ton_to_cop, eer_to_cop_no_fan, hspf_to_cop_no_fan, \
     ems_friendly_name, rename_plant_loop_nodes
 from .schedule import create_constant_schedule_ruleset, model_add_schedule
@@ -1314,8 +1316,12 @@ def model_add_doas_cold_supply(
     # add thermal zones to airloop
     for zone in thermal_zones:
         # make an air terminal for the zone
-        air_terminal = openstudio_model.AirTerminalSingleDuctUncontrolled(
-            model, model.alwaysOnDiscreteSchedule())
+        if model.version() < openstudio.VersionString('2.7.0'):
+            air_terminal = openstudio_model.AirTerminalSingleDuctUncontrolled(
+                model, model.alwaysOnDiscreteSchedule())
+        else:
+            air_terminal = openstudio_model.AirTerminalSingleDuctConstantVolumeNoReheat(
+                model, model.alwaysOnDiscreteSchedule())
         air_terminal.setName('{} Air Terminal'.format(zone.nameString()))
 
         # attach new terminal to the zone and to the airloop
@@ -1552,8 +1558,12 @@ def model_add_doas(
 
         # make an air terminal for the zone
         if doas_type == 'DOASCV':
-            air_terminal = openstudio_model.AirTerminalSingleDuctUncontrolled(
-                model, model.alwaysOnDiscreteSchedule())
+            if model.version() < openstudio.VersionString('2.7.0'):
+                air_terminal = openstudio_model.AirTerminalSingleDuctUncontrolled(
+                    model, model.alwaysOnDiscreteSchedule())
+            else:
+                air_terminal = openstudio_model.AirTerminalSingleDuctConstantVolumeNoReheat(
+                    model, model.alwaysOnDiscreteSchedule())
         elif doas_type == 'DOASVAVReheat':
             # Reheat coil
             if hot_water_loop is None:
@@ -2487,8 +2497,12 @@ def model_add_psz_ac(
             avail_mgr.setCyclingRunTime(1800)
 
         # create a diffuser and attach the zone/diffuser pair to the air loop
-        diffuser = openstudio_model.AirTerminalSingleDuctUncontrolled(
-            model, model.alwaysOnDiscreteSchedule())
+        if model.version() < openstudio.VersionString('2.7.0'):
+            diffuser = openstudio_model.AirTerminalSingleDuctUncontrolled(
+                model, model.alwaysOnDiscreteSchedule())
+        else:
+            diffuser = openstudio_model.AirTerminalSingleDuctConstantVolumeNoReheat(
+                model, model.alwaysOnDiscreteSchedule())
         diffuser.setName('{} Diffuser'.format(loop_name))
         air_loop.multiAddBranchForZone(zone, diffuser.to_HVACComponent().get())
         air_loops.append(air_loop)
@@ -2784,8 +2798,12 @@ def model_add_minisplit_hp(
         unitary.setSupplyAirFanOperatingModeSchedule(model.alwaysOffDiscreteSchedule())
 
         # create a diffuser
-        diffuser = openstudio_model.AirTerminalSingleDuctUncontrolled(
-            model, model.alwaysOnDiscreteSchedule())
+        if model.version() < openstudio.VersionString('2.7.0'):
+            diffuser = openstudio_model.AirTerminalSingleDuctUncontrolled(
+                model, model.alwaysOnDiscreteSchedule())
+        else:
+            diffuser = openstudio_model.AirTerminalSingleDuctConstantVolumeNoReheat(
+                model, model.alwaysOnDiscreteSchedule())
         diffuser.setName('{} Direct Air'.format(zone_name))
         air_loop.multiAddBranchForZone(zone, diffuser.to_HVACComponent().get())
 
@@ -3264,8 +3282,12 @@ def model_add_evap_cooler(model, thermal_zones):
         oa_intake.addToNode(air_loop.supplyInletNode())
 
         # make an air terminal for the zone
-        air_terminal = openstudio_model.AirTerminalSingleDuctUncontrolled(
-            model, model.alwaysOnDiscreteSchedule())
+        if model.version() < openstudio.VersionString('2.7.0'):
+            air_terminal = openstudio_model.AirTerminalSingleDuctUncontrolled(
+                model, model.alwaysOnDiscreteSchedule())
+        else:
+            air_terminal = openstudio_model.AirTerminalSingleDuctConstantVolumeNoReheat(
+                model, model.alwaysOnDiscreteSchedule())
         air_terminal.setName('{} Air Terminal'.format(zone_name))
 
         # attach new terminal to the zone and to the airloop
@@ -3776,8 +3798,10 @@ def model_add_low_temp_radiant(
         layers = [mat_slab_insulation, mat_concrete_3_5in, mat_concrete_1_5in]
         if include_carpet:
             layers.append(mat_thin_carpet_tile)
+        materials = os_create_vector(layers, openstudio_model.MaterialVector())
         radiant_ground_slab_construction = \
-            openstudio_model.ConstructionWithInternalSource(layers)
+            openstudio_model.ConstructionWithInternalSource(model)
+        radiant_ground_slab_construction.setLayers(materials)
         radiant_ground_slab_construction.setName('Radiant Ground Slab Construction')
         radiant_ground_slab_construction.setSourcePresentAfterLayerNumber(2)
         radiant_ground_slab_construction.setTemperatureCalculationRequestedAfterLayerNumber(3)
@@ -3786,8 +3810,10 @@ def model_add_low_temp_radiant(
         layers = [mat_ext_insulation, mat_concrete_3_5in, mat_concrete_1_5in]
         if include_carpet:
             layers.append(mat_thin_carpet_tile)
+        materials = os_create_vector(layers, openstudio_model.MaterialVector())
         radiant_exterior_slab_construction = \
-            openstudio_model.ConstructionWithInternalSource(layers)
+            openstudio_model.ConstructionWithInternalSource(model)
+        radiant_exterior_slab_construction.setLayers(materials)
         radiant_exterior_slab_construction.setName('Radiant Exterior Slab Construction')
         radiant_exterior_slab_construction.setSourcePresentAfterLayerNumber(2)
         radiant_exterior_slab_construction.setTemperatureCalculationRequestedAfterLayerNumber(3)
@@ -3796,8 +3822,10 @@ def model_add_low_temp_radiant(
         layers = [mat_concrete_3_5in, mat_concrete_1_5in]
         if include_carpet:
             layers.append(mat_thin_carpet_tile)
+        materials = os_create_vector(layers, openstudio_model.MaterialVector())
         radiant_interior_floor_slab_construction = \
-            openstudio_model.ConstructionWithInternalSource(layers)
+            openstudio_model.ConstructionWithInternalSource(model)
+        radiant_interior_floor_slab_construction.setLayers(materials)
         radiant_interior_floor_slab_construction.setName(
             'Radiant Interior Floor Slab Construction')
         radiant_interior_floor_slab_construction.setSourcePresentAfterLayerNumber(1)
@@ -3808,8 +3836,10 @@ def model_add_low_temp_radiant(
         layers = [mat_concrete_3_5in, mat_concrete_1_5in]
         if include_carpet:
             layers.insert(0, mat_thin_carpet_tile)
+        materials = os_create_vector(layers, openstudio_model.MaterialVector())
         radiant_interior_ceiling_slab_construction = \
-            openstudio_model.ConstructionWithInternalSource(layers)
+            openstudio_model.ConstructionWithInternalSource(model)
+        radiant_interior_ceiling_slab_construction.setLayers(materials)
         radiant_interior_ceiling_slab_construction.setName(
             'Radiant Interior Ceiling Slab Construction')
         slab_src_loc = 2 if include_carpet else 1
@@ -3820,8 +3850,10 @@ def model_add_low_temp_radiant(
 
         layers = [mat_refl_roof_membrane, mat_roof_insulation,
                   mat_concrete_3_5in, mat_concrete_1_5in]
+        materials = os_create_vector(layers, openstudio_model.MaterialVector())
         radiant_ceiling_slab_construction = \
-            openstudio_model.ConstructionWithInternalSource(layers)
+            openstudio_model.ConstructionWithInternalSource(model)
+        radiant_ceiling_slab_construction.setLayers(materials)
         radiant_ceiling_slab_construction.setName(
             'Radiant Exterior Ceiling Slab Construction')
         radiant_ceiling_slab_construction.setSourcePresentAfterLayerNumber(3)
@@ -3830,8 +3862,10 @@ def model_add_low_temp_radiant(
 
     elif radiant_type == 'ceilingmetalpanel':
         layers = [mat_concrete_3_5in, air_gap_mat, metal_mat, metal_mat]
+        materials = os_create_vector(layers, openstudio_model.MaterialVector())
         radiant_interior_ceiling_metal_construction = \
-            openstudio_model.ConstructionWithInternalSource(layers)
+            openstudio_model.ConstructionWithInternalSource(model)
+        radiant_interior_ceiling_metal_construction.setLayers(materials)
         radiant_interior_ceiling_metal_construction.setName(
             'Radiant Interior Ceiling Metal Construction')
         radiant_interior_ceiling_metal_construction.setSourcePresentAfterLayerNumber(3)
@@ -3840,8 +3874,10 @@ def model_add_low_temp_radiant(
 
         layers = [mat_refl_roof_membrane, mat_roof_insulation, mat_concrete_3_5in,
                   air_gap_mat, metal_mat, metal_mat]
+        materials = os_create_vector(layers, openstudio_model.MaterialVector())
         radiant_ceiling_metal_construction = \
-            openstudio_model.ConstructionWithInternalSource(layers)
+            openstudio_model.ConstructionWithInternalSource(model)
+        radiant_ceiling_metal_construction.setLayers(materials)
         radiant_ceiling_metal_construction.setName('Radiant Ceiling Metal Construction')
         radiant_ceiling_metal_construction.setSourcePresentAfterLayerNumber(5)
         radiant_ceiling_metal_construction.setTemperatureCalculationRequestedAfterLayerNumber(6)
@@ -3851,8 +3887,10 @@ def model_add_low_temp_radiant(
         layers = [mat_slab_insulation, mat_concrete_3_5in, wood_mat]
         if include_carpet:
             layers.append(mat_thin_carpet_tile)
+        materials = os_create_vector(layers, openstudio_model.MaterialVector())
         radiant_ground_wood_construction = \
-            openstudio_model.ConstructionWithInternalSource(layers)
+            openstudio_model.ConstructionWithInternalSource(model)
+        radiant_ground_wood_construction.setLayers(materials)
         radiant_ground_wood_construction.setName(
             'Radiant Ground Slab Wood Floor Construction')
         radiant_ground_wood_construction.setSourcePresentAfterLayerNumber(2)
@@ -3862,8 +3900,10 @@ def model_add_low_temp_radiant(
         layers = [mat_ext_insulation, wood_mat]
         if include_carpet:
             layers.append(mat_thin_carpet_tile)
+        materials = os_create_vector(layers, openstudio_model.MaterialVector())
         radiant_exterior_wood_construction = \
-            openstudio_model.ConstructionWithInternalSource(layers)
+            openstudio_model.ConstructionWithInternalSource(model)
+        radiant_exterior_wood_construction.setLayers(materials)
         radiant_exterior_wood_construction.setName(
             'Radiant Exterior Wood Floor Construction')
         radiant_exterior_wood_construction.setSourcePresentAfterLayerNumber(1)
@@ -3873,8 +3913,10 @@ def model_add_low_temp_radiant(
         layers = [gypsum_ceiling_mat, wood_floor_insulation, wood_mat]
         if include_carpet:
             layers.append(mat_thin_carpet_tile)
+        materials = os_create_vector(layers, openstudio_model.MaterialVector())
         radiant_interior_wood_floor_construction = \
-            openstudio_model.ConstructionWithInternalSource(layers)
+            openstudio_model.ConstructionWithInternalSource(model)
+        radiant_interior_wood_floor_construction.setLayers(materials)
         radiant_interior_wood_floor_construction.setName(
             'Radiant Interior Wooden Floor Construction')
         radiant_interior_wood_floor_construction.setSourcePresentAfterLayerNumber(2)
@@ -4036,7 +4078,8 @@ def model_add_low_temp_radiant(
         # assign internal source construction to floors in zone
         srf_count = 0
         for space in zone.spaces():
-            for surface in space.surfaces():
+            surfaces = space.surfaces() if sys.version_info >= (3, 0) else space.surfaces
+            for surface in surfaces:
                 if surface.isAirWall():
                     continue
                 elif radiant_type == 'floor':
@@ -4334,8 +4377,12 @@ def model_add_furnace_central_ac(
         unitary.setSupplyAirFanOperatingModeSchedule(model.alwaysOffDiscreteSchedule())
 
         # create a diffuser
-        diffuser = openstudio_model.AirTerminalSingleDuctUncontrolled(
-            model, model.alwaysOnDiscreteSchedule())
+        if model.version() < openstudio.VersionString('2.7.0'):
+            diffuser = openstudio_model.AirTerminalSingleDuctUncontrolled(
+                model, model.alwaysOnDiscreteSchedule())
+        else:
+            diffuser = openstudio_model.AirTerminalSingleDuctConstantVolumeNoReheat(
+                model, model.alwaysOnDiscreteSchedule())
         diffuser.setName('{} Direct Air'.format(zone_name))
         air_loop.multiAddBranchForZone(zone, diffuser.to_HVACComponent().get())
 
@@ -4484,8 +4531,12 @@ def model_add_central_air_source_heat_pump(
         unitary.setSupplyAirFanOperatingModeSchedule(model.alwaysOffDiscreteSchedule())
 
         # create a diffuser
-        diffuser = openstudio_model.AirTerminalSingleDuctUncontrolled(
-            model, model.alwaysOnDiscreteSchedule())
+        if model.version() < openstudio.VersionString('2.7.0'):
+            diffuser = openstudio_model.AirTerminalSingleDuctUncontrolled(
+                model, model.alwaysOnDiscreteSchedule())
+        else:
+            diffuser = openstudio_model.AirTerminalSingleDuctConstantVolumeNoReheat(
+                model, model.alwaysOnDiscreteSchedule())
         diffuser.setName('{} Direct Air'.format(zone_name))
         air_loop.multiAddBranchForZone(zone, diffuser.to_HVACComponent().get())
 
