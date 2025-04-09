@@ -12,7 +12,7 @@ from honeybee.typing import clean_ep_string
 from honeybee.altnumber import autocalculate
 from honeybee.facetype import RoofCeiling, Floor, AirBoundary
 from honeybee.boundarycondition import Outdoors, Ground, Surface
-from honeybee_energy.config import hbe_folders
+from honeybee_energy.config import folders as hbe_folders
 from honeybee_energy.boundarycondition import Adiabatic, OtherSideTemperature
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 from honeybee_energy.hvac.idealair import IdealAirSystem

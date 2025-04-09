@@ -98,8 +98,9 @@ def thermal_zone_get_occupancy_schedule(model, thermal_zone):
     occupancy_sch = None
     for space in thermal_zone.spaces():
         # From the space type
-        if space.spaceType().is_initialized():
-            for people in space.spaceType().get().people():
+        space_type = space.spaceType() if sys.version_info >= (3, 0) else space.spaceType
+        if space_type.is_initialized():
+            for people in space_type.get().people():
                 num_ppl_sch = people.numberofPeopleSchedule()
                 if not num_ppl_sch.is_initialized():
                     continue

@@ -22,11 +22,22 @@ def _os_vector_len_ironpython(vector):
     return vector.Count
 
 
+def _os_create_vector_cpython(val_list, vector):
+    return val_list
+
+
+def _os_create_vector_ironpython(val_list, vector):
+    for val in val_list:
+        vector.Add(val)
+    return vector
+
+
 if sys.version_info >= (3, 0):  # we are in cPython and can import normally
     import openstudio
     openstudio_model = openstudio.model
     os_path = _os_path_cpython
     os_vector_len = _os_vector_len_cpython
+    os_create_vector = _os_create_vector_cpython
 else:  # we are in IronPython and we must import the .NET bindings
     try:  # first see if OpenStudio has already been loaded
         import OpenStudio as openstudio
@@ -51,6 +62,7 @@ else:  # we are in IronPython and we must import the .NET bindings
     openstudio_model = openstudio
     os_path = _os_path_ironpython
     os_vector_len = _os_vector_len_ironpython
+    os_create_vector = _os_create_vector_ironpython
 
 # load all of the classes used by this package
 # geometry classes
