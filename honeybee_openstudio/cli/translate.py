@@ -51,7 +51,7 @@ def model_to_osm(model_file, output_file=None):
             translation. If None, the string will be returned from this function.
     """
     model = Model.from_file(model_file)
-    os_model = model_to_openstudio(model)
+    os_model = model_to_openstudio(model, print_progress=True)
     if output_file is not None and 'stdout' not in str(output_file):
         output_file = output_file.name \
             if not isinstance(output_file, str) else output_file
