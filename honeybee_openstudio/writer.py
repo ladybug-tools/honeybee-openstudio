@@ -2,22 +2,28 @@
 """Methods to write Honeybee Models to OpenStudio."""
 from __future__ import division
 import sys
+import os
+import tempfile
+import json
+import subprocess
 
 from ladybug_geometry.geometry3d import Face3D
 from honeybee.typing import clean_ep_string
 from honeybee.altnumber import autocalculate
 from honeybee.facetype import RoofCeiling, Floor, AirBoundary
 from honeybee.boundarycondition import Outdoors, Ground, Surface
+from honeybee_energy.config import hbe_folders
 from honeybee_energy.boundarycondition import Adiabatic, OtherSideTemperature
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 from honeybee_energy.hvac.idealair import IdealAirSystem
 from honeybee_energy.hvac._template import _TemplateSystem
+from honeybee_energy.hvac.detailed import DetailedHVAC
 from honeybee_energy.lib.constructionsets import generic_construction_set
 
 from honeybee_openstudio.openstudio import OSModel, OSPoint3dVector, OSPoint3d, \
     OSShadingSurfaceGroup, OSShadingSurface, OSSubSurface, OSSurface, OSSpace, \
     OSThermalZone, OSBuildingStory, OSSurfacePropertyOtherSideCoefficients, \
-    OSEnergyManagementSystemProgramCallingManager, os_vector_len
+    OSEnergyManagementSystemProgramCallingManager, openstudio, os_vector_len
 from honeybee_openstudio.schedule import schedule_type_limits_to_openstudio, \
     schedule_to_openstudio
 from honeybee_openstudio.material import material_to_openstudio
@@ -888,7 +894,7 @@ def model_to_openstudio(
             if room.properties.energy.hvac is not None:
                 zone_rooms[zone_id] = room
                 break
-    template_zones, template_hvac_dict = {}, {}
+    template_zones, template_hvac_dict, detailed_hvac_dict = {}, {}, {}
     for zone_id, room in zone_rooms.items():
         hvac = room.properties.energy.hvac
         os_zone = zone_map[room.identifier]
@@ -910,12 +916,38 @@ def model_to_openstudio(
                     zone_list['heated_zones'].append(os_zone)
                 if set_pt.cooling_setpoint < 33:
                     zone_list['cooled_zones'].append(os_zone)
+        elif isinstance(hvac, DetailedHVAC):
+            detailed_hvac_dict[hvac.identifier] = hvac
+    # translate template HVAC systems
     for hvac_id, os_zones in template_zones.items():
         hvac = template_hvac_dict[hvac_id]
         template_hvac_to_openstudio(hvac, os_zones, os_model)
     if len(template_zones) != 0:  # rename air loop and plant loop nodes for readability
         rename_air_loop_nodes(os_model)
         rename_plant_loop_nodes(os_model)
+    # translate detailed HVAC systems
+    if len(detailed_hvac_dict) != 0:
+        assert hbe_folders.ironbug_exe is not None, 'Detailed Ironbug HVAC System was ' \
+            'assigned but no Ironbug installation was found.'
+        for hvac_id, hvac in detailed_hvac_dict.items():
+            hvac_trans_dir = tempfile.gettempdir()
+            spec_file = os.path.join(hvac_trans_dir, '{}.json'.format(hvac.identifier))
+            with open(spec_file, 'w') as sf:
+                json.dump(hvac.specification, sf)
+            osm_file = os.path.join(hvac_trans_dir, '{}.osm'.format(hvac.identifier))
+            os_model.save(osm_file, overwrite=True)
+            command = '"{ironbug_exe}" "{osm_file}" "{spec_file}"'.format(
+                ironbug_exe=hbe_folders, osm_file=osm_file, spec_file=spec_file)
+            process = subprocess.Popen(command, shell=True)
+            result = process.communicate()  # pause script until command is done
+            translator = openstudio.OSVersion.VersionTranslator()
+            o_model = translator.loadModel(osm_file)
+            if o_model.is_initialized():
+                os_model = o_model.get()
+            else:
+                msg = 'Failed to apply Detailed HVAC "{}"\n{}\n{}'.format(
+                    hvac_id, result[0], result[1])
+                raise ValueError(msg)
 
     # write service hot water and any SHW systems
     shw_sys_dict = {}
