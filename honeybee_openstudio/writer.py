@@ -11,7 +11,7 @@ from ladybug_geometry.geometry3d import Face3D
 from honeybee.typing import clean_ep_string
 from honeybee.altnumber import autocalculate
 from honeybee.facetype import RoofCeiling, Floor, AirBoundary
-from honeybee.boundarycondition import Outdoors, Ground, Surface
+from honeybee.boundarycondition import Outdoors, Surface
 from honeybee_energy.config import folders as hbe_folders
 from honeybee_energy.boundarycondition import Adiabatic, OtherSideTemperature
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
@@ -318,10 +318,8 @@ def face_to_openstudio(face, os_model, adj_map=None):
         elif isinstance(face.type, RoofCeiling):
             if face.altitude < 0:
                 os_f_type = 'Wall'  # ensure E+ does not try to flip the Face
-            elif isinstance(face.boundary_condition, (Outdoors, Ground)):
-                os_f_type = 'Roof'  # E+ distinguishes between Roof and Ceiling
             else:
-                os_f_type = 'Ceiling'
+                os_f_type = 'RoofCeiling'
         elif isinstance(face.type, Floor) and face.altitude > 0:
             os_f_type = 'Wall'  # ensure E+ does not try to flip the Face
         else:
@@ -640,8 +638,12 @@ def model_to_openstudio(
     use_simple_vent = True if vent_sim_control.vent_control_type == 'SingleZone' \
         or sys.version_info < (3, 0) else False  # AFN not supported in .NET
 
-    # create the OpenStudio model object and setup the Building
+    # create the OpenStudio model object and set properties for speed
     os_model = OSModel() if seed_model is None else seed_model
+    os_model.setStrictnessLevel(openstudio.StrictnessLevel('None'))
+    os_model.setFastNaming(True)
+
+    # setup the Building
     os_building = os_model.getBuilding()
     if model._display_name is not None:
         os_building.setName(clean_ep_string(model.display_name))
