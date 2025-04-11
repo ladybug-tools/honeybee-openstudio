@@ -228,7 +228,7 @@ def run_period_to_openstudio(run_period, os_model):
     return os_run_period
 
 
-def simulation_parameter_to_openstudio(sim_par, seed_model=None, epw_file=None):
+def simulation_parameter_to_openstudio(sim_par, seed_model=None):
     """Convert Honeybee SimulationParameter to an OpenStudio model.
 
     Args:
@@ -236,9 +236,6 @@ def simulation_parameter_to_openstudio(sim_par, seed_model=None, epw_file=None):
         seed_model: An optional OpenStudio Model object to which the Honeybee
             Model will be added. If None, a new OpenStudio Model will be
             initialized within this method. (Default: None).
-        epw_file: An optional path to an EPW file to be assigned to the OpenStudio
-            model and will be used to assign criteria like the ASHRAE climate zone
-            to the Model. (Default: None).
     """
     # create the OpenStudio model object
     os_model = OSModel() if seed_model is None else seed_model

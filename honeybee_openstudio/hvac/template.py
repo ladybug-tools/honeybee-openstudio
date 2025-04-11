@@ -24,7 +24,7 @@ from honeybee_energy.hvac.heatcool.windowac import WindowAC
 from honeybee_energy.hvac.heatcool.wshp import WSHP
 from honeybee_energy.hvac.heatcool.radiant import Radiant
 
-from honeybee_openstudio.openstudio import openstudio_model
+from honeybee_openstudio.openstudio import openstudio_model, OSScheduleRuleset, OSTime
 from .standards.hvac_systems import model_add_hvac_system, model_add_low_temp_radiant, \
     model_get_or_add_hot_water_loop, model_get_or_add_chilled_water_loop
 
@@ -911,9 +911,22 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
             for i, loop in enumerate(os_air_loops):
                 loop.setName('{} {}'.format(clean_hvac_name, i))
 
+        # have an always available schedule ready to use if there are no user controls
+        always_avail_name = 'Building HVAC Always Available'
+        opt_sch = os_model.getScheduleByName(always_avail_name)
+        if opt_sch.is_initialized():
+            always_avail = opt_sch.get()
+        else:
+            always_avail = OSScheduleRuleset(os_model)
+            always_avail.setName(always_avail_name)
+            def_day_sch = always_avail.defaultDaySchedule()
+            def_day_sch.addValue(OSTime(0, 24, 0, 0), 1)
+
         # assign the properties that are specific to All-Air systems
         if isinstance(hvac, _AllAirBase):
             for os_air_loop in os_air_loops:
+                # set the loop to always be available
+                os_air_loop.setAvailabilitySchedule(always_avail)
                 # assign the economizer
                 oasys = os_air_loop.airLoopHVACOutdoorAirSystem()
                 if oasys.is_initialized():
@@ -928,13 +941,15 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
 
         # assign the properties that are specific to DOAS systems
         if isinstance(hvac, _DOASBase):
+            avail_sch = None
             if hvac.doas_availability_schedule is not None:
                 sch_id = hvac.doas_availability_schedule.identifier
                 schedule = os_model.getScheduleByName(sch_id)
                 if schedule.is_initialized():
                     avail_sch = schedule.get()
-                    for os_air_loop in os_air_loops:
-                        os_air_loop.setAvailabilitySchedule(avail_sch)
+            avail_sch = always_avail if avail_sch is None else avail_sch
+            for os_air_loop in os_air_loops:
+                os_air_loop.setAvailabilitySchedule(avail_sch)
 
         # set the sensible heat recovery if it is specified
         if hvac.sensible_heat_recovery != 0:
@@ -982,14 +997,14 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
                         oa_sch, oa_sch_name = space_oa_sch, space_oa_sch_name
                     else:  # different schedules across zones; just use constant max
                         oa_sch = None
-        if oa_sch is not None:
-            for os_air_loop in os_air_loops:
-                oasys = os_air_loop.airLoopHVACOutdoorAirSystem()
-                if oasys.is_initialized():
-                    os_oasys = oasys.get()
-                    oactrl = os_oasys.getControllerOutdoorAir()
-                    oactrl.resetMinimumFractionofOutdoorAirSchedule()
-                    oactrl.setMinimumOutdoorAirSchedule(oa_sch)
+        oa_sch = always_avail if oa_sch is None else oa_sch
+        for os_air_loop in os_air_loops:
+            oasys = os_air_loop.airLoopHVACOutdoorAirSystem()
+            if oasys.is_initialized():
+                os_oasys = oasys.get()
+                oactrl = os_oasys.getControllerOutdoorAir()
+                oactrl.resetMinimumFractionofOutdoorAirSchedule()
+                oactrl.setMinimumOutdoorAirSchedule(oa_sch)
 
     # if the systems are PTAC and there is ventilation, ensure the system includes it
     if isinstance(hvac, PTAC):

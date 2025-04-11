@@ -564,7 +564,7 @@ def model_to_openstudio(
             presence of Rooms in the Model, which is as necessary prerequisite
             for simulation in EnergyPlus. (Default: False).
         print_progress: Set to True to have the progress of the translation
-            printed as it is completed.
+            printed as it is completed. (Default: False).
 
     Usage:
 
@@ -622,6 +622,10 @@ def model_to_openstudio(
     rem_msgs = model.properties.energy.remove_hvac_from_no_setpoints()
     if len(rem_msgs) != 0:
         print('\n'.join(rem_msgs))
+
+    # auto-assign stories if there are none since most OpenStudio measures need these
+    if len(model.stories) == 0 and len(model.rooms) != 0:
+        model.assign_stories_by_floor_height()
 
     # reset the IDs to be derived from the display_names if requested
     if use_geometry_names:
