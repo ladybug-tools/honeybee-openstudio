@@ -6,12 +6,14 @@ import os
 import tempfile
 import json
 import subprocess
+import xml.etree.ElementTree as ET
 
 from ladybug_geometry.geometry3d import Face3D
 from honeybee.typing import clean_ep_string
 from honeybee.altnumber import autocalculate
 from honeybee.facetype import RoofCeiling, Floor, AirBoundary
 from honeybee.boundarycondition import Outdoors, Surface
+from honeybee.model import Model
 from honeybee_energy.config import folders as hbe_folders
 from honeybee_energy.boundarycondition import Adiabatic, OtherSideTemperature
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
@@ -290,7 +292,7 @@ def aperture_to_openstudio(aperture, os_model):
     return os_aperture
 
 
-def face_to_openstudio(face, os_model, adj_map=None):
+def face_to_openstudio(face, os_model, adj_map=None, ignore_complex_sub_faces=True):
     """Create an OpenStudio object from a Face.
 
     This method also adds all Apertures, Doors, and Shades assigned to the Face.
@@ -301,6 +303,9 @@ def face_to_openstudio(face, os_model, adj_map=None):
         adj_map: An optional dictionary with keys for 'faces' and 'sub_faces'
             that will have the space Surfaces and SubSurfaces added to it
             such that adjacencies can be assigned after running this method.
+        ignore_complex_sub_faces: Boolean for whether sub-faces (including Apertures
+            and Doors) should be ignored if they have more than 4 sides (True) or
+            whether they should be left as they are (False). (Default: True).
 
     Returns:
         An OpenStudio Surface object if the Face has a parent. An OpenStudio
@@ -364,12 +369,14 @@ def face_to_openstudio(face, os_model, adj_map=None):
         # create the sub-faces
         sub_faces = {}
         for ap in face.apertures:
-            if len(ap.geometry) <= 4:  # ignore apertures to be triangulated
+            # ignore apertures to be triangulated
+            if len(ap.geometry) <= 4 or not ignore_complex_sub_faces:
                 os_ap = aperture_to_openstudio(ap, os_model)
                 os_ap.setSurface(os_face)
                 sub_faces[ap.identifier] = os_ap
         for dr in face.doors:
-            if len(dr.geometry) <= 4:  # ignore doors to be triangulated
+            # ignore doors to be triangulated
+            if len(dr.geometry) <= 4 or not ignore_complex_sub_faces:
                 os_dr = door_to_openstudio(dr, os_model)
                 os_dr.setSurface(os_face)
                 sub_faces[dr.identifier] = os_dr
@@ -395,7 +402,8 @@ def face_to_openstudio(face, os_model, adj_map=None):
     return os_face
 
 
-def room_to_openstudio(room, os_model, adj_map=None, include_infiltration=True):
+def room_to_openstudio(room, os_model, adj_map=None, include_infiltration=True,
+                       ignore_complex_sub_faces=True):
     """Create OpenStudio objects from a Room.
 
     Args:
@@ -408,6 +416,9 @@ def room_to_openstudio(room, os_model, adj_map=None, include_infiltration=True):
             in the translation of the Room. It may be desirable to set this
             to False if the building airflow is being modeled with the EnergyPlus
             AirFlowNetwork. (Default: True).
+        ignore_complex_sub_faces: Boolean for whether sub-faces (including Apertures
+            and Doors) should be ignored if they have more than 4 sides (True) or
+            whether they should be left as they are (False). (Default: True).
 
     Returns:
         An OpenStudio Space object for the Room.
@@ -494,7 +505,8 @@ def room_to_openstudio(room, os_model, adj_map=None, include_infiltration=True):
 
     # assign all of the faces to the room
     for face in room.faces:
-        os_face = face_to_openstudio(face, os_model, adj_map)
+        os_face = face_to_openstudio(face, os_model, adj_map,
+                                     ignore_complex_sub_faces=ignore_complex_sub_faces)
         os_face.setSpace(os_space)
 
     # add any assigned shades to a group for the room
@@ -521,7 +533,8 @@ def room_to_openstudio(room, os_model, adj_map=None, include_infiltration=True):
 def model_to_openstudio(
     model, seed_model=None, schedule_directory=None,
     use_geometry_names=False, use_resource_names=False,
-    triangulate_non_planar_orphaned=False, enforce_rooms=False, print_progress=False
+    triangulate_non_planar_orphaned=False, triangulate_subfaces=True,
+    enforce_rooms=False, print_progress=False
 ):
     """Create an OpenStudio Model from a Honeybee Model.
 
@@ -560,6 +573,11 @@ def model_to_openstudio(
             This can be helpful because OpenStudio simply raises an error when
             it encounters non-planar geometry, which would hinder the ability
             to save files that are to be corrected later. (Default: False).
+        triangulate_subfaces: Boolean to note whether sub-faces (including
+            Apertures and Doors) should be triangulated if they have more
+            than 4 sides (True) or whether they should be left as they are (False).
+            This triangulation is necessary when exporting directly to EnergyPlus
+            since it cannot accept sub-faces with more than 4 vertices. (Default: True).
         enforce_rooms: Boolean to note whether this method should enforce the
             presence of Rooms in the Model, which is as necessary prerequisite
             for simulation in EnergyPlus. (Default: False).
@@ -574,17 +592,18 @@ def model_to_openstudio(
         from honeybee.model import Model
         from honeybee.room import Room
         from honeybee.config import folders
+        from honeybee_energy.lib.programtypes import office_program
         import openstudio
         from honeybee_openstudio.writer import model_to_openstudio
 
         # Crate an input Model
-        room = Room.from_box('Tiny House Zone', 5, 10, 3)
+        room = Room.from_box('Tiny_House_Zone', 5, 10, 3)
         room.properties.energy.program_type = office_program
         room.properties.energy.add_default_ideal_air()
-        hb_model = Model('Tiny House', [room])
+        hb_model = Model('Tiny_House', [room])
 
         # translate the honeybee model to an openstudio model
-        os_model = model_to_openstudio(model)
+        os_model = model_to_openstudio(hb_model)
 
         # save the OpenStudio model to an OSM
         osm = os.path.join(folders.default_simulation_folder, 'in.osm')
@@ -596,7 +615,9 @@ def model_to_openstudio(
         idf = os.path.join(folders.default_simulation_folder, 'in.idf')
         workspace.save(idf, overwrite=True)
     """
-    # check for rooms if this is enforced
+    # check the model and check for rooms if this is enforced
+    assert isinstance(model, Model), \
+        'Expected Honeybee Model for model_to_openstudio. Got {}.'.format(type(model))
     if enforce_rooms:
         assert len(model.rooms) != 0, \
             'Model contains no Rooms and therefore cannot be simulated in EnergyPlus.'
@@ -734,7 +755,8 @@ def model_to_openstudio(
     adj_map = {'faces': {}, 'sub_faces': {}}
     rooms = model.rooms
     for i, room in enumerate(rooms):
-        os_space = room_to_openstudio(room, os_model, adj_map, use_simple_vent)
+        os_space = room_to_openstudio(room, os_model, adj_map, use_simple_vent,
+                                      triangulate_subfaces)
         space_map[room.identifier] = os_space
         try:
             story_map[room.story].append(os_space)
@@ -803,24 +825,25 @@ def model_to_openstudio(
         print('Translated all {} Zones'.format(zone_count))
 
     # triangulate any apertures or doors with more than 4 vertices
-    tri_apertures, _ = model.triangulated_apertures()
-    for tri_aps in tri_apertures:
-        for i, ap in enumerate(tri_aps):
-            if i != 0:
-                ap.properties.energy.vent_opening = None
-            os_ap = aperture_to_openstudio(ap, model)
-            os_face = adj_map['faces'][ap.parent.identifier]
-            os_ap.setSurface(os_face)
-            adj_map['sub_faces'][ap.identifier] = os_ap
-    tri_doors, _ = model.triangulated_doors()
-    for tri_drs in tri_doors:
-        for i, dr in enumerate(tri_drs):
-            if i != 0:
-                dr.properties.energy.vent_opening = None
-            os_dr = door_to_openstudio(dr, model)
-            os_face = adj_map['faces'][dr.parent.identifier]
-            os_dr.setSurface(os_face)
-            adj_map['sub_faces'][dr.identifier] = os_dr
+    if triangulate_subfaces:
+        tri_apertures, _ = model.triangulated_apertures()
+        for tri_aps in tri_apertures:
+            for i, ap in enumerate(tri_aps):
+                if i != 0:
+                    ap.properties.energy.vent_opening = None
+                os_ap = aperture_to_openstudio(ap, model)
+                os_face = adj_map['faces'][ap.parent.identifier]
+                os_ap.setSurface(os_face)
+                adj_map['sub_faces'][ap.identifier] = os_ap
+        tri_doors, _ = model.triangulated_doors()
+        for tri_drs in tri_doors:
+            for i, dr in enumerate(tri_drs):
+                if i != 0:
+                    dr.properties.energy.vent_opening = None
+                os_dr = door_to_openstudio(dr, model)
+                os_face = adj_map['faces'][dr.parent.identifier]
+                os_dr.setSurface(os_face)
+                adj_map['sub_faces'][dr.identifier] = os_dr
 
     # assign stories to the rooms
     for story_id, os_spaces in story_map.items():
@@ -1101,3 +1124,168 @@ def _instance_in_array(object_instance, object_array):
         if val is object_instance:
             return True
     return False
+
+
+def model_to_gbxml(
+    model, triangulate_non_planar_orphaned=True, triangulate_subfaces=False,
+    full_geometry=False, interior_face_type=None, ground_face_type=None,
+    print_progress=False
+):
+    """Translate a Honeybee Model to gbXML string using OpenStudio SDK translators.
+
+    Args:
+        model: The Honeybee Model to be converted into an OpenStudio Model.
+        triangulate_non_planar_orphaned: Boolean to note whether any non-planar
+            orphaned geometry in the model should be triangulated.
+            This can be helpful because OpenStudio simply raises an error when
+            it encounters non-planar geometry, which would hinder the ability
+            to save files that are to be corrected later. (Default: False).
+        triangulate_subfaces: Boolean to note whether sub-faces (including
+            Apertures and Doors) should be triangulated if they have more
+            than 4 sides (True) or whether they should be left as they are (False).
+            This triangulation is necessary when exporting directly to EnergyPlus
+            since it cannot accept sub-faces with more than 4 vertices. (Default: True).
+        full_geometry: Boolean to note whether space boundaries and shell geometry
+            should be included in the exported gbXML vs. just the minimal required
+            non-manifold geometry. (Default: False).
+        interior_face_type: Text string for the type to be used for all interior
+            floor faces. If unspecified, the interior types will be left as they are.
+            Choose from the following. InteriorFloor, Ceiling.
+        ground_face_type: Text string for the type to be used for all ground-contact
+            floor faces. If unspecified, the ground types will be left as they are.
+            Choose from the following. UndergroundSlab, SlabOnGrade, RaisedFloor.
+        print_progress: Set to True to have the progress of the translation
+            printed as it is completed. (Default: False).
+    """
+    # check that the input is a model
+    assert isinstance(model, Model), \
+        'Expected Honeybee Model for model_to_gbxml. Got {}.'.format(type(model))
+
+    # remove any detailed HVAC or AFN as this will only slow the translation down
+    v_control = model.properties.energy.ventilation_simulation_control
+    det_hvac_count = 0
+    for hvac in model.properties.energy.hvacs:
+        if hvac is not None and not isinstance(hvac, IdealAirSystem):
+            det_hvac_count += 1
+    if v_control.vent_control_type != 'SingleZone' or det_hvac_count != 0:
+        model = model.duplicate()  # duplicate to avoid mutating the input
+        for room in model.rooms:
+            room.properties.energy.assign_ideal_air_equivalent()
+        v_control.vent_control_type = 'SingleZone'
+
+    # translate the Honeybee Model to an OpenStudio Model
+    os_model = model_to_openstudio(
+        model, triangulate_non_planar_orphaned=triangulate_non_planar_orphaned,
+        triangulate_subfaces=triangulate_subfaces, print_progress=print_progress
+    )
+
+    # translate the model to a gbXML string
+    if (sys.version_info < (3, 0)):
+        gbxml_translator = openstudio.GbXMLForwardTranslator()
+    else:
+        gbxml_translator = openstudio.gbxml.GbXMLForwardTranslator()
+    gbxml_str = gbxml_translator.modelToGbXMLString(os_model)
+
+    # replace all interior floors with the specified type
+    if interior_face_type == 'InteriorFloor':
+        gbxml_str = gbxml_str.replace('="Ceiling"', '="InteriorFloor"')
+    elif interior_face_type == 'Ceiling':
+        gbxml_str = gbxml_str.replace('="InteriorFloor"', '="Ceiling"')
+
+    # replace all ground floors with the specified type
+    if ground_face_type == 'UndergroundSlab':
+        gbxml_str = gbxml_str.replace('="SlabOnGrade"', '="UndergroundSlab"')
+        gbxml_str = gbxml_str.replace('="RaisedFloor"', '="UndergroundSlab"')
+    elif ground_face_type == 'SlabOnGrade':
+        gbxml_str = gbxml_str.replace('="UndergroundSlab"', '="SlabOnGrade"')
+        gbxml_str = gbxml_str.replace('="RaisedFloor"', '="SlabOnGrade"')
+    elif ground_face_type == 'RaisedFloor':
+        gbxml_str = gbxml_str.replace('="UndergroundSlab"', '="RaisedFloor"')
+        gbxml_str = gbxml_str.replace('="SlabOnGrade"', '="RaisedFloor"')
+
+    # write the SpaceBoundary and ShellGeometry into the XML if requested
+    if full_geometry:
+        # get a dictionary of rooms in the model
+        room_dict = {room.identifier: room for room in model.rooms}
+
+        # register all of the namespaces within the OpenStudio-exported XML
+        ET.register_namespace('', 'http://www.gbxml.org/schema')
+        ET.register_namespace('xhtml', 'http://www.w3.org/1999/xhtml')
+        ET.register_namespace('xsi', 'http://www.w3.org/2001/XMLSchema-instance')
+        ET.register_namespace('xsd', 'http://www.w3.org/2001/XMLSchema')
+
+        # parse the XML and get the building definition
+        root = ET.fromstring(gbxml_str)
+        gbxml_header = r'{http://www.gbxml.org/schema}'
+        building = root[0][1]
+
+        # loop through surfaces in the gbXML so that we know the name of the interior ones
+        surface_set = set()
+        for room_element in root[0].findall(gbxml_header + 'Surface'):
+            surface_set.add(room_element.get('id'))
+
+        # loop through the rooms in the XML and add them as space boundaries to the room
+        for room_element in building.findall(gbxml_header + 'Space'):
+            room_id = room_element.get('zoneIdRef')
+            if room_id:
+                room_id = room_element.get('id')
+                shell_element = ET.Element('ShellGeometry')
+                shell_element.set('id', '{}Shell'.format(room_id))
+                shell_geo_element = ET.SubElement(shell_element, 'ClosedShell')
+                hb_room = room_dict[room_id[:-6]]  # remove '_Space' from the end
+                for face in hb_room:
+                    face_xml, face_geo_xml = _face_to_gbxml_geo(face, surface_set)
+                    if face_xml is not None:
+                        room_element.append(face_xml)
+                        shell_geo_element.append(face_geo_xml)
+                room_element.append(shell_element)
+
+        # convert the element tree back into a string
+        gbxml_str = ET.tostring(root, encoding='unicode', xml_declaration=True)
+
+    return gbxml_str
+
+
+def _face_to_gbxml_geo(face, face_set):
+    """Get an Element Tree of a gbXML SpaceBoundary for a Face.
+
+    Note that the resulting string is only meant to go under the "Space" tag and
+    it is not a Surface tag with all of the construction and boundary condition
+    properties assigned to it.
+
+    Args:
+        face: A honeybee Face for which an gbXML representation will be returned.
+        face_set: A set of surface identifiers in the model, used to evaluate whether
+            the geometry must be associated with its boundary condition surface.
+
+    Returns:
+        A tuple with two elements.
+
+        -   face_element: The element tree for the SpaceBoundary definition of the Face.
+
+        -   loop_element: The element tree for the PolyLoop definition of the Face,
+            which is useful in defining the shell.
+    """
+    # create the face element and associate it with a surface in the model
+    face_element = ET.Element('SpaceBoundary')
+    face_element.set('isSecondLevelBoundary', 'false')
+    obj_id = None
+    if face.identifier in face_set:
+        obj_id = face.identifier
+    elif isinstance(face.boundary_condition, Surface):
+        bc_obj = face.boundary_condition.boundary_condition_object
+        if bc_obj in face_set:
+            obj_id = bc_obj
+    if obj_id is None:
+        return None, None
+    face_element.set('surfaceIdRef', obj_id)
+
+    # write the geometry of the face
+    geo_element = ET.SubElement(face_element, 'PlanarGeometry')
+    loop_element = ET.SubElement(geo_element, 'PolyLoop')
+    for pt in face.vertices:
+        pt_element = ET.SubElement(loop_element, 'CartesianPoint')
+        for coord in pt:
+            coord_element = ET.SubElement(pt_element, 'Coordinate')
+            coord_element.text = str(coord)
+    return face_element, loop_element

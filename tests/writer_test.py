@@ -14,7 +14,7 @@ from honeybee.shademesh import ShadeMesh
 from honeybee_openstudio.openstudio import OSModel, os_vector_len
 from honeybee_openstudio.writer import shade_mesh_to_openstudio, shade_to_openstudio, \
     door_to_openstudio, aperture_to_openstudio, face_to_openstudio, room_to_openstudio, \
-    model_to_openstudio
+    model_to_openstudio, model_to_gbxml
 from honeybee_energy.material.glazing import EnergyWindowMaterialGlazing
 from honeybee_energy.material.gas import EnergyWindowMaterialGas
 from honeybee_energy.construction.window import WindowConstruction
@@ -334,3 +334,15 @@ def test_model_writer_from_complete_hbjson():
     os_model = model_to_openstudio(model)
     spaces = os_model.getSpaces()
     assert os_vector_len(spaces) == 100
+
+
+def test_model_to_gbxml():
+    """Test the translation of a Model with programs, constructions and HVAC to OSM."""
+    standard_test = 'assets/2023_rac_advanced_sample_project.hbjson'
+    standard_test = os.path.join(os.path.dirname(__file__), standard_test)
+    model = Model.from_file(standard_test)
+
+    gbxml_str = model_to_gbxml(
+        model, full_geometry=True, interior_face_type='InteriorFloor',
+        ground_face_type='SlabOnGrade')
+    assert isinstance(gbxml_str, str)
