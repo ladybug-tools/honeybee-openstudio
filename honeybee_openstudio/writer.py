@@ -654,6 +654,9 @@ def model_to_openstudio(
     else:
         os_building.setName(model.identifier)
     os_model.setDayofWeekforStartDay('Sunday')  # this avoids lots of warnings
+    os_model.alwaysOnDiscreteSchedule()
+    os_model.alwaysOffDiscreteSchedule()
+    os_model.alwaysOnContinuousSchedule()
     if print_progress:
         print('Model prepared for translation')
 
