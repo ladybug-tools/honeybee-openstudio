@@ -34,8 +34,7 @@ def thermal_zone_get_outdoor_airflow_rate(thermal_zone):
     for space in spaces:
         floor_area = space.floorArea() if sys.version_info >= (3, 0) else space.floorArea
         number_of_people = space.numberOfPeople()
-        volume = space.volume() if sys.version_info >= (3, 0) else space.volume
-        # volume = 1
+        volume = space.volume()
 
         dsn_oa = space.designSpecificationOutdoorAir()
         if not dsn_oa.is_initialized():
