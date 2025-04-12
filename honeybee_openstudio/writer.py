@@ -16,6 +16,8 @@ from honeybee.boundarycondition import Outdoors, Surface
 from honeybee.model import Model
 from honeybee_energy.config import folders as hbe_folders
 from honeybee_energy.boundarycondition import Adiabatic, OtherSideTemperature
+from honeybee_energy.construction.window import WindowConstruction
+from honeybee_energy.construction.windowshade import WindowConstructionShade
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 from honeybee_energy.hvac.idealair import IdealAirSystem
 from honeybee_energy.hvac._template import _TemplateSystem
@@ -534,7 +536,7 @@ def model_to_openstudio(
     model, seed_model=None, schedule_directory=None,
     use_geometry_names=False, use_resource_names=False,
     triangulate_non_planar_orphaned=False, triangulate_subfaces=True,
-    enforce_rooms=False, print_progress=False
+    use_simple_window_constructions=False, enforce_rooms=False, print_progress=False
 ):
     """Create an OpenStudio Model from a Honeybee Model.
 
@@ -578,6 +580,11 @@ def model_to_openstudio(
             than 4 sides (True) or whether they should be left as they are (False).
             This triangulation is necessary when exporting directly to EnergyPlus
             since it cannot accept sub-faces with more than 4 vertices. (Default: True).
+        use_simple_window_constructions: Boolean to note whether the Model should
+            be translated with simple window constructions, all of which will
+            be represented with a single-layer glazing system construction. This
+            is useful for translation to gbXML since the U-value will only show
+            up if the construction is simple. (Default: False).
         enforce_rooms: Boolean to note whether this method should enforce the
             presence of Rooms in the Model, which is as necessary prerequisite
             for simulation in EnergyPlus. (Default: False).
@@ -704,22 +711,33 @@ def model_to_openstudio(
         print('Translated {} Schedules'.format(len(schedules)))
 
     # write all of the materials, constructions, and construction sets
+    w_cons = (WindowConstruction, WindowConstructionShade, WindowConstructionDynamic)
     materials, constructions, dynamic_cons = [], [], []
     all_constrs = model.properties.energy.constructions + \
         generic_construction_set.constructions_unique
     for constr in set(all_constrs):
         try:
-            materials.extend(constr.materials)
-            constructions.append(constr)
-            if constr.has_frame:
-                materials.append(constr.frame)
-            if constr.has_shade:
-                if constr.window_construction in all_constrs:
-                    constructions.pop(-1)  # avoid duplicate specification
-                if constr.is_switchable_glazing:
-                    materials.append(constr.switched_glass_material)
-            elif constr.is_dynamic:
-                dynamic_cons.append(constr)
+            if use_simple_window_constructions and isinstance(constr, w_cons):
+                if isinstance(constr, WindowConstruction):
+                    new_con = constr.to_simple_construction()
+                elif isinstance(constr, WindowConstructionShade):
+                    new_con = constr.window_construction.to_simple_construction()
+                elif isinstance(constr, WindowConstructionDynamic):
+                    new_con = constr.constructions[0].to_simple_construction()
+                materials.extend(new_con.materials)
+                constructions.append(new_con)
+            else:
+                materials.extend(constr.materials)
+                constructions.append(constr)
+                if constr.has_frame:
+                    materials.append(constr.frame)
+                if constr.has_shade:
+                    if constr.window_construction in all_constrs:
+                        constructions.pop(-1)  # avoid duplicate specification
+                    if constr.is_switchable_glazing:
+                        materials.append(constr.switched_glass_material)
+                elif constr.is_dynamic:
+                    dynamic_cons.append(constr)
         except AttributeError:
             try:  # AirBoundaryConstruction or ShadeConstruction
                 constructions.append(constr)  # AirBoundaryConstruction
@@ -1176,7 +1194,8 @@ def model_to_gbxml(
     # translate the Honeybee Model to an OpenStudio Model
     os_model = model_to_openstudio(
         model, triangulate_non_planar_orphaned=triangulate_non_planar_orphaned,
-        triangulate_subfaces=triangulate_subfaces, print_progress=print_progress
+        triangulate_subfaces=triangulate_subfaces,
+        use_simple_window_constructions=True, print_progress=print_progress
     )
 
     # translate the model to a gbXML string
@@ -1241,7 +1260,10 @@ def model_to_gbxml(
                 room_element.append(shell_element)
 
         # convert the element tree back into a string
-        gbxml_str = ET.tostring(root, encoding='unicode', xml_declaration=True)
+        if sys.version_info >= (3, 0):
+            gbxml_str = ET.tostring(root, encoding='unicode', xml_declaration=True)
+        else:
+            gbxml_str = ET.tostring(root)
 
     return gbxml_str
 
