@@ -424,8 +424,11 @@ def model_add_chw_loop(
         # Create chillers and set plant operation scheme
         for i in range(num_chillers):
             chiller = openstudio_model.ChillerElectricEIR(model)
-            ch_name = 'ASHRAE 90.1 {} {} {} Chiller {}'.format(
-                chiller_cooling_type, chiller_condenser_type, chiller_compressor_type, i)
+            cool_t = chiller_cooling_type \
+                if chiller_cooling_type is not None else 'WaterCooled'
+            cond_t = chiller_condenser_type if chiller_condenser_type is not None else ''
+            comp_t = chiller_compressor_type if chiller_compressor_type is not None else ''
+            ch_name = 'ASHRAE 90.1 {} {} {} Chiller {}'.format(cool_t, cond_t, comp_t, i)
             chiller.setName(ch_name)
             chilled_water_loop.addSupplyBranchForComponent(chiller)
             dsgn_sup_wtr_temp_c = TEMPERATURE.to_unit([dsgn_sup_wtr_temp], 'C', 'F')[0]

@@ -118,13 +118,14 @@ def sizing_to_openstudio(sizing, os_model):
     os_sizing_par.setCoolingSizingFactor(sizing.cooling_factor)
     for des_day in sizing.design_days:
         design_day_to_openstudio(des_day, os_model)
+    building = os_model.getBuilding()
     if sizing.efficiency_standard is not None:
         std_gem_standard = STANDARD_MAP[sizing.efficiency_standard]
-        building = os_model.getBuilding()
         building.setStandardsTemplate(std_gem_standard)
     if sizing.building_type is not None:
-        building = os_model.getBuilding()
         building.setStandardsBuildingType(sizing.building_type)
+    else:
+        building.setStandardsBuildingType('MediumOffice')
     if sizing.climate_zone is not None:
         climate_zone_objs = os_model.getClimateZones()
         climate_zone_objs.setClimateZone('ASHRAE', sizing.climate_zone)

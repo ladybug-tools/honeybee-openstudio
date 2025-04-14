@@ -157,7 +157,7 @@ def test_low_temp_radiant_slab_with_doas():
     plant_loops = os_model.getPlantLoops()
     rad_heats = os_model.getCoilHeatingLowTempRadiantVarFlows()
     assert os_vector_len(air_loops) == 1
-    assert os_vector_len(plant_loops) == 3
+    assert os_vector_len(plant_loops) == 5
     assert os_vector_len(rad_heats) == 2
 
 
@@ -192,5 +192,5 @@ def test_low_temp_radiant_metal_panel_with_doas():
     plant_loops = os_model.getPlantLoops()
     rad_heats = os_model.getCoilHeatingLowTempRadiantVarFlows()
     assert os_vector_len(air_loops) == 1
-    assert os_vector_len(plant_loops) == 2
+    assert os_vector_len(plant_loops) == 4
     assert os_vector_len(rad_heats) == 2

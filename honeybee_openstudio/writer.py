@@ -811,6 +811,7 @@ def model_to_openstudio(
             dl_name = '{}_Daylighting'.format(room.identifier)
             os_daylight = os_model.getDaylightingControlByName(dl_name)
             if os_daylight.is_initialized():
+                os_daylight = os_daylight.get()
                 os_zone.setPrimaryDaylightingControl(os_daylight)
                 os_zone.setFractionofZoneControlledbyPrimaryDaylightingControl(
                     daylight.control_fraction)
@@ -1012,6 +1013,7 @@ def model_to_openstudio(
     if print_progress and ideal_air_count != 0:
         print('  Assigned {} Ideal Air Systems'.format(ideal_air_count))
     # translate template HVAC systems
+    os_model.setFastNaming(False)
     if len(template_hvac_dict) != 0:
         for hvac_id, os_zones in template_zones.items():
             hvac = template_hvac_dict[hvac_id]
