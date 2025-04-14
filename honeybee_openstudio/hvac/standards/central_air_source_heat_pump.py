@@ -34,7 +34,7 @@ def create_central_air_source_heat_pump(model, hot_water_loop, name=None, cop=3.
 
     # set plant component properties
     plant_comp.setPlantLoadingMode('MeetsLoadWithNominalCapacityHiOutLimit')
-    plant_comp.setPlantLoopFlowRequestMode('NeedsFlowIfLoopIsOn')
+    plant_comp.setPlantLoopFlowRequestMode('NeedsFlowIfLoopOn')
 
     # plant design volume flow rate internal variable
     vdot_des_int_var = openstudio_model.EnergyManagementSystemInternalVariable(

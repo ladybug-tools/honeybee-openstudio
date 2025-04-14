@@ -24,9 +24,11 @@ from honeybee_energy.hvac.heatcool.windowac import WindowAC
 from honeybee_energy.hvac.heatcool.wshp import WSHP
 from honeybee_energy.hvac.heatcool.radiant import Radiant
 
-from honeybee_openstudio.openstudio import openstudio_model, OSScheduleRuleset, OSTime
+from honeybee_openstudio.openstudio import openstudio, openstudio_model, \
+    OSScheduleRuleset, OSTime
 from .standards.hvac_systems import model_add_hvac_system, model_add_low_temp_radiant, \
-    model_get_or_add_hot_water_loop, model_get_or_add_chilled_water_loop
+    model_get_or_add_chilled_water_loop, model_add_hw_loop, model_add_chw_loop, \
+    model_add_cw_loop, model_get_or_add_ambient_water_loop
 
 
 def template_hvac_to_openstudio(hvac, os_zones, os_model):
@@ -290,14 +292,54 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
         elif equip == 'DOAS_Radiant_DCW_DHW':
             main_heat_fuel, cool_fuel = 'DistrictHeating', 'DistrictCooling'
 
-        hot_water_loop = model_get_or_add_hot_water_loop(
-            os_model, main_heat_fuel, hot_water_loop_type='LowTemperature')
-        chilled_water_loop = model_get_or_add_chilled_water_loop(
-            os_model, cool_fuel,
-            chilled_water_loop_cooling_type=chilled_water_loop_cooling_type)
         air_loop = model_add_hvac_system(
             os_model, doas_type, main_heat_fuel, None, cool_fuel, zones,
-            'LowTemperature', chilled_water_loop_cooling_type)
+            chilled_water_loop_cooling_type=chilled_water_loop_cooling_type)
+        hw_name = 'Low Temp Hot Water Loop'
+        if os_model.getPlantLoopByName(hw_name).is_initialized():
+            hot_water_loop = os_model.getPlantLoopByName(hw_name).get()
+        else:
+            hot_water_loop = model_add_hw_loop(
+                os_model, main_heat_fuel, dsgn_sup_wtr_temp=120.0,
+                boiler_draft_type='Condensing')
+            hot_water_loop.setName(hw_name)
+        chw_name = 'Low Temp Chilled Water Loop'
+        if os_model.getPlantLoopByName(chw_name).is_initialized():
+            chilled_water_loop = os_model.getPlantLoopByName(chw_name).get()
+        else:
+            if cool_fuel == 'DistrictCooling':
+                chilled_water_loop = model_add_chw_loop(
+                    os_model, chw_pumping_type='const_pri', cooling_fuel=cool_fuel)
+            elif cool_fuel == 'HeatPump':
+                condenser_water_loop = model_get_or_add_ambient_water_loop(os_model)
+                chilled_water_loop = model_add_chw_loop(
+                    os_model, chw_pumping_type='const_pri_var_sec',
+                    chiller_cooling_type='WaterCooled',
+                    chiller_compressor_type='Rotary Screw',
+                    condenser_water_loop=condenser_water_loop)
+            elif cool_fuel == 'Electricity':
+                if chilled_water_loop_cooling_type == 'AirCooled':
+                    chilled_water_loop = model_add_chw_loop(
+                        os_model, chw_pumping_type='const_pri',
+                        chiller_cooling_type='AirCooled', cooling_fuel=cool_fuel)
+                else:
+                    cond_name = 'Condenser Water Loop'
+                    if os_model.getPlantLoopByName(cond_name).is_initialized():
+                        condenser_water_loop = os_model.getPlantLoopByName(cond_name).get()
+                    else:
+                        fan_type = 'Variable Speed Fan'
+                        condenser_water_loop = model_add_cw_loop(
+                            os_model, cooling_tower_type='Open Cooling Tower',
+                            cooling_tower_fan_type='Propeller or Axial',
+                            cooling_tower_capacity_control=fan_type,
+                            number_of_cells_per_tower=1, number_cooling_towers=1)
+                        condenser_water_loop.setName(cond_name)
+                    chilled_water_loop = model_add_chw_loop(
+                        os_model, chw_pumping_type='const_pri_var_sec',
+                        chiller_cooling_type='WaterCooled',
+                        chiller_compressor_type='Rotary Screw',
+                        condenser_water_loop=condenser_water_loop)
+            chilled_water_loop.setName(chw_name)
 
         control_strategy, include_carpet = 'proportional_control', False
         radiant_temperature_control_type = 'SurfaceFaceTemperature'
@@ -463,8 +505,14 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
         elif equip == 'Radiant_DCW_DHW':
             main_heat_fuel, cool_fuel = 'DistrictHeating', 'DistrictCooling'
 
-        hot_water_loop = model_get_or_add_hot_water_loop(
-            os_model, main_heat_fuel, hot_water_loop_type='LowTemperature')
+        hw_name = 'Low Temperature Hot Water Loop'
+        if os_model.getPlantLoopByName(hw_name).is_initialized():
+            hot_water_loop = os_model.getPlantLoopByName(hw_name).get()
+        else:
+            hot_water_loop = model_add_hw_loop(
+                os_model, main_heat_fuel, dsgn_sup_wtr_temp=120.0,
+                boiler_draft_type='Condensing')
+            hot_water_loop.setName(hw_name)
         chilled_water_loop = model_get_or_add_chilled_water_loop(
             os_model, cool_fuel,
             chilled_water_loop_cooling_type=chilled_water_loop_cooling_type)
@@ -951,23 +999,22 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
             for os_air_loop in os_air_loops:
                 os_air_loop.setAvailabilitySchedule(avail_sch)
 
-        # set the sensible heat recovery if it is specified
-        if hvac.sensible_heat_recovery != 0:
+        # set the heat recovery if it is specified
+        if hvac.sensible_heat_recovery != 0 or hvac.latent_heat_recovery != 0:
             for os_air_loop in os_air_loops:
                 heat_ex = _get_or_add_heat_recovery(os_model, os_air_loop)
                 # ratio of max to standard efficiency from OpenStudio Standards
-                eff_standard = hvac.sensible_heat_recovery
-                heat_ex.setSensibleEffectivenessat100CoolingAirFlow(eff_standard)
-                heat_ex.setSensibleEffectivenessat100HeatingAirFlow(eff_standard)
-
-        # set the latent heat recovery ity is specified
-        if hvac.latent_heat_recovery != 0:
-            for os_air_loop in os_air_loops:
-                heat_ex = _get_or_add_heat_recovery(os_model, os_air_loop)
-                # ratio of max to standard efficiency from OpenStudio Standards
-                eff_standard = hvac.latent_heat_recovery
-                heat_ex.setLatentEffectivenessat100CoolingAirFlow(eff_standard)
-                heat_ex.setLatentEffectivenessat100HeatingAirFlow(eff_standard)
+                eff_sens = hvac.sensible_heat_recovery
+                heat_ex.setSensibleEffectivenessat100CoolingAirFlow(eff_sens)
+                heat_ex.setSensibleEffectivenessat100HeatingAirFlow(eff_sens)
+                eff_lat = hvac.latent_heat_recovery
+                heat_ex.setLatentEffectivenessat100CoolingAirFlow(eff_lat)
+                heat_ex.setLatentEffectivenessat100HeatingAirFlow(eff_lat)
+                if os_model.version() < openstudio.VersionString('3.8.0'):
+                    heat_ex.setSensibleEffectivenessat75CoolingAirFlow(eff_sens)
+                    heat_ex.setSensibleEffectivenessat75HeatingAirFlow(eff_sens)
+                    heat_ex.setLatentEffectivenessat75CoolingAirFlow(eff_lat)
+                    heat_ex.setLatentEffectivenessat75HeatingAirFlow(eff_lat)
 
         # assign electric humidifier if there's an air loop and zones have humidistat
         humidistat_exists = False
@@ -1046,10 +1093,6 @@ def _get_or_add_heat_recovery(os_model, os_air_loop):
     heat_ex = openstudio_model.HeatExchangerAirToAirSensibleAndLatent(os_model)
     heat_ex.setEconomizerLockout(False)
     heat_ex.setName('{}_Heat Recovery Unit'.format(os_air_loop.nameString()))
-    heat_ex.setSensibleEffectivenessat100CoolingAirFlow(0.0)
-    heat_ex.setSensibleEffectivenessat100HeatingAirFlow(0.0)
-    heat_ex.setLatentEffectivenessat100CoolingAirFlow(0.0)
-    heat_ex.setLatentEffectivenessat100HeatingAirFlow(0.0)
 
     # add the heat exchanger to the air loop
     outdoor_node = os_air_loop.reliefAirNode()
