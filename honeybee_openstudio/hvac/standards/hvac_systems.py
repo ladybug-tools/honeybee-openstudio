@@ -5519,7 +5519,7 @@ def model_add_hvac_system(
             heating_type = 'Water'
             supplemental_heating_type = 'Electricity'
             hot_water_loop = model_get_or_add_hot_water_loop(
-                model, main_heat_fuel, hot_water_loop_type='LowTemperature')
+                model, main_heat_fuel, hot_water_loop_type=hot_water_loop_type)
         elif main_heat_fuel == 'Electricity':
             heating_type = main_heat_fuel
             supplemental_heating_type = 'Electricity'
@@ -5738,7 +5738,7 @@ def model_add_hvac_system(
     elif system_type == 'PVAV Reheat':
         if main_heat_fuel == 'AirSourceHeatPump':
             hot_water_loop = model_get_or_add_hot_water_loop(
-                model, main_heat_fuel, hot_water_loop_type='LowTemperature')
+                model, main_heat_fuel, hot_water_loop_type=hot_water_loop_type)
         else:
             if air_loop_heating_type == 'Water':
                 hot_water_loop = model_get_or_add_hot_water_loop(
