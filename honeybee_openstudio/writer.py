@@ -1106,31 +1106,36 @@ def model_to_openstudio(
                 con, dyn_dict[con.identifier], os_model)
             os_prog_manager.addProgram(ems_program)
 
+    # add the orphaned objects
+    shade_count, shades_to_group = 0, []
+    for face in model.orphaned_faces:
+        shades_to_group.append(face_to_openstudio(face, os_model))
+        shade_count += 1
+    for aperture in model.orphaned_apertures:
+        shades_to_group.append(aperture_to_openstudio(aperture, os_model))
+        shade_count += 1
+    for door in model.orphaned_doors:
+        shades_to_group.append(door_to_openstudio(door, os_model))
+        shade_count += 1
+    for shade in model.orphaned_shades:
+        shades_to_group.append(shade_to_openstudio(shade, os_model))
+        shade_count += 1
+    for shade_mesh in model.shade_meshes:
+        shade_mesh_to_openstudio(shade_mesh, os_model)
+        shade_count += 1
+    if len(shades_to_group) != 0:
+        shd_group = OSShadingSurfaceGroup(os_model)
+        shd_group.setName('Orphaned Shades')
+        for os_shade in shades_to_group:
+            os_shade.setShadingSurfaceGroup(shd_group)
+    if print_progress and shade_count != 0:
+        print('Translated {} Shades'.format(shade_count))
+
     # write the electric load center is any generator objects are in the model
     os_pv_gens = os_model.getGeneratorPVWattss()
     if os_vector_len(os_pv_gens) != 0:
         load_center = model.properties.energy.electric_load_center
         electric_load_center_to_openstudio(load_center, os_pv_gens, os_model)
-
-    # add the orphaned objects
-    shade_count = 0
-    for face in model.orphaned_faces:
-        face_to_openstudio(face, os_model)
-        shade_count += 1
-    for aperture in model.orphaned_apertures:
-        aperture_to_openstudio(aperture, os_model)
-        shade_count += 1
-    for door in model.orphaned_doors:
-        door_to_openstudio(door, os_model)
-        shade_count += 1
-    for shade in model.orphaned_shades:
-        shade_to_openstudio(shade, os_model)
-        shade_count += 1
-    for shade_mesh in model.shade_meshes:
-        shade_mesh_to_openstudio(shade_mesh, os_model)
-        shade_count += 1
-    if print_progress and shade_count != 0:
-        print('Translated {} Shades'.format(shade_count))
 
     # return the Model object
     return os_model
