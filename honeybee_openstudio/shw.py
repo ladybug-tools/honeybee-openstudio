@@ -128,8 +128,8 @@ def shw_system_to_openstudio(shw, os_shw_connections, total_flow, water_temp, os
             heater.setAmbientTemperatureSchedule(a_sch)
         # set the ambient loss coefficient
         if heater_in_zone:
-            heater.setOffCycleLossFractiontoThermalZone(shw.ambient_loss_coefficient)
-            heater.setOnCycleLossFractiontoThermalZone(shw.ambient_loss_coefficient)
+            heater.setOffCycleLossFractiontoThermalZone(1)
+            heater.setOnCycleLossFractiontoThermalZone(1)
         else:
             heater.setOffCycleLossCoefficienttoAmbientTemperature(
                 shw.ambient_loss_coefficient)
