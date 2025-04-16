@@ -27,7 +27,7 @@ from honeybee_energy.lib.constructionsets import generic_construction_set
 from honeybee_openstudio.openstudio import OSModel, OSPoint3dVector, OSPoint3d, \
     OSShadingSurfaceGroup, OSShadingSurface, OSSubSurface, OSSurface, OSSpace, \
     OSThermalZone, OSBuildingStory, OSSurfacePropertyOtherSideCoefficients, \
-    OSEnergyManagementSystemProgramCallingManager, openstudio, os_vector_len
+    OSEnergyManagementSystemProgramCallingManager, openstudio, os_path, os_vector_len
 from honeybee_openstudio.schedule import schedule_type_limits_to_openstudio, \
     schedule_to_openstudio
 from honeybee_openstudio.material import material_to_openstudio
@@ -1037,15 +1037,14 @@ def model_to_openstudio(
             with open(spec_file, 'w') as sf:
                 json.dump(hvac.specification, sf)
             osm_file = os.path.join(hvac_trans_dir, '{}.osm'.format(hvac.identifier))
-            os_model.save(osm_file, overwrite=True)
-            command = '"{ironbug_exe}" "{osm_file}" "{spec_file}"'.format(
-                ironbug_exe=hbe_folders, osm_file=osm_file, spec_file=spec_file)
-            process = subprocess.Popen(command, shell=True)
+            os_model.save(os_path(osm_file), overwrite=True)
+            cmds = [hbe_folders.ironbug_exe, osm_file, spec_file]
+            process = subprocess.Popen(
+                cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             result = process.communicate()  # pause script until command is done
-            translator = openstudio.OSVersion.VersionTranslator()
-            o_model = translator.loadModel(osm_file)
-            if o_model.is_initialized():
-                os_model = o_model.get()
+            exist_os_model = OSModel.load(os_path(osm_file))
+            if exist_os_model.is_initialized():
+                os_model = exist_os_model.get()
             else:
                 msg = 'Failed to apply Detailed HVAC "{}"\n{}\n{}'.format(
                     hvac_id, result[0], result[1])
