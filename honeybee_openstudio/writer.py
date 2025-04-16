@@ -949,6 +949,7 @@ def model_to_openstudio(
                             os_sub_f = adj_map['sub_faces'][sub_f.identifier]
                             os_afn_sf = os_sub_f.getAirflowNetworkSurface(os_opening)
                             if op_fac is not None:
+                                op_fac = 1 if op_fac == 0 else op_fac
                                 os_afn_sf.setWindowDoorOpeningFactorOrCrackFactor(op_fac)
                                 operable_sub_fs.append(os_sub_f)
                                 opening_factors.append(op_fac)
