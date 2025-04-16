@@ -916,7 +916,8 @@ def model_to_openstudio(
                     for sub_f in face.sub_faces:
                         vent_open = sub_f.properties.energy.vent_opening
                         if vent_open is not None:
-                            ventilation_opening_to_openstudio(vent_open, os_model)
+                            os_vent = ventilation_opening_to_openstudio(vent_open, os_model)
+                            os_vent.addToThermalZone(zone_map[room.identifier])
     else:  # we are using the AFN!
         # create the AFN reference crack for the model and make an outdoor sensor
         vent_sim_ctrl = model.properties.energy.ventilation_simulation_control
