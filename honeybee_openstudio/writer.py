@@ -431,7 +431,10 @@ def room_to_openstudio(room, os_model, adj_map=None, include_infiltration=True,
     if room._display_name is not None:
         os_space.setDisplayName(room.display_name)
     if room.exclude_floor_area:
-        os_space.setPartofTotalFloorArea(False)
+        if sys.version_info < (3, 0):  # .NET bindings are missing the method
+            os_space.setString(11, 'No')
+        else:
+            os_space.setPartofTotalFloorArea(False)
     os_space.setVolume(room.volume)
 
     # assign the construction set if specified
