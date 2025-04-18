@@ -847,6 +847,7 @@ def model_to_openstudio(
         print('Translated all {} Zones'.format(zone_count))
 
     # triangulate any apertures or doors with more than 4 vertices
+    tri_sub_faces = []
     if triangulate_subfaces:
         tri_apertures, _ = model.triangulated_apertures()
         for tri_aps in tri_apertures:
@@ -857,6 +858,7 @@ def model_to_openstudio(
                 os_face = adj_map['faces'][ap.parent.identifier]
                 os_ap.setSurface(os_face)
                 adj_map['sub_faces'][ap.identifier] = os_ap
+                tri_sub_faces.append(ap)
         tri_doors, _ = model.triangulated_doors()
         for tri_drs in tri_doors:
             for i, dr in enumerate(tri_drs):
@@ -866,6 +868,7 @@ def model_to_openstudio(
                 os_face = adj_map['faces'][dr.parent.identifier]
                 os_dr.setSurface(os_face)
                 adj_map['sub_faces'][dr.identifier] = os_dr
+                tri_sub_faces.append(dr)
 
     # assign stories to the rooms
     for story_id, os_spaces in story_map.items():
@@ -892,10 +895,17 @@ def model_to_openstudio(
                     base_os_face.setAdjacentSurface(adj_os_face)
                     # set the adjacency of all sub-faces
                     for sub_face in face.sub_faces:
-                        adj_id = sub_face.boundary_condition.boundary_condition_object
-                        base_os_sub_face = adj_map['sub_faces'][sub_face.identifier]
-                        adj_os_sub_face = adj_map['sub_faces'][adj_id]
-                        base_os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
+                        if len(sub_face.geometry) <= 4 or not triangulate_subfaces:
+                            adj_id = sub_face.boundary_condition.boundary_condition_object
+                            base_os_sub_face = adj_map['sub_faces'][sub_face.identifier]
+                            adj_os_sub_face = adj_map['sub_faces'][adj_id]
+                            base_os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
+    for sub_face in tri_sub_faces:
+        if isinstance(sub_face.boundary_condition, Surface):
+            adj_id = sub_face.boundary_condition.boundary_condition_object
+            base_os_sub_face = adj_map['sub_faces'][sub_face.identifier]
+            adj_os_sub_face = adj_map['sub_faces'][adj_id]
+            base_os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
 
     # if simple ventilation is being used
     if use_simple_vent:
