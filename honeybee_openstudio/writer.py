@@ -853,7 +853,7 @@ def model_to_openstudio(
             for i, ap in enumerate(tri_aps):
                 if i != 0:
                     ap.properties.energy.vent_opening = None
-                os_ap = aperture_to_openstudio(ap, model)
+                os_ap = aperture_to_openstudio(ap, os_model)
                 os_face = adj_map['faces'][ap.parent.identifier]
                 os_ap.setSurface(os_face)
                 adj_map['sub_faces'][ap.identifier] = os_ap
@@ -862,7 +862,7 @@ def model_to_openstudio(
             for i, dr in enumerate(tri_drs):
                 if i != 0:
                     dr.properties.energy.vent_opening = None
-                os_dr = door_to_openstudio(dr, model)
+                os_dr = door_to_openstudio(dr, os_model)
                 os_face = adj_map['faces'][dr.parent.identifier]
                 os_dr.setSurface(os_face)
                 adj_map['sub_faces'][dr.identifier] = os_dr
