@@ -114,6 +114,7 @@ def shade_mesh_to_openstudio(shade_mesh, os_model):
     if trans_sched is not None:
         os_schedule = os_model.getScheduleByName(trans_sched.identifier)
         if os_schedule.is_initialized():
+            os_schedule = os_schedule.get()
             for os_shade in os_shades:
                 os_shade.setTransmittanceSchedule(os_schedule)
     return os_shades
@@ -147,6 +148,7 @@ def shade_to_openstudio(shade, os_model):
     if trans_sched is not None:
         os_schedule = os_model.getScheduleByName(trans_sched.identifier)
         if os_schedule.is_initialized():
+            os_schedule = os_schedule.get()
             os_shade.setTransmittanceSchedule(os_schedule)
     # add the PVProperties if they exist
     pv_prop = shade.properties.energy.pv_properties
