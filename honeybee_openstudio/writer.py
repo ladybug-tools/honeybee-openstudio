@@ -107,6 +107,7 @@ def shade_mesh_to_openstudio(shade_mesh, os_model):
             not construction.is_default:
         os_construction = os_model.getConstructionByName(construction.identifier)
         if os_construction.is_initialized():
+            os_construction = os_construction.get()
             for os_shade in os_shades:
                 os_shade.setConstruction(os_construction)
     trans_sched = shade_mesh.properties.energy.transmittance_schedule
@@ -140,6 +141,7 @@ def shade_to_openstudio(shade, os_model):
             not construction.is_default:
         os_construction = os_model.getConstructionByName(construction.identifier)
         if os_construction.is_initialized():
+            os_construction = os_construction.get()
             os_shade.setConstruction(os_construction)
     trans_sched = shade.properties.energy.transmittance_schedule
     if trans_sched is not None:
