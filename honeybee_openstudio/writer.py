@@ -705,8 +705,12 @@ def model_to_openstudio(
             always_on_included = True
         schedules.append(sched)
         t_lim = sched.schedule_type_limit
-        if t_lim is not None and not _instance_in_array(t_lim, type_limits):
-            type_limits.append(t_lim)
+        if t_lim is not None:
+            for val in type_limits:
+                if val is t_lim:
+                    break
+            else:
+                type_limits.append(t_lim)
     if not always_on_included:
         always_schedule = model.properties.energy._always_on_schedule()
         schedules.append(always_schedule)
@@ -1140,6 +1144,7 @@ def model_to_openstudio(
     if len(shades_to_group) != 0:
         shd_group = OSShadingSurfaceGroup(os_model)
         shd_group.setName('Orphaned Shades')
+        shd_group.setShadingSurfaceType('Building')
         for os_shade in shades_to_group:
             os_shade.setShadingSurfaceGroup(shd_group)
     if print_progress and shade_count != 0:
@@ -1155,18 +1160,102 @@ def model_to_openstudio(
     return os_model
 
 
-def _instance_in_array(object_instance, object_array):
-    """Check if a specific object instance is already in an array.
+def model_to_osm(
+    model, seed_model=None, schedule_directory=None,
+    use_geometry_names=False, use_resource_names=False, print_progress=False
+):
+    """Translate a Honeybee Model to an OSM string.
 
-    This can be much faster than  `if object_instance in object_array`
-    when you expect to be testing a lot of the same instance of an object for
-    inclusion in an array since the builtin method uses an == operator to
-    test inclusion.
+    Args:
+        model: The Honeybee Model to be converted into an OpenStudio Model.
+        seed_model: An optional OpenStudio Model object to which the Honeybee
+            Model will be added. If None, a new OpenStudio Model will be
+            initialized within this method. (Default: None).
+        schedule_directory: An optional file directory to which all file-based
+            schedules should be written to. If None, all ScheduleFixedIntervals
+            will be translated to Schedule:Compact and written fully into the
+            IDF string instead of to Schedule:File. (Default: None).
+        use_geometry_names: Boolean to note whether a cleaned version of all
+            geometry display names should be used instead of identifiers when
+            translating the Model to OSM and IDF. Using this flag will affect
+            all Rooms, Faces, Apertures, Doors, and Shades. It will generally
+            result in more read-able names in the OSM and IDF but this means
+            that it will not be easy to map the EnergyPlus results back to the
+            input Honeybee Model. Cases of duplicate IDs resulting from
+            non-unique names will be resolved by adding integers to the ends
+            of the new IDs that are derived from the name. (Default: False).
+        use_resource_names: Boolean to note whether a cleaned version of all
+            resource display names should be used instead of identifiers when
+            translating the Model to OSM and IDF. Using this flag will affect
+            all Materials, Constructions, ConstructionSets, Schedules, Loads,
+            and ProgramTypes. It will generally result in more read-able names
+            for the resources in the OSM and IDF. Cases of duplicate IDs
+            resulting from non-unique names will be resolved by adding integers
+            to the ends of the new IDs that are derived from the name. (Default: False).
+        print_progress: Set to True to have the progress of the translation
+            printed as it is completed. (Default: False).
     """
-    for val in object_array:
-        if val is object_instance:
-            return True
-    return False
+    # check that the input is a model
+    assert isinstance(model, Model), \
+        'Expected Honeybee Model for model_to_osm. Got {}.'.format(type(model))
+    # translate the Honeybee Model to an OpenStudio Model
+    os_model = model_to_openstudio(
+        model, seed_model, schedule_directory, use_geometry_names, use_resource_names,
+        print_progress=print_progress
+    )
+    return str(os_model)
+
+
+def model_to_idf(
+    model, seed_model=None, schedule_directory=None,
+    use_geometry_names=False, use_resource_names=False, print_progress=False
+):
+    """Translate a Honeybee Model to an IDF string using OpenStudio SDK translators.
+
+    Args:
+        model: The Honeybee Model to be converted into an OpenStudio Model.
+        seed_model: An optional OpenStudio Model object to which the Honeybee
+            Model will be added. If None, a new OpenStudio Model will be
+            initialized within this method. (Default: None).
+        schedule_directory: An optional file directory to which all file-based
+            schedules should be written to. If None, all ScheduleFixedIntervals
+            will be translated to Schedule:Compact and written fully into the
+            IDF string instead of to Schedule:File. (Default: None).
+        use_geometry_names: Boolean to note whether a cleaned version of all
+            geometry display names should be used instead of identifiers when
+            translating the Model to OSM and IDF. Using this flag will affect
+            all Rooms, Faces, Apertures, Doors, and Shades. It will generally
+            result in more read-able names in the OSM and IDF but this means
+            that it will not be easy to map the EnergyPlus results back to the
+            input Honeybee Model. Cases of duplicate IDs resulting from
+            non-unique names will be resolved by adding integers to the ends
+            of the new IDs that are derived from the name. (Default: False).
+        use_resource_names: Boolean to note whether a cleaned version of all
+            resource display names should be used instead of identifiers when
+            translating the Model to OSM and IDF. Using this flag will affect
+            all Materials, Constructions, ConstructionSets, Schedules, Loads,
+            and ProgramTypes. It will generally result in more read-able names
+            for the resources in the OSM and IDF. Cases of duplicate IDs
+            resulting from non-unique names will be resolved by adding integers
+            to the ends of the new IDs that are derived from the name. (Default: False).
+        print_progress: Set to True to have the progress of the translation
+            printed as it is completed. (Default: False).
+    """
+    # check that the input is a model
+    assert isinstance(model, Model), \
+        'Expected Honeybee Model for model_to_idf. Got {}.'.format(type(model))
+    # translate the Honeybee Model to an OpenStudio Model
+    os_model = model_to_openstudio(
+        model, seed_model, schedule_directory, use_geometry_names, use_resource_names,
+        print_progress=print_progress
+    )
+    # translate the model to an IDF string
+    if (sys.version_info < (3, 0)):
+        idf_translator = openstudio.EnergyPlusForwardTranslator()
+    else:
+        idf_translator = openstudio.energyplus.ForwardTranslator()
+    workspace = idf_translator.translateModel(os_model)
+    return str(workspace)
 
 
 def model_to_gbxml(
