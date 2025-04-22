@@ -2,11 +2,9 @@
 import sys
 import logging
 import click
-import os
 
 from ladybug.commandutil import process_content_to_output
 from honeybee.model import Model
-from honeybee.config import folders
 
 import openstudio
 from honeybee_openstudio.writer import model_to_openstudio
@@ -107,11 +105,13 @@ def osm_to_idf(osm_file, output_file=None):
     workspace = idf_translator.translateModel(os_model)
 
     # write the IDF file
-    if output_file is None:
-        idf = os.path.join(folders.default_simulation_folder, 'temp_translate', 'in.idf')
-    elif not isinstance(output_file, str):
-        idf = output_file.name
-    workspace.save(idf, overwrite=True)
+    if output_file is not None and 'stdout' not in str(output_file):
+        output_file = output_file.name \
+            if not isinstance(output_file, str) else output_file
+        workspace.save(output_file, overwrite=True)
+    else:
+        output = process_content_to_output(str(workspace), output_file)
+        return output
 
 
 @translate.command('append-to-osm')
