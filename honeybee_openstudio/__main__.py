@@ -1,4 +1,4 @@
-from honeybee_openstudio.cli import doe2
+from honeybee_openstudio.cli import openstudio
 
 if __name__ == '__main__':
-    doe2()
+    openstudio()

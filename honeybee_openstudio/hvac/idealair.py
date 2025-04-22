@@ -23,7 +23,7 @@ def ideal_air_system_to_openstudio(hvac, os_model, room=None):
     else:
         os_ideal_air.setName('{} Ideal Loads Air System'.format(room.identifier))
     if hvac._display_name is not None:
-        hvac.setDisplayName(hvac.display_name)
+        os_ideal_air.setDisplayName(hvac.display_name)
     # assign the dehumidification based on the room
     os_ideal_air.setDehumidificationControlType('None')  # default when no humidistat
     if room is not None:
