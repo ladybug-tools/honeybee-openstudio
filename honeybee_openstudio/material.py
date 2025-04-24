@@ -2,6 +2,7 @@
 """OpenStudio material translators."""
 from __future__ import division
 
+from honeybee.typing import clean_ep_string
 from honeybee_energy.material.opaque import EnergyMaterial, EnergyMaterialNoMass, \
     EnergyMaterialVegetation
 from honeybee_energy.material.glazing import EnergyWindowMaterialGlazing, \
@@ -15,6 +16,9 @@ from honeybee_energy.material.shade import EnergyWindowMaterialShade, \
 from honeybee_openstudio.openstudio import OSStandardOpaqueMaterial, \
     OSMasslessOpaqueMaterial, OSRoofVegetation, OSStandardGlazing, OSSimpleGlazing, \
     OSGas, OSGasMixture, OSShade, OSBlind, OSWindowPropertyFrameAndDivider
+
+
+"""____________TRANSLATORS TO OPENSTUDIO____________"""
 
 
 def opaque_material_to_openstudio(material, os_model):
@@ -265,3 +269,333 @@ def material_to_openstudio(material, os_model):
     else:
         raise ValueError(
             '{} is not a recognized Energy Material type'.format(type(material)))
+
+
+"""____________TRANSLATORS FROM OPENSTUDIO____________"""
+
+
+def opaque_material_from_openstudio(os_material):
+    """Convert OpenStudio StandardOpaqueMaterial to Honeybee EnergyMaterial."""
+    # create the material object
+    thickness = os_material.thickness()
+    conductivity = os_material.conductivity()
+    density = os_material.density()
+    specific_heat = os_material.specificHeat()
+    material = EnergyMaterial(clean_ep_string(os_material.nameString()),
+                              thickness, conductivity, density, specific_heat)
+    # set the optional properties of the material
+    _apply_roughness(os_material, material)
+    material.thermal_absorptance = os_material.thermalAbsorptance()
+    material.solar_absorptance = os_material.solarAbsorptance()
+    material.visible_absorptance = os_material.visibleAbsorptance()
+    if os_material.displayName().is_initialized():
+        material.display_name = os_material.displayName().get()
+    return material
+
+
+def opaque_no_mass_material_from_openstudio(os_material):
+    """Convert OpenStudio MasslessOpaqueMaterial to Honeybee EnergyMaterialNoMass."""
+    # create the material object
+    r_value = os_material.thermalResistance()
+    material = EnergyMaterialNoMass(clean_ep_string(os_material.nameString()), r_value)
+    # set the optional properties of the material
+    _apply_roughness(os_material, material)
+    if os_material.thermalAbsorptance().is_initialized():
+        material.thermal_absorptance = os_material.thermalAbsorptance().get()
+    if os_material.solarAbsorptance().is_initialized():
+        material.solar_absorptance = os_material.solarAbsorptance().get()
+    if os_material.visibleAbsorptance().is_initialized():
+        material.visible_absorptance = os_material.visibleAbsorptance().get()
+    if os_material.displayName().is_initialized():
+        material.display_name = os_material.displayName().get()
+    return material
+
+
+def vegetation_material_from_openstudio(os_material):
+    """Convert OpenStudio RoofVegetation to Honeybee EnergyMaterialVegetation."""
+    # create the material object
+    thickness = os_material.thickness()
+    conductivity = os_material.conductivityofDrySoil()
+    density = os_material.densityofDrySoil()
+    specific_heat = os_material.specificHeatofDrySoil()
+    plant_height = os_material.heightofPlants()
+    leaf_area_index = os_material.leafAreaIndex()
+    leaf_reflectivity = os_material.leafReflectivity()
+    leaf_emissivity = os_material.leafEmissivity()
+    min_stomatal_resist = os_material.minimumStomatalResistance()
+    material = EnergyMaterialVegetation(
+        clean_ep_string(os_material.nameString()),
+        thickness, conductivity, density, specific_heat,
+        plant_height=plant_height, leaf_area_index=leaf_area_index,
+        leaf_reflectivity=leaf_reflectivity, leaf_emissivity=leaf_emissivity,
+        min_stomatal_resist=min_stomatal_resist)
+    # set the other required properties
+    material.sat_vol_moist_cont = os_material.saturationVolumetricMoistureContent()
+    material.residual_vol_moist_cont = os_material.residualVolumetricMoistureContent()
+    material.init_vol_moist_cont = os_material.initialVolumetricMoistureContent()
+    material.moist_diff_model = os_material.moistureDiffusionCalculationMethod().title()
+    # set the optional properties of the material
+    _apply_roughness(os_material, material)
+    if os_material.thermalAbsorptance().is_initialized():
+        material.thermal_absorptance = os_material.thermalAbsorptance().get()
+    if os_material.solarAbsorptance().is_initialized():
+        material.solar_absorptance = os_material.solarAbsorptance().get()
+    if os_material.visibleAbsorptance().is_initialized():
+        material.visible_absorptance = os_material.visibleAbsorptance().get()
+    if os_material.displayName().is_initialized():
+        material.display_name = os_material.displayName().get()
+    return material
+
+
+def _apply_roughness(os_material, material):
+    """Apply roughness from an OpenStudio Material to a Honeybee Material."""
+    rough = os_material.roughness().lower()
+    if rough == 'veryrough':
+        material.roughness == 'VeryRough'
+    elif rough == 'mediumrough':
+        material.roughness == 'MediumRough'
+    elif rough == 'mediumsmooth':
+        material.roughness == 'MediumSmooth'
+    elif rough == 'verysmooth':
+        material.roughness == 'VerySmooth'
+    else:  # Rough or Smooth
+        material.roughness = rough.title()
+
+
+def glazing_material_from_openstudio(os_material):
+    """Convert OpenStudio StandardGlazing to Honeybee EnergyWindowMaterialGlazing."""
+    # get the solar transmittance
+    try:
+        solar_transmittance = os_material.solarTransmittance()
+    except Exception:  # spectral material to ignore
+        return None
+    # create the material objects
+    thickness = os_material.thickness()
+    conductivity = os_material.conductivity()
+    infrared_transmittance = os_material.infraredTransmittance()
+    emissivity = os_material.frontSideInfraredHemisphericalEmissivity()
+    emissivity_back = os_material.backSideInfraredHemisphericalEmissivity()
+    conductivity = os_material.thermalConductivity()
+    material = EnergyWindowMaterialGlazing(
+        clean_ep_string(os_material.nameString()), thickness, solar_transmittance,
+        conductivity=conductivity, infrared_transmittance=infrared_transmittance,
+        emissivity=emissivity, emissivity_back=emissivity_back)
+    # set all of the optional properties
+    if os_material.frontSideSolarReflectanceatNormalIncidence().is_initialized():
+        material.solar_reflectance = \
+            os_material.frontSideSolarReflectanceatNormalIncidence().get()
+    if os_material.backSideSolarReflectanceatNormalIncidence().is_initialized():
+        material.solar_reflectance_back = \
+            os_material.backSideSolarReflectanceatNormalIncidence().get()
+    if os_material.visibleTransmittanceatNormalIncidence().is_initialized():
+        material.visible_transmittance = \
+            os_material.visibleTransmittanceatNormalIncidence().get()
+    if os_material.frontSideVisibleReflectanceatNormalIncidence().is_initialized():
+        material.visible_reflectance = \
+            os_material.frontSideVisibleReflectanceatNormalIncidence().get()
+    if os_material.backSideVisibleReflectanceatNormalIncidence().is_initialized():
+        material.visible_reflectance_back = \
+            os_material.backSideVisibleReflectanceatNormalIncidence().get()
+    material.dirt_correction = \
+        os_material.dirtCorrectionFactorforSolarandVisibleTransmittance()
+    material.solar_diffusing = os_material.solarDiffusing()
+    if os_material.displayName().is_initialized():
+        material.display_name = os_material.displayName().get()
+    return material
+
+
+def simple_glazing_sys_material_from_openstudio(os_material):
+    """Convert OpenStudio SimpleGlazing to Honeybee EnergyWindowMaterialSimpleGlazSys."""
+    # create the material object
+    u_factor = os_material.uFactor()
+    shgc = os_material.solarHeatGainCoefficient()
+    material = EnergyWindowMaterialSimpleGlazSys(
+        clean_ep_string(os_material.nameString()), u_factor, shgc)
+    # set the optional properties of the material
+    if os_material.visibleTransmittance().is_initialized():
+        material.vt = os_material.visibleTransmittance().get()
+    if os_material.displayName().is_initialized():
+        material.display_name = os_material.displayName().get()
+    return material
+
+
+def gas_material_from_openstudio(os_material):
+    """Convert OpenStudio Gas to Honeybee EnergyWindowMaterialGas."""
+    # create the material object
+    thickness = os_material.thickness()
+    gas_type = os_material.gasType()
+    material = EnergyWindowMaterialGas(
+        clean_ep_string(os_material.nameString()), thickness, gas_type)
+    if os_material.displayName().is_initialized():
+        material.display_name = os_material.displayName().get()
+    return material
+
+
+def gas_mixture_material_from_openstudio(os_material):
+    """Convert OpenStudio GasMixture to Honeybee EnergyWindowMaterialGasMixture."""
+    thickness = os_material.thickness()
+    gas_count = os_material.numberofGasesinMixture()
+    gas_types = [os_material.gas1Type(), os_material.gas2Type()]
+    gas_fractions = [os_material.gas1Fraction(), os_material.gas2Fraction()]
+    if gas_count > 2:
+        if os_material.gas3Fraction().is_initialized():
+            gas_types.append(os_material.gas3Type())
+            gas_fractions.append(os_material.gas3Fraction().get())
+        if gas_count > 3:
+            if os_material.gas4Fraction().is_initialized():
+                gas_types.append(os_material.gas4Type())
+                gas_fractions.append(os_material.gas4Fraction().get())
+    material = EnergyWindowMaterialGasMixture(
+        clean_ep_string(os_material.nameString()), thickness, gas_types, gas_fractions)
+    if os_material.displayName().is_initialized():
+        material.display_name = os_material.displayName().get()
+    return material
+
+
+def gas_custom_material_from_openstudio(os_material):
+    """Convert OpenStudio Gas to Honeybee EnergyWindowMaterialGasCustom."""
+    # create the material object
+    thickness = os_material.thickness()
+    conductivity_coeff_a, viscosity_coeff_a, specific_heat_coeff_a = 0, 0, 0
+    if os_material.customConductivityCoefficientA().is_initialized():
+        conductivity_coeff_a = os_material.customConductivityCoefficientA().get()
+    if os_material.viscosityCoefficientA().is_initialized():
+        viscosity_coeff_a = os_material.viscosityCoefficientA().get()
+    if os_material.specificHeatCoefficientA().is_initialized():
+        specific_heat_coeff_a = os_material.specificHeatCoefficientA().get()
+    material = EnergyWindowMaterialGas(
+        clean_ep_string(os_material.nameString()), thickness,
+        conductivity_coeff_a, viscosity_coeff_a, specific_heat_coeff_a)
+    # set the optional properties of the material
+    if os_material.customConductivityCoefficientB().is_initialized():
+        material.conductivity_coeff_b = material.customConductivityCoefficientB().get()
+    if os_material.viscosityCoefficientB().is_initialized():
+        material.viscosity_coeff_b = material.viscosityCoefficientB().get()
+    if os_material.specificHeatCoefficientB().is_initialized():
+        material.specific_heat_coeff_b = material.specificHeatCoefficientB().get()
+    if os_material.customConductivityCoefficientC().is_initialized():
+        material.conductivity_coeff_c = material.customConductivityCoefficientC().get()
+    if os_material.viscosityCoefficientC().is_initialized():
+        material.viscosity_coeff_c = material.viscosityCoefficientC().get()
+    if os_material.specificHeatCoefficientC().is_initialized():
+        material.specific_heat_coeff_c = material.specificHeatCoefficientC().get()
+    if os_material.specificHeatRatio().is_initialized():
+        material.specific_heat_ratio = material.specificHeatRatio().get()
+    if os_material.molecularWeight().is_initialized():
+        material.molecular_weight = material.molecularWeight().get()
+    if os_material.displayName().is_initialized():
+        material.display_name = os_material.displayName().get()
+    return material
+
+
+def shade_material_from_openstudio(os_material):
+    """Convert OpenStudio Shade to Honeybee EnergyWindowMaterialShade."""
+    # create the material object
+    material = EnergyWindowMaterialShade(clean_ep_string(os_material.nameString()))
+    # set the optional properties of the material
+    material.solar_transmittance = os_material.solarTransmittance()
+    material.solar_reflectance = os_material.solarReflectance()
+    material.visible_transmittance = os_material.visibleTransmittance()
+    material.visible_reflectance = os_material.visibleReflectance()
+    material.emissivity = os_material.thermalHemisphericalEmissivity()
+    material.infrared_transmittance = os_material.thermalTransmittance()
+    material.thickness = os_material.thickness()
+    material.conductivity = os_material.conductivity()
+    material.distance_to_glass = os_material.shadetoGlassDistance()
+    material.top_opening_multiplier = os_material.topOpeningMultiplier()
+    material.bottom_opening_multiplier = os_material.bottomOpeningMultiplier()
+    material.left_opening_multiplier = os_material.leftSideOpeningMultiplier()
+    material.right_opening_multiplier = os_material.rightSideOpeningMultiplier()
+    material.airflow_permeability = os_material.airflowPermeability()
+    if os_material.displayName().is_initialized():
+        material.display_name = os_material.displayName().get()
+    return material
+
+
+def blind_material_from_openstudio(os_material):
+    """Convert OpenStudio Blind to Honeybee EnergyWindowMaterialBlind."""
+    # create the material object
+    material = EnergyWindowMaterialBlind(clean_ep_string(os_material.nameString()))
+    # set the optional properties of the material
+    material.slat_orientation = os_material.slatOrientation()
+    material.slat_width = os_material.slatWidth()
+    material.slat_separation = os_material.slatSeparation()
+    material.slat_thickness = os_material.slatThickness()
+    material.slat_width = os_material.slatWidth()
+    material.slat_angle = os_material.slatAngle()
+    material.slat_conductivity = os_material.slatConductivity()
+    material.beam_solar_transmittance = os_material.slatBeamSolarTransmittance()
+    material.beam_solar_reflectance = os_material.frontSideSlatBeamSolarReflectance()
+    material.beam_solar_reflectance_back = os_material.backSideSlatBeamSolarReflectance()
+    material.diffuse_solar_reflectance = \
+        os_material.frontSideSlatDiffuseSolarReflectance()
+    material.diffuse_solar_reflectance_back = \
+        os_material.backSideSlatDiffuseSolarReflectance()
+    material.diffuse_visible_transmittance = \
+        os_material.slatDiffuseVisibleTransmittance()
+    material.infrared_transmittance = \
+        os_material.slatInfraredHemisphericalTransmittance()
+    material.emissivity = os_material.frontSideSlatInfraredHemisphericalEmissivity()
+    material.emissivity_back = os_material.backSideSlatInfraredHemisphericalEmissivity()
+    material.distance_to_glass = os_material.blindtoGlassDistance()
+    material.top_opening_multiplier = os_material.blindTopOpeningMultiplier()
+    material.bottom_opening_multiplier = os_material.blindBottomOpeningMultiplier()
+    material.left_opening_multiplier = os_material.blindLeftSideOpeningMultiplier()
+    material.right_opening_multiplier = os_material.blindRightSideOpeningMultiplier()
+    if os_material.frontSideSlatDiffuseVisibleReflectance().is_initialized():
+        material.diffuse_visible_reflectance = \
+            os_material.frontSideSlatDiffuseVisibleReflectance().get()
+    if os_material.backSideSlatDiffuseVisibleReflectance().is_initialized():
+        material.diffuse_visible_reflectance_back = \
+            os_material.backSideSlatDiffuseVisibleReflectance().get()
+    if os_material.displayName().is_initialized():
+        material.display_name = os_material.displayName().get()
+    return material
+
+
+def extract_all_material_from_openstudio_model(os_model):
+    """Extract all material objects from an OpenStudio Model.
+
+    Args:
+        os_model: The OpenStudio Model object from which materials will be extracted.
+
+    Returns:
+        A dictionary of material objects with material identifiers as keys and
+        material objects as values.
+    """
+    materials = {}
+    for os_mat in os_model.getStandardOpaqueMaterials():
+        mat = opaque_material_from_openstudio(os_mat)
+        materials[mat.identifier] = mat
+    for os_mat in os_model.getMasslessOpaqueMaterials():
+        mat = opaque_no_mass_material_from_openstudio(os_mat)
+        materials[mat.identifier] = mat
+    for os_mat in os_model.getAirGaps():
+        mat = opaque_no_mass_material_from_openstudio(os_mat)
+        materials[mat.identifier] = mat
+    for os_mat in os_model.getRoofVegetations():
+        mat = vegetation_material_from_openstudio(os_mat)
+        materials[mat.identifier] = mat
+    for os_mat in os_model.getSimpleGlazings():
+        mat = simple_glazing_sys_material_from_openstudio(os_mat)
+        materials[mat.identifier] = mat
+    for os_mat in os_model.getStandardGlazings():
+        mat = glazing_material_from_openstudio(os_mat)
+        if mat is not None:
+            materials[mat.identifier] = mat
+    for os_mat in os_model.getGass():
+        if os_mat.gasType() == 'Custom':
+            mat = gas_custom_material_from_openstudio(os_mat)
+        else:
+            mat = gas_material_from_openstudio(os_mat)
+        materials[mat.identifier] = mat
+    for os_mat in os_model.getGasMixtures():
+        mat = gas_mixture_material_from_openstudio(os_mat)
+        materials[mat.identifier] = mat
+    for os_mat in os_model.getShades():
+        mat = shade_material_from_openstudio(os_mat)
+        materials[mat.identifier] = mat
+    for os_mat in os_model.getBlinds():
+        mat = blind_material_from_openstudio(os_mat)
+        materials[mat.identifier] = mat
+    return materials
