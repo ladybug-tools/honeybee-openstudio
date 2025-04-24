@@ -18,6 +18,8 @@ from honeybee_energy.construction.window import WindowConstruction
 from honeybee_energy.construction.windowshade import WindowConstructionShade
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 
+from honeybee_openstudio.material import extract_all_material_from_openstudio_model
+
 NATIVE_EP_TOL = 0.01  # native tolerance of E+ in meters
 GLASS_CONSTR = (WindowConstruction, WindowConstructionShade, WindowConstructionDynamic)
 
@@ -352,23 +354,35 @@ def room_from_openstudio(os_space, constructions=None, schedules=None):
     return room
 
 
-def model_from_openstudio(os_model):
+def model_from_openstudio(os_model, reset_properties=False):
     """Convert an OpenStudio Model into a Honeybee Model.
 
     Args:
         os_model: An OpenStudio Model to be converted into a Honeybee Model.
+        reset_properties: Boolean to note whether all energy properties should
+            be reset to defaults upon import, meaning that only the geometry and
+            boundary conditions are imported from the Openstudio Model. This
+            can be particularly useful when importing an openStudio Model that
+            originated from an IDF or gbXML since these formats don't support
+            higher-level objects like SpaceTypes or ConstructionSets. So it is
+            often easier to just import the geometry and reassign properties
+            rather than working from a model where all properties are assigned
+            to individual objects. (Default: False)
 
     Returns:
         A honeybee Model.
     """
-    # load the schedule type limits
-    # load the schedules
-    schedules = None
-    # load the materials
-    # load the constructions
-    constructions = None
-    # load the construction sets
-    # load the program types
+    if reset_properties:
+        schedules = None
+        constructions = None
+    else:
+        # load the schedule type limits
+        # load the schedules
+        # load the materials
+        materials = extract_all_material_from_openstudio_model(os_model)
+        # load the constructions
+        # load the construction sets
+        # load the program types
 
     # load all of the rooms
     rooms = []
