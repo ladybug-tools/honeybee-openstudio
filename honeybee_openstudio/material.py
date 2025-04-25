@@ -133,6 +133,7 @@ def gas_mixture_material_to_openstudio(material, os_model):
     for i in range(len(material.gas_types)):
         os_gas_mix.setGasType(i, material.gas_types[i])
         os_gas_mix.setGasFraction(i, material.gas_fractions[i])
+    os_gas_mix.setNumberofGasesinMixture(len(material.gas_types))
     return os_gas_mix
 
 
@@ -337,11 +338,11 @@ def vegetation_material_from_openstudio(os_material):
     # set the optional properties of the material
     _apply_roughness(os_material, material)
     if os_material.thermalAbsorptance().is_initialized():
-        material.thermal_absorptance = os_material.thermalAbsorptance().get()
+        material.soil_thermal_absorptance = os_material.thermalAbsorptance().get()
     if os_material.solarAbsorptance().is_initialized():
-        material.solar_absorptance = os_material.solarAbsorptance().get()
+        material.soil_solar_absorptance = os_material.solarAbsorptance().get()
     if os_material.visibleAbsorptance().is_initialized():
-        material.visible_absorptance = os_material.visibleAbsorptance().get()
+        material.soil_visible_absorptance = os_material.visibleAbsorptance().get()
     if os_material.displayName().is_initialized():
         material.display_name = os_material.displayName().get()
     return material
@@ -463,26 +464,26 @@ def gas_custom_material_from_openstudio(os_material):
         viscosity_coeff_a = os_material.viscosityCoefficientA().get()
     if os_material.specificHeatCoefficientA().is_initialized():
         specific_heat_coeff_a = os_material.specificHeatCoefficientA().get()
-    material = EnergyWindowMaterialGas(
+    material = EnergyWindowMaterialGasCustom(
         clean_ep_string(os_material.nameString()), thickness,
         conductivity_coeff_a, viscosity_coeff_a, specific_heat_coeff_a)
     # set the optional properties of the material
     if os_material.customConductivityCoefficientB().is_initialized():
-        material.conductivity_coeff_b = material.customConductivityCoefficientB().get()
+        material.conductivity_coeff_b = os_material.customConductivityCoefficientB().get()
     if os_material.viscosityCoefficientB().is_initialized():
-        material.viscosity_coeff_b = material.viscosityCoefficientB().get()
+        material.viscosity_coeff_b = os_material.viscosityCoefficientB().get()
     if os_material.specificHeatCoefficientB().is_initialized():
-        material.specific_heat_coeff_b = material.specificHeatCoefficientB().get()
+        material.specific_heat_coeff_b = os_material.specificHeatCoefficientB().get()
     if os_material.customConductivityCoefficientC().is_initialized():
-        material.conductivity_coeff_c = material.customConductivityCoefficientC().get()
+        material.conductivity_coeff_c = os_material.customConductivityCoefficientC().get()
     if os_material.viscosityCoefficientC().is_initialized():
-        material.viscosity_coeff_c = material.viscosityCoefficientC().get()
+        material.viscosity_coeff_c = os_material.viscosityCoefficientC().get()
     if os_material.specificHeatCoefficientC().is_initialized():
-        material.specific_heat_coeff_c = material.specificHeatCoefficientC().get()
+        material.specific_heat_coeff_c = os_material.specificHeatCoefficientC().get()
     if os_material.specificHeatRatio().is_initialized():
-        material.specific_heat_ratio = material.specificHeatRatio().get()
+        material.specific_heat_ratio = os_material.specificHeatRatio().get()
     if os_material.molecularWeight().is_initialized():
-        material.molecular_weight = material.molecularWeight().get()
+        material.molecular_weight = os_material.molecularWeight().get()
     if os_material.displayName().is_initialized():
         material.display_name = os_material.displayName().get()
     return material

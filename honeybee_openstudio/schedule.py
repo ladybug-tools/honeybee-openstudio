@@ -281,7 +281,7 @@ def schedule_day_from_openstudio(os_day_schedule):
     values = [v for v in os_day_schedule.values()]
     times = [Time(0, 0)]
     for shc_time in os_day_schedule.times():
-        times.append(Time(shc_time.hours, shc_time.minutes))
+        times.append(Time(shc_time.hours(), shc_time.minutes()))
     times.pop(-1)
     interpolate = os_day_schedule.interpolatetoTimestep()
     day_schedule = ScheduleDay(clean_ep_string(os_day_schedule.nameString()),
@@ -309,16 +309,17 @@ def _schedule_rule_from_openstudio(os_sch_rule, day_schedules):
     # assign the optional dates to the rule
     if os_sch_rule.startDate().is_initialized():
         start_date = os_sch_rule.startDate().get()
-        start_date = [start_date.monthOfYear().value(), start_date.dayOfMonth()]
+        start_date_arr = [start_date.monthOfYear().value(), start_date.dayOfMonth()]
         if start_date.isLeapYear():
-            start_date.append(True)
-        sch_rule.start_date = Date.from_array(start_date)
+            start_date_arr.append(True)
+        sch_rule.start_date = Date.from_array(start_date_arr)
     if os_sch_rule.endDate().is_initialized():
         end_date = os_sch_rule.endDate().get()
-        end_date = [start_date.monthOfYear().value(), end_date.dayOfMonth()]
+        end_date_arr = [start_date.monthOfYear().value(), end_date.dayOfMonth()]
         if end_date.isLeapYear():
-            end_date.append(True)
-        sch_rule.end_date = Date.from_array(end_date)
+            end_date_arr.append(True)
+        sch_rule.end_date = Date.from_array(end_date_arr)
+    return sch_rule
 
 
 def schedule_ruleset_from_openstudio(os_schedule, type_limits=None):
@@ -365,6 +366,7 @@ def schedule_ruleset_from_openstudio(os_schedule, type_limits=None):
     if type_limits is not None and os_schedule.scheduleTypeLimits().is_initialized():
         typ_lim = os_schedule.scheduleTypeLimits().get()
         typ_lim = type_limits[clean_ep_string(typ_lim.nameString())]
+
     # create the schedule object
     schedule = ScheduleRuleset(
         clean_ep_string(os_schedule.nameString()), schedule_days[default_day_schedule],
@@ -418,7 +420,7 @@ def extract_all_schedules_from_openstudio_model(os_model):
     type_limits = {}
     for os_type_lim in os_model.getScheduleTypeLimitss():
         type_lim = schedule_type_limits_from_openstudio(os_type_lim)
-        type_limits[type_lim.identifier] = type_limits
+        type_limits[type_lim.identifier] = type_lim
     # gather all of the schedule objects
     is_leap_year = os_model.isLeapYear()
     schedules = {}

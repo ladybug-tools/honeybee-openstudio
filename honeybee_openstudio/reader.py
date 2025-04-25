@@ -383,7 +383,7 @@ def model_from_openstudio(os_model, reset_properties=False):
     else:
         schedules = extract_all_schedules_from_openstudio_model(os_model)
         materials = extract_all_materials_from_openstudio_model(os_model)
-        # load the constructions
+        constructions = None
         # load the construction sets
         # load the program types
 
