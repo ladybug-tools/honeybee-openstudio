@@ -3,6 +3,9 @@
 from __future__ import division
 import re
 
+from honeybee.typing import clean_ep_string
+from honeybee_energy.material.shade import EnergyWindowMaterialShade, \
+    EnergyWindowMaterialBlind
 from honeybee_energy.construction.opaque import OpaqueConstruction
 from honeybee_energy.construction.window import WindowConstruction
 from honeybee_energy.construction.windowshade import WindowConstructionShade
@@ -11,13 +14,16 @@ from honeybee_energy.construction.shade import ShadeConstruction
 from honeybee_energy.construction.air import AirBoundaryConstruction
 from honeybee_energy.lib.constructions import air_boundary
 
-from honeybee_openstudio.material import material_to_openstudio
+from honeybee_openstudio.material import material_to_openstudio, extract_all_materials
 from honeybee_openstudio.openstudio import OSConstruction, OSMaterialVector, \
     OSShadingControl, OSConstructionAirBoundary, OSZoneMixing, \
     OSStandardOpaqueMaterial, OSStandardGlazing, \
     OSOutputVariable, OSEnergyManagementSystemProgram, \
     OSEnergyManagementSystemSensor, OSEnergyManagementSystemActuator, \
-    OSEnergyManagementSystemConstructionIndexVariable
+    OSEnergyManagementSystemConstructionIndexVariable, os_vector_len
+
+
+"""____________TRANSLATORS TO OPENSTUDIO____________"""
 
 
 def standard_construction_to_openstudio(construction, os_model):
@@ -254,3 +260,120 @@ def construction_to_openstudio(construction, os_model):
         raise ValueError(
             '{} is not a recognized Energy Construction type'.format(type(construction))
         )
+
+
+"""____________TRANSLATORS FROM OPENSTUDIO____________"""
+
+
+def opaque_construction_from_openstudio(os_construction, materials):
+    """Convert OpenStudio Construction to Honeybee OpaqueConstruction."""
+    layers = [materials[clean_ep_string(layer.nameString())]
+              for layer in os_construction.layers()]
+    construct = OpaqueConstruction(clean_ep_string(os_construction.nameString()), layers)
+    if os_construction.displayName().is_initialized():
+        construct.display_name = os_construction.displayName().get()
+    return construct
+
+
+def window_construction_from_openstudio(os_construction, materials):
+    """Convert OpenStudio Construction to Honeybee WindowConstruction."""
+    layers, skip = [], False
+    all_layers = os_construction.layers()
+    for i, layer in enumerate(all_layers):
+        if skip:
+            skip = False
+            continue
+        mat = materials[clean_ep_string(layer.nameString())]
+        if not isinstance(mat, (EnergyWindowMaterialShade, EnergyWindowMaterialBlind)):
+            layers.append(mat)
+        elif i not in (0, os_vector_len(all_layers) - 1):
+            skip = True
+    construct = WindowConstruction(clean_ep_string(os_construction.nameString()), layers)
+    if os_construction.displayName().is_initialized():
+        construct.display_name = os_construction.displayName().get()
+    return construct
+
+
+def air_construction_from_openstudio(os_construction, schedules=None):
+    """Convert OpenStudio ConstructionAirBoundary to Honeybee AirBoundaryConstruction."""
+    construct = AirBoundaryConstruction(clean_ep_string(os_construction.nameString()))
+    if schedules is not None and os_construction.simpleMixingSchedule().is_initialized():
+        schedule = os_construction.simpleMixingSchedule().get()
+        construct.air_mixing_schedule = schedules[clean_ep_string(schedule.nameString())]
+    if os_construction.displayName().is_initialized():
+        construct.display_name = os_construction.displayName().get()
+    return construct
+
+
+def shade_construction_from_openstudio(os_construction):
+    """Convert OpenStudio Construction to Honeybee OpaqueConstruction."""
+    solar_ref, visible_ref, is_specular = 0.2, 0.2, False
+    layer = os_construction.layers()[0]
+    if layer.to_StandardGlazing().is_initialized():
+        layer = layer.to_StandardGlazing().get()
+        is_specular = True
+        if layer.frontSideSolarReflectanceatNormalIncidence().is_initialized():
+            solar_ref = layer.frontSideSolarReflectanceatNormalIncidence().get()
+        if layer.frontSideVisibleReflectanceatNormalIncidence().is_initialized():
+            visible_ref = layer.frontSideVisibleReflectanceatNormalIncidence().get()
+    elif layer.to_StandardOpaqueMaterial().is_initialized():
+        layer = layer.to_StandardOpaqueMaterial().get()
+        is_specular = False
+        if layer.solarReflectance().is_initialized():
+            solar_ref = layer.solarReflectance().get()
+        if layer.visibleReflectance().is_initialized():
+            visible_ref = layer.visibleReflectance().get()
+    elif layer.to_MasslessOpaqueMaterial().is_initialized():
+        layer = layer.to_MasslessOpaqueMaterial().get()
+        is_specular = False
+        if layer.solarAbsorptance().is_initialized():
+            solar_ref = 1 - layer.solarAbsorptance().get()
+        if layer.visibleAbsorptance().is_initialized():
+            visible_ref = 1 - layer.visibleAbsorptance().get()
+    construct = ShadeConstruction(
+        clean_ep_string(os_construction.nameString()),
+        solar_ref, visible_ref, is_specular)
+    if os_construction.displayName().is_initialized():
+        construct.display_name = os_construction.displayName().get()
+    return construct
+
+
+def extract_all_constructions(os_model, schedules=None):
+    """Extract all construction objects from an OpenStudio Model.
+
+    Args:
+        os_model: The OpenStudio Model object from which constructions will be extracted.
+        materials: An optional dictionary of schedules with schedule identifiers
+            as keys and schedules objects as values.
+
+    Returns:
+        A dictionary of construction objects with construction identifiers as keys and
+        construction objects as values.
+    """
+    # extract all of the materials from the model
+    materials = extract_all_materials(os_model)
+    constructions = {}
+    # create HB AirConstruction from OpenStudio Construction
+    for os_construction in os_model.getConstructionAirBoundarys():
+        construct = air_construction_from_openstudio(os_construction, schedules)
+        constructions[construct.identifier] = construct
+    # create HB WindowConstruction from OpenStudio Construction
+    for os_construction in os_model.getConstructions():
+        layers = os_construction.layers()
+        if os_vector_len(layers) > 0:
+            window_construction, opaque_construction = False, False
+            material = layers[0]
+            if material.to_StandardGlazing().is_initialized() or \
+                    material.to_SimpleGlazing().is_initialized():
+                window_construction = True
+            elif material.to_StandardOpaqueMaterial().is_initialized() or \
+                    material.to_MasslessOpaqueMaterial().is_initialized() or \
+                    material.to_RoofVegetation().is_initialized():
+                opaque_construction = True
+            if window_construction:
+                constr = window_construction_from_openstudio(os_construction, materials)
+                constructions[constr.identifier] = constr
+            elif opaque_construction:
+                constr = opaque_construction_from_openstudio(os_construction, materials)
+                constructions[constr.identifier] = constr
+    return constructions

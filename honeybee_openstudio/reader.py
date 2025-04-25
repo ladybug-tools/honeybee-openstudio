@@ -1,6 +1,7 @@
 # coding=utf-8
 """Methods to read OpenStudio Models into Honeybee Models."""
 from __future__ import division
+import sys
 
 from ladybug_geometry.geometry3d import Point3D, Face3D
 from honeybee.typing import clean_string, clean_ep_string
@@ -18,8 +19,8 @@ from honeybee_energy.construction.window import WindowConstruction
 from honeybee_energy.construction.windowshade import WindowConstructionShade
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 
-from honeybee_openstudio.schedule import extract_all_schedules_from_openstudio_model
-from honeybee_openstudio.material import extract_all_materials_from_openstudio_model
+from honeybee_openstudio.schedule import extract_all_schedules
+from honeybee_openstudio.construction import extract_all_constructions
 
 NATIVE_EP_TOL = 0.01  # native tolerance of E+ in meters
 GLASS_CONSTR = (WindowConstruction, WindowConstructionShade, WindowConstructionDynamic)
@@ -329,7 +330,8 @@ def room_from_openstudio(os_space, constructions=None, schedules=None):
     # translate the geometry and the room object
     os_site_transform = os_space.siteTransformation()
     faces = []
-    for os_surface in os_space.surfaces():
+    os_surfaces = os_space.surfaces if sys.version_info < (3, 0) else os_space.surfaces()
+    for os_surface in os_surfaces:
         face = face_from_openstudio(os_surface, os_site_transform, constructions)
         faces.append(face)
     room_id = clean_string(os_space.nameString())
@@ -342,7 +344,9 @@ def room_from_openstudio(os_space, constructions=None, schedules=None):
         room.display_name = os_space.displayName().get()
     if os_space.multiplier() != 1:
         room.multiplier = os_space.multiplier()
-    if not os_space.partofTotalFloorArea():
+    inc_flr = os_space.partofTotalFloorArea if sys.version_info < (3, 0) \
+        else os_space.partofTotalFloorArea()
+    if not inc_flr:
         room.exclude_floor_area = True
     if os_space.buildingStory().is_initialized():
         room.story = os_space.buildingStory().get().nameString()
@@ -381,9 +385,8 @@ def model_from_openstudio(os_model, reset_properties=False):
         schedules = None
         constructions = None
     else:
-        schedules = extract_all_schedules_from_openstudio_model(os_model)
-        materials = extract_all_materials_from_openstudio_model(os_model)
-        constructions = None
+        schedules = extract_all_schedules(os_model)
+        constructions = extract_all_constructions(os_model, schedules)
         # load the construction sets
         # load the program types
 

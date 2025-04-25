@@ -16,7 +16,7 @@ from honeybee_energy.schedule.fixedinterval import ScheduleFixedInterval
 
 from honeybee_openstudio.openstudio import OSScheduleTypeLimits, OSScheduleRuleset, \
     OSScheduleRule, OSScheduleDay, OSScheduleFixedInterval, OSExternalFile, \
-    OSScheduleFile, OSVector, OSTime, OSTimeSeries, os_vector_len
+    OSScheduleFile, OSVector, OSTime, OSTimeSeries
 
 
 """____________TRANSLATORS TO OPENSTUDIO____________"""
@@ -396,7 +396,7 @@ def schedule_fixed_interval_from_openstudio(os_schedule, type_limits=None,
     timestep = 60 / int(interval_length)
     # get values from schedule fixed interval
     values = os_schedule.timeSeries().values()
-    values = [values[i] for i in range(os_vector_len(values))]
+    values = [values[i] for i in range(len(values))]
     # create the schedule object
     schedule = ScheduleFixedInterval(
         clean_ep_string(os_schedule.nameString()), values, typ_lim, timestep,
@@ -406,7 +406,7 @@ def schedule_fixed_interval_from_openstudio(os_schedule, type_limits=None,
     return schedule
 
 
-def extract_all_schedules_from_openstudio_model(os_model):
+def extract_all_schedules(os_model):
     """Extract all schedule objects from an OpenStudio Model.
 
     Args:
