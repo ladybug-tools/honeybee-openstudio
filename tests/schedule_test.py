@@ -16,7 +16,7 @@ import honeybee_energy.lib.scheduletypelimits as schedule_types
 from honeybee_openstudio.openstudio import OSModel
 from honeybee_openstudio.schedule import schedule_type_limits_to_openstudio, \
     schedule_day_to_openstudio, schedule_to_openstudio, \
-    extract_all_schedules_from_openstudio_model
+    extract_all_schedules
 
 
 def test_schedule_typelimit_to_openstudio():
@@ -71,7 +71,7 @@ def test_schedule_ruleset_to_openstudio():
     os_schedule_str = str(os_schedule)
     assert os_schedule_str.startswith('OS:Schedule:Ruleset,')
 
-    schedules = extract_all_schedules_from_openstudio_model(os_model)
+    schedules = extract_all_schedules(os_model)
     assert len(schedules) == 1
     assert isinstance(schedules['Office Occupancy'], ScheduleRuleset)
 
@@ -111,7 +111,7 @@ def test_schedule_ruleset_to_openstudio_date_range():
     os_schedule_str = str(os_schedule)
     assert os_schedule_str.startswith('OS:Schedule:Ruleset,')
 
-    schedules = extract_all_schedules_from_openstudio_model(os_model)
+    schedules = extract_all_schedules(os_model)
     assert len(schedules) == 1
     assert isinstance(schedules['School Occupancy'], ScheduleRuleset)
 
@@ -130,7 +130,7 @@ def test_schedule_fixedinterval_to_openstudio():
     os_schedule_str = str(os_schedule)
     assert os_schedule_str.startswith('OS:Schedule:FixedInterval,')
 
-    schedules = extract_all_schedules_from_openstudio_model(os_model)
+    schedules = extract_all_schedules(os_model)
     assert len(schedules) == 1
     assert isinstance(schedules['Custom Transmittance'], ScheduleFixedInterval)
 

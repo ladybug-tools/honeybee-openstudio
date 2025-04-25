@@ -16,7 +16,8 @@ from honeybee_energy.schedule.ruleset import ScheduleRuleset
 from honeybee_openstudio.openstudio import OSModel, os_vector_len
 from honeybee_openstudio.schedule import schedule_to_openstudio
 from honeybee_openstudio.material import material_to_openstudio
-from honeybee_openstudio.construction import construction_to_openstudio
+from honeybee_openstudio.construction import construction_to_openstudio, \
+    extract_all_constructions
 
 
 def test_opaque_construction_to_openstudio():
@@ -42,6 +43,10 @@ def test_opaque_construction_to_openstudio():
 
     materials = os_construction.layers()
     assert os_vector_len(materials) == 4
+
+    constructions = extract_all_constructions(os_model)
+    assert len(constructions) == 1
+    assert isinstance(constructions['Generic Wall Construction'], OpaqueConstruction)
 
 
 def test_window_construction_to_openstudio():
@@ -77,6 +82,11 @@ def test_window_construction_to_openstudio():
     materials = os_construction.layers()
     assert os_vector_len(materials) == 5
 
+    constructions = extract_all_constructions(os_model)
+    assert len(constructions) == 2
+    assert isinstance(constructions['Double Low-E Window'], WindowConstruction)
+    assert isinstance(constructions['Triple Clear Window'], WindowConstruction)
+
 
 def test_window_simple_construction_to_openstudio():
     """Test the translation of a simple WindowConstruction to OpenStudio."""
@@ -92,6 +102,10 @@ def test_window_simple_construction_to_openstudio():
     assert os_construction_str.startswith('OS:Construction,')
     materials = os_construction.layers()
     assert os_vector_len(materials) == 1
+
+    constructions = extract_all_constructions(os_model)
+    assert len(constructions) == 1
+    assert isinstance(constructions['NECB Window Construction'], WindowConstruction)
 
 
 def test_window_construction_shade_to_openstudio():
@@ -148,6 +162,9 @@ def test_window_construction_shade_to_openstudio():
     materials = os_construction.layers()
     assert os_vector_len(materials) == 4
 
+    constructions = extract_all_constructions(os_model)
+    assert len(constructions) == 5
+
 
 def test_window_construction_blind_to_openstudio():
     """Test the translation of a WindowConstructionShade with a blind to OpenStudio."""
@@ -202,6 +219,9 @@ def test_window_construction_blind_to_openstudio():
     materials = os_construction.layers()
     assert os_vector_len(materials) == 4
 
+    constructions = extract_all_constructions(os_model)
+    assert len(constructions) == 5
+
 
 def test_window_construction_ec_to_openstudio():
     """Test the translation of electrochromic WindowConstruction to OpenStudio."""
@@ -255,6 +275,9 @@ def test_window_construction_ec_to_openstudio():
     materials = os_construction.layers()
     assert os_vector_len(materials) == 3
 
+    constructions = extract_all_constructions(os_model)
+    assert len(constructions) == 6
+
 
 def test_window_construction_dynamic_to_openstudio():
     """Test the translation of WindowConstructionDynamic to OpenStudio."""
@@ -294,6 +317,9 @@ def test_window_construction_dynamic_to_openstudio():
         materials = os_construction.layers()
         assert os_vector_len(materials) == 3
 
+    constructions = extract_all_constructions(os_model)
+    assert len(constructions) == 2
+
 
 def test_shade_construction_to_openstudio():
     """Test the translation of a ShadeConstruction to OpenStudio."""
@@ -326,3 +352,7 @@ def test_air_construction_to_openstudio():
     assert str(os_construction.name()) == 'Night Flush Boundary'
     os_construction_str = str(os_construction)
     assert os_construction_str.startswith('OS:Construction:AirBoundary,')
+
+    constructions = extract_all_constructions(os_model)
+    assert len(constructions) == 1
+    assert isinstance(constructions['Night Flush Boundary'], AirBoundaryConstruction)

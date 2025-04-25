@@ -12,7 +12,7 @@ from honeybee_energy.material.shade import EnergyWindowMaterialShade, \
 
 from honeybee_openstudio.openstudio import OSModel
 from honeybee_openstudio.material import material_to_openstudio, \
-    extract_all_materials_from_openstudio_model
+    extract_all_materials
 
 
 def test_opaque_material_to_openstudio():
@@ -26,7 +26,7 @@ def test_opaque_material_to_openstudio():
     os_material_str = str(os_material)
     assert os_material_str.startswith('OS:Material,')
 
-    materials = extract_all_materials_from_openstudio_model(os_model)
+    materials = extract_all_materials(os_model)
     assert len(materials) == 1
     assert isinstance(materials['Concrete'], EnergyMaterial)
 
@@ -42,7 +42,7 @@ def test_opaque_no_mass_material_to_openstudio():
     os_material_str = str(os_material)
     assert os_material_str.startswith('OS:Material:NoMass,')
 
-    materials = extract_all_materials_from_openstudio_model(os_model)
+    materials = extract_all_materials(os_model)
     assert len(materials) == 1
     assert isinstance(materials['Insulation R-2'], EnergyMaterialNoMass)
 
@@ -59,7 +59,7 @@ def test_vegetation_material_to_openstudio():
     os_material_str = str(os_material)
     assert os_material_str.startswith('OS:Material:RoofVegetation,')
 
-    materials = extract_all_materials_from_openstudio_model(os_model)
+    materials = extract_all_materials(os_model)
     assert len(materials) == 1
     assert isinstance(materials['roofmcroofface'], EnergyMaterialVegetation)
 
@@ -76,7 +76,7 @@ def test_glazing_material_to_openstudio():
     os_material_str = str(os_material)
     assert os_material_str.startswith('OS:WindowMaterial:Glazing,')
 
-    materials = extract_all_materials_from_openstudio_model(os_model)
+    materials = extract_all_materials(os_model)
     assert len(materials) == 1
     assert isinstance(materials['Low-e Glass'], EnergyWindowMaterialGlazing)
 
@@ -92,7 +92,7 @@ def test_simple_glazing_sys_material_to_openstudio():
     os_material_str = str(os_material)
     assert os_material_str.startswith('OS:WindowMaterial:SimpleGlazingSystem,')
 
-    materials = extract_all_materials_from_openstudio_model(os_model)
+    materials = extract_all_materials(os_model)
     assert len(materials) == 1
     assert isinstance(materials['Double Pane Low-e'], EnergyWindowMaterialSimpleGlazSys)
 
@@ -107,7 +107,7 @@ def test_gas_material_to_openstudio():
     os_material_str = str(os_material)
     assert os_material_str.startswith('OS:WindowMaterial:Gas,')
 
-    materials = extract_all_materials_from_openstudio_model(os_model)
+    materials = extract_all_materials(os_model)
     assert len(materials) == 1
     assert isinstance(materials['Air Gap'], EnergyWindowMaterialGas)
 
@@ -123,7 +123,7 @@ def test_gas_mixture_material_to_openstudio():
     os_material_str = str(os_material)
     assert os_material_str.startswith('OS:WindowMaterial:GasMixture,')
 
-    materials = extract_all_materials_from_openstudio_model(os_model)
+    materials = extract_all_materials(os_model)
     assert len(materials) == 1
     assert isinstance(materials['Air Argon Gap'], EnergyWindowMaterialGasMixture)
 
@@ -140,7 +140,7 @@ def test_gas_custom_material_to_openstudio():
     os_material_str = str(os_material)
     assert os_material_str.startswith('OS:WindowMaterial:Gas,')
 
-    materials = extract_all_materials_from_openstudio_model(os_model)
+    materials = extract_all_materials(os_model)
     assert len(materials) == 1
     assert isinstance(materials['CO2'], EnergyWindowMaterialGasCustom)
 
@@ -157,7 +157,7 @@ def test_shade_material_to_openstudio():
     os_material_str = str(os_material)
     assert os_material_str.startswith('OS:WindowMaterial:Shade,')
 
-    materials = extract_all_materials_from_openstudio_model(os_model)
+    materials = extract_all_materials(os_model)
     assert len(materials) == 1
     assert isinstance(materials['Low-e Diffusing Shade'], EnergyWindowMaterialShade)
 
@@ -174,7 +174,7 @@ def test_blind_material_to_openstudio():
     os_material_str = str(os_material)
     assert os_material_str.startswith('OS:WindowMaterial:Blind,')
 
-    materials = extract_all_materials_from_openstudio_model(os_model)
+    materials = extract_all_materials(os_model)
     assert len(materials) == 1
     assert isinstance(materials['Plastic Blind'], EnergyWindowMaterialBlind)
 
