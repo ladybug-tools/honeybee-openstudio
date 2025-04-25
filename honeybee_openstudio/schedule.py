@@ -4,14 +4,22 @@ from __future__ import division
 import os
 
 from ladybug.futil import write_to_file
+from ladybug.dt import Date, Time
 from ladybug.analysisperiod import AnalysisPeriod
 from honeybee.altnumber import no_limit
+from honeybee.typing import clean_ep_string
+from honeybee_energy.schedule.typelimit import ScheduleTypeLimit
+from honeybee_energy.schedule.day import ScheduleDay
+from honeybee_energy.schedule.rule import ScheduleRule
 from honeybee_energy.schedule.ruleset import ScheduleRuleset
 from honeybee_energy.schedule.fixedinterval import ScheduleFixedInterval
 
 from honeybee_openstudio.openstudio import OSScheduleTypeLimits, OSScheduleRuleset, \
     OSScheduleRule, OSScheduleDay, OSScheduleFixedInterval, OSExternalFile, \
-    OSScheduleFile, OSVector, OSTime, OSTimeSeries
+    OSScheduleFile, OSVector, OSTime, OSTimeSeries, os_vector_len
+
+
+"""____________TRANSLATORS TO OPENSTUDIO____________"""
 
 
 def schedule_type_limits_to_openstudio(type_limit, os_model):
@@ -234,3 +242,191 @@ def schedule_to_openstudio(schedule, os_model, schedule_directory=None):
         raise ValueError(
             '{} is not a recognized energy Schedule type'.format(type(schedule))
         )
+
+
+"""____________TRANSLATORS FROM OPENSTUDIO____________"""
+
+
+def schedule_type_limits_from_openstudio(os_type_limit):
+    """Convert OpenStudio ScheduleTypeLimits to Honeybee ScheduleTypeLimit."""
+    lower_limit = os_type_limit.lowerLimitValue().get() if \
+        os_type_limit.lowerLimitValue().is_initialized() else no_limit
+    upper_limit = os_type_limit.upperLimitValue().get() if \
+        os_type_limit.upperLimitValue().is_initialized() else no_limit
+    numeric_type = os_type_limit.numericType().get().title() if \
+        os_type_limit.numericType().is_initialized() else 'Continuous'
+    unit_type = os_type_limit.unitType().title()
+    if unit_type == 'Deltatemperature':
+        unit_type = 'DeltaTemperature'
+    elif unit_type == 'Precipitationrate':
+        unit_type = 'PrecipitationRate'
+    elif unit_type == 'Convectioncoefficient':
+        unit_type = 'ConvectionCoefficient'
+    elif unit_type == 'Activitylevel':
+        unit_type = 'ActivityLevel'
+    elif unit_type == 'Controlmode':
+        unit_type = 'Control'
+    unit_type = unit_type if unit_type in ScheduleTypeLimit.UNIT_TYPES \
+        else 'Dimensionless'
+    type_limit = ScheduleTypeLimit(
+        clean_ep_string(os_type_limit.nameString()), lower_limit, upper_limit,
+        numeric_type, unit_type)
+    if os_type_limit.displayName().is_initialized():
+        type_limit.display_name = os_type_limit.displayName().get()
+    return type_limit
+
+
+def schedule_day_from_openstudio(os_day_schedule):
+    """Convert OpenStudio ScheduleDay to Honeybee ScheduleDay."""
+    values = [v for v in os_day_schedule.values()]
+    times = [Time(0, 0)]
+    for shc_time in os_day_schedule.times():
+        times.append(Time(shc_time.hours, shc_time.minutes))
+    times.pop(-1)
+    interpolate = os_day_schedule.interpolatetoTimestep()
+    day_schedule = ScheduleDay(clean_ep_string(os_day_schedule.nameString()),
+                               values, times, interpolate)
+    if os_day_schedule.displayName().is_initialized():
+        day_schedule.display_name = os_day_schedule.displayName().get()
+    return day_schedule
+
+
+def _schedule_rule_from_openstudio(os_sch_rule, day_schedules):
+    """Convert OpenStudio ScheduleRule to Honeybee ScheduleRule."""
+    # create the ScheduleRule object
+    sch_day_id = clean_ep_string(os_sch_rule.daySchedule().nameString())
+    schedule_day = day_schedules[sch_day_id]
+    apply_sunday = os_sch_rule.applySunday()
+    apply_monday = os_sch_rule.applyMonday()
+    apply_tuesday = os_sch_rule.applyTuesday()
+    apply_wednesday = os_sch_rule.applyWednesday()
+    apply_thursday = os_sch_rule.applyThursday()
+    apply_friday = os_sch_rule.applyFriday()
+    apply_saturday = os_sch_rule.applySaturday()
+    sch_rule = ScheduleRule(
+        schedule_day, apply_sunday, apply_monday, apply_tuesday, apply_wednesday,
+        apply_thursday, apply_friday, apply_saturday)
+    # assign the optional dates to the rule
+    if os_sch_rule.startDate().is_initialized():
+        start_date = os_sch_rule.startDate().get()
+        start_date = [start_date.monthOfYear().value(), start_date.dayOfMonth()]
+        if start_date.isLeapYear():
+            start_date.append(True)
+        sch_rule.start_date = Date.from_array(start_date)
+    if os_sch_rule.endDate().is_initialized():
+        end_date = os_sch_rule.endDate().get()
+        end_date = [start_date.monthOfYear().value(), end_date.dayOfMonth()]
+        if end_date.isLeapYear():
+            end_date.append(True)
+        sch_rule.end_date = Date.from_array(end_date)
+
+
+def schedule_ruleset_from_openstudio(os_schedule, type_limits=None):
+    """Convert OpenStudio ScheduleRuleset to Honeybee ScheduleRuleset."""
+    default_day_schedule = \
+        clean_ep_string(os_schedule.defaultDaySchedule().nameString())
+    summer_designday_schedule = \
+        clean_ep_string(os_schedule.summerDesignDaySchedule().nameString())
+    winter_designday_schedule = \
+        clean_ep_string(os_schedule.winterDesignDaySchedule().nameString())
+    holiday_schedule = \
+        clean_ep_string(os_schedule.holidaySchedule().nameString())
+    # create a list of all day schedules referenced in the Ruleset
+    schedule_days = {}
+    required_days = [
+        os_schedule.defaultDaySchedule(),
+        os_schedule.summerDesignDaySchedule(),
+        os_schedule.winterDesignDaySchedule(),
+        os_schedule.holidaySchedule()
+    ]
+    for os_day_sch in required_days:
+        if os_day_sch.nameString() not in schedule_days:
+            schedule_days[os_day_sch.nameString()] = \
+                schedule_day_from_openstudio(os_day_sch)
+    for os_rule in os_schedule.scheduleRules():
+        os_day_sch = os_rule.daySchedule()
+        if os_day_sch.nameString() not in schedule_days:
+            schedule_days[os_day_sch.nameString()] = \
+                schedule_day_from_openstudio(os_day_sch)
+    # loop through the rules and add them along with their day schedules
+    schedule_rules = []
+    for os_rule in os_schedule.scheduleRules():
+        rule = _schedule_rule_from_openstudio(os_rule, schedule_days)
+        schedule_rules.append(rule)
+    # remove the bogus default day schedule that OpenStudio adds upon import from IDF
+    if default_day_schedule.startswith('Schedule Day '):
+        if schedule_days[default_day_schedule].values == (0,) and \
+                len(schedule_rules) > 0:
+            default_day_schedule = schedule_rules[0].schedule_day.identifier
+            schedule_rules.pop(0)
+            schedule_days.pop(default_day_schedule)
+    # get any schedule type limits if they exist
+    typ_lim = None
+    if type_limits is not None and os_schedule.scheduleTypeLimits().is_initialized():
+        typ_lim = os_schedule.scheduleTypeLimits().get()
+        typ_lim = type_limits[clean_ep_string(typ_lim.nameString())]
+    # create the schedule object
+    schedule = ScheduleRuleset(
+        clean_ep_string(os_schedule.nameString()), schedule_days[default_day_schedule],
+        schedule_rules, typ_lim, schedule_days[holiday_schedule],
+        schedule_days[summer_designday_schedule], schedule_days[winter_designday_schedule])
+    if os_schedule.displayName().is_initialized():
+        schedule.display_name = os_schedule.displayName().get()
+    return schedule
+
+
+def schedule_fixed_interval_from_openstudio(os_schedule, type_limits=None,
+                                            is_leap_year=False):
+    """Convert OpenStudio ScheduleFixedInterval to Honeybee ScheduleFixedInterval."""
+    # get the start month
+    start_month = os_schedule.startMonth()
+    start_day = os_schedule.startDay()
+    start_date = Date(start_month, start_day, True) if is_leap_year else \
+        Date(start_month, start_day)
+    interpolate = os_schedule.interpolatetoTimestep()
+    # get any schedule type limits if they exist
+    typ_lim = None
+    if type_limits is not None and os_schedule.scheduleTypeLimits().is_initialized():
+        typ_lim = os_schedule.scheduleTypeLimits().get()
+        typ_lim = type_limits[clean_ep_string(typ_lim.nameString())]
+    # compute the timestep
+    interval_length = os_schedule.intervalLength()
+    timestep = 60 / int(interval_length)
+    # get values from schedule fixed interval
+    values = os_schedule.timeSeries().values()
+    values = [values[i] for i in range(os_vector_len(values))]
+    # create the schedule object
+    schedule = ScheduleFixedInterval(
+        clean_ep_string(os_schedule.nameString()), values, typ_lim, timestep,
+        start_date, interpolate=interpolate)
+    if os_schedule.displayName().is_initialized():
+        schedule.display_name = os_schedule.displayName().get()
+    return schedule
+
+
+def extract_all_schedules_from_openstudio_model(os_model):
+    """Extract all schedule objects from an OpenStudio Model.
+
+    Args:
+        os_model: The OpenStudio Model object from which schedules will be extracted.
+
+    Returns:
+        A dictionary of schedule objects with schedule identifiers as keys and
+        schedule objects as values.
+    """
+    # first, gather all schedule type limits
+    type_limits = {}
+    for os_type_lim in os_model.getScheduleTypeLimitss():
+        type_lim = schedule_type_limits_from_openstudio(os_type_lim)
+        type_limits[type_lim.identifier] = type_limits
+    # gather all of the schedule objects
+    is_leap_year = os_model.isLeapYear()
+    schedules = {}
+    for os_schedule in os_model.getScheduleRulesets():
+        schedule = schedule_ruleset_from_openstudio(os_schedule, type_limits)
+        schedules[schedule.identifier] = schedule
+    for os_schedule in os_model.getScheduleFixedIntervals():
+        schedule = schedule_fixed_interval_from_openstudio(
+            os_schedule, type_limits, is_leap_year)
+        schedules[schedule.identifier] = schedule
+    return schedules

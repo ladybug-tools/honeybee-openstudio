@@ -553,7 +553,7 @@ def blind_material_from_openstudio(os_material):
     return material
 
 
-def extract_all_material_from_openstudio_model(os_model):
+def extract_all_materials_from_openstudio_model(os_model):
     """Extract all material objects from an OpenStudio Model.
 
     Args:
