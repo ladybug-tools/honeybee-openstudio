@@ -18,7 +18,8 @@ from honeybee_energy.construction.window import WindowConstruction
 from honeybee_energy.construction.windowshade import WindowConstructionShade
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 
-from honeybee_openstudio.material import extract_all_material_from_openstudio_model
+from honeybee_openstudio.schedule import extract_all_schedules_from_openstudio_model
+from honeybee_openstudio.material import extract_all_materials_from_openstudio_model
 
 NATIVE_EP_TOL = 0.01  # native tolerance of E+ in meters
 GLASS_CONSTR = (WindowConstruction, WindowConstructionShade, WindowConstructionDynamic)
@@ -103,7 +104,11 @@ def shades_from_openstudio(os_shade_group, constructions=None, schedules=None):
         if schedules is not None and trans_sch.is_initialized():
             t_sch_name = clean_ep_string(trans_sch.get().nameString())
             if t_sch_name in schedules:
-                shade.properties.energy.transmittance_schedule = schedules[t_sch_name]
+                try:
+                    t_sched = schedules[t_sch_name]
+                    shade.properties.energy.transmittance_schedule = t_sched
+                except KeyError:
+                    pass  # schedule was of a type that could not be loaded
 
         shades.append(shade)
     return shades
@@ -376,10 +381,8 @@ def model_from_openstudio(os_model, reset_properties=False):
         schedules = None
         constructions = None
     else:
-        # load the schedule type limits
-        # load the schedules
-        # load the materials
-        materials = extract_all_material_from_openstudio_model(os_model)
+        schedules = extract_all_schedules_from_openstudio_model(os_model)
+        materials = extract_all_materials_from_openstudio_model(os_model)
         # load the constructions
         # load the construction sets
         # load the program types
