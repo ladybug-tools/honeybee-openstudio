@@ -1,8 +1,11 @@
 # coding=utf-8
 """OpenStudio ConstructionSet translator."""
 from __future__ import division
+
+from honeybee.typing import clean_ep_string
 from honeybee_energy.construction.windowshade import WindowConstructionShade
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
+from honeybee_energy.constructionset import ConstructionSet
 
 from honeybee_openstudio.openstudio import OSDefaultConstructionSet, \
     OSDefaultSurfaceConstructions, OSDefaultSubSurfaceConstructions
@@ -185,3 +188,84 @@ def construction_set_to_openstudio(construction_set, os_model):
             os_constr_set.setSpaceShadingConstruction(shade_construction)
 
     return os_constr_set
+
+
+def construction_set_from_openstudio(os_construction_set, constructions):
+    """Convert OpenStudio DefaultConstructionSet to Honeybee ConstructionSet."""
+    con_set = ConstructionSet(clean_ep_string(os_construction_set.nameString()))
+
+    # get interior surface constructions
+    if os_construction_set.defaultInteriorSurfaceConstructions().is_initialized():
+        os_int_set = os_construction_set.defaultInteriorSurfaceConstructions().get()
+        if os_int_set.wallConstruction().is_initialized():
+            int_wall_const = os_int_set.wallConstruction().get().nameString()
+            int_wall_const = constructions[clean_ep_string(int_wall_const)]
+            con_set.wall_set.interior_construction = int_wall_const
+        if os_int_set.floorConstruction().is_initialized():
+            int_floor_const = os_int_set.floorConstruction().get().nameString()
+            int_floor_const = constructions[clean_ep_string(int_floor_const)]
+            con_set.floor_set.interior_construction = int_floor_const
+        if os_int_set.roofCeilingConstruction().is_initialized():
+            int_roof_const = os_int_set.roofCeilingConstruction().get().nameString()
+            int_roof_const = constructions[clean_ep_string(int_roof_const)]
+            con_set.roof_ceiling_set.interior_construction = int_roof_const
+
+    # get interior subsurface constructions
+    if os_construction_set.defaultInteriorSubSurfaceConstructions().is_initialized():
+        int_subset = os_construction_set.defaultInteriorSubSurfaceConstructions().get()
+        if int_subset.fixedWindowConstruction().is_initialized():
+            int_wind_const = int_subset.fixedWindowConstruction().get().nameString()
+            int_wind_const = constructions[clean_ep_string(int_wind_const)]
+            con_set.aperture_set.window_construction = int_wind_const
+        if int_subset.doorConstruction().is_initialized():
+            int_door_const = int_subset.doorConstruction().get().nameString()
+            int_door_const = constructions[clean_ep_string(int_door_const)]
+            con_set.door_set.interior_construction = int_door_const
+        if int_subset.glassDoorConstruction().is_initialized():
+            int_glass_door_const = int_subset.glassDoorConstruction().get().nameString()
+            int_glass_door_const = constructions[clean_ep_string(int_glass_door_const)]
+            con_set.door_set.interior_glass_construction = int_glass_door_const
+
+    # get exterior surface constructions
+    if os_construction_set.defaultExteriorSurfaceConstructions().is_initialized():
+        os_ext_set = os_construction_set.defaultExteriorSurfaceConstructions().get()
+        if os_ext_set.wallConstruction().is_initialized():
+            ext_wall_const = os_ext_set.wallConstruction().get().nameString()
+            ext_wall_const = constructions[clean_ep_string(ext_wall_const)]
+            con_set.wall_set.exterior_construction = ext_wall_const
+        if os_ext_set.floorConstruction().is_initialized():
+            ext_floor_const = os_ext_set.floorConstruction().get().nameString()
+            ext_floor_const = constructions[clean_ep_string(ext_floor_const)]
+            con_set.floor_set.exterior_construction = ext_floor_const
+        if os_ext_set.roofCeilingConstruction().is_initialized():
+            ext_roof_const = os_ext_set.roofCeilingConstruction().get().nameString()
+            ext_roof_const = constructions[clean_ep_string(ext_roof_const)]
+            con_set.roof_ceiling_set.exterior_construction = ext_roof_const
+
+    # get exterior subsurface construction
+    if os_construction_set.defaultExteriorSubSurfaceConstructions().is_initialized():
+        ext_subset = os_construction_set.defaultExteriorSubSurfaceConstructions().get()
+        if ext_subset.fixedWindowConstruction().is_initialized():
+            ext_wind_const = ext_subset.fixedWindowConstruction().get().nameString()
+            ext_wind_const = constructions[clean_ep_string(ext_wind_const)]
+            con_set.aperture_set.window_construction = ext_wind_const
+        if ext_subset.operableWindowConstruction().is_initialized():
+            op_wind_const = ext_subset.operableWindowConstruction().get().nameString()
+            op_wind_const = constructions[clean_ep_string(op_wind_const)]
+            con_set.aperture_set.operable_construction = op_wind_const
+        if ext_subset.skylightConstruction().is_initialized():
+            ext_skylight_const = ext_subset.skylightConstruction().get().nameString()
+            ext_skylight_const = constructions[clean_ep_string(ext_skylight_const)]
+            con_set.aperture_set.skylight_construction = ext_skylight_const
+        if ext_subset.doorConstruction().is_initialized():
+            ext_door_const = ext_subset.doorConstruction().get().nameString()
+            ext_door_const = constructions[clean_ep_string(ext_door_const)]
+            con_set.door_set.exterior_construction = ext_door_const
+        if ext_subset.overheadDoorConstruction().is_initialized():
+            ext_ovhd_door = ext_subset.overheadDoorConstruction().get().nameString()
+            ext_ovhd_door = constructions[clean_ep_string(ext_ovhd_door)]
+            con_set.door_set.overhead_construction = ext_ovhd_door
+
+    if os_construction_set.displayName().is_initialized():
+        con_set.display_name = os_construction_set.displayName().get()
+    return con_set
