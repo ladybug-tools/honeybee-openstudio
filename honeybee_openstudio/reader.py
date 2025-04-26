@@ -382,8 +382,8 @@ def model_from_openstudio(os_model, reset_properties=False):
         A honeybee Model.
     """
     if reset_properties:
-        schedules = None
-        constructions = None
+        schedules, constructions = None, None
+        # construction_sets, program_types = None, None
     else:
         schedules = extract_all_schedules(os_model)
         constructions = extract_all_constructions(os_model, schedules)
