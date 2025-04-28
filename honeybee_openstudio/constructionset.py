@@ -9,6 +9,7 @@ from honeybee_energy.constructionset import ConstructionSet
 
 from honeybee_openstudio.openstudio import OSDefaultConstructionSet, \
     OSDefaultSurfaceConstructions, OSDefaultSubSurfaceConstructions
+from honeybee_openstudio.construction import shade_construction_from_openstudio
 
 
 def _assign_construction_to_subset(construction, os_constr_subset, face_type, os_model):
@@ -216,7 +217,7 @@ def construction_set_from_openstudio(os_construction_set, constructions):
         if int_subset.fixedWindowConstruction().is_initialized():
             int_wind_const = int_subset.fixedWindowConstruction().get().nameString()
             int_wind_const = constructions[clean_ep_string(int_wind_const)]
-            con_set.aperture_set.window_construction = int_wind_const
+            con_set.aperture_set.interior_construction = int_wind_const
         if int_subset.doorConstruction().is_initialized():
             int_door_const = int_subset.doorConstruction().get().nameString()
             int_door_const = constructions[clean_ep_string(int_door_const)]
@@ -265,7 +266,38 @@ def construction_set_from_openstudio(os_construction_set, constructions):
             ext_ovhd_door = ext_subset.overheadDoorConstruction().get().nameString()
             ext_ovhd_door = constructions[clean_ep_string(ext_ovhd_door)]
             con_set.door_set.overhead_construction = ext_ovhd_door
+        if ext_subset.glassDoorConstruction().is_initialized():
+            ext_glz_door = ext_subset.glassDoorConstruction().get().nameString()
+            ext_glz_door = constructions[clean_ep_string(ext_glz_door)]
+            con_set.door_set.exterior_glass_construction = ext_glz_door
 
+    # assign the ground construction and other attributes
+    if os_construction_set.defaultGroundContactSurfaceConstructions().is_initialized():
+        os_gnd_set = os_construction_set.defaultGroundContactSurfaceConstructions().get()
+        if os_gnd_set.wallConstruction().is_initialized():
+            gnd_wall_const = os_gnd_set.wallConstruction().get().nameString()
+            gnd_wall_const = constructions[clean_ep_string(gnd_wall_const)]
+            con_set.wall_set.ground_construction = gnd_wall_const
+        if os_gnd_set.floorConstruction().is_initialized():
+            gnd_floor_const = os_gnd_set.floorConstruction().get().nameString()
+            gnd_floor_const = constructions[clean_ep_string(gnd_floor_const)]
+            con_set.floor_set.ground_construction = gnd_floor_const
+        if os_gnd_set.roofCeilingConstruction().is_initialized():
+            gnd_roof_const = os_gnd_set.roofCeilingConstruction().get().nameString()
+            gnd_roof_const = constructions[clean_ep_string(gnd_roof_const)]
+            con_set.roof_ceiling_set.ground_construction = gnd_roof_const
+
+    # assign shade and other optional attributes
+    if os_construction_set.spaceShadingConstruction().is_initialized():
+        shade_con = os_construction_set.spaceShadingConstruction().get()
+        const_name = '{} Shade'.format(clean_ep_string(shade_con.nameString()))
+        try:
+            shade_con = constructions[const_name]
+        except KeyError:
+            const = shade_con.to_LayeredConstruction().get()
+            shade_con = shade_construction_from_openstudio(const)
+            constructions[const_name] = shade_con
+        con_set.shade_construction = shade_con
     if os_construction_set.displayName().is_initialized():
         con_set.display_name = os_construction_set.displayName().get()
     return con_set

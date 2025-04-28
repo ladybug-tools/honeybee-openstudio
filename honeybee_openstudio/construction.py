@@ -224,6 +224,8 @@ def shade_construction_to_openstudio(construction, os_model):
             construction.solar_reflectance)
         os_material.setFrontSideVisibleReflectanceatNormalIncidence(
             construction.visible_reflectance)
+        os_material.setSolarTransmittanceatNormalIncidence(0)
+        os_material.setVisibleTransmittanceatNormalIncidence(0)
     else:
         os_material = OSStandardOpaqueMaterial(os_model)
         os_material.setSolarAbsorptance(1 - construction.solar_reflectance)
@@ -330,9 +332,8 @@ def shade_construction_from_openstudio(os_construction):
             solar_ref = 1 - layer.solarAbsorptance().get()
         if layer.visibleAbsorptance().is_initialized():
             visible_ref = 1 - layer.visibleAbsorptance().get()
-    construct = ShadeConstruction(
-        clean_ep_string(os_construction.nameString()),
-        solar_ref, visible_ref, is_specular)
+    const_id = '{} Shade'.format(clean_ep_string(os_construction.nameString()))
+    construct = ShadeConstruction(const_id, solar_ref, visible_ref, is_specular)
     if os_construction.displayName().is_initialized():
         construct.display_name = os_construction.displayName().get()
     return construct

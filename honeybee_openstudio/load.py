@@ -3,6 +3,9 @@
 from __future__ import division
 
 from honeybee.altnumber import autocalculate
+from honeybee.typing import clean_ep_string
+from honeybee_energy.lib.schedules import always_on
+from honeybee_energy.load.people import People
 
 from honeybee_openstudio.openstudio import OSPeopleDefinition, OSPeople, \
     OSLightsDefinition, OSLights, OSElectricEquipmentDefinition, OSElectricEquipment, \
@@ -23,6 +26,9 @@ def _create_constant_schedule(schedule_name, schedule_value, os_model):
         os_sch = OSScheduleRuleset(os_model, schedule_value)
         os_sch.setName(schedule_name)
         return os_sch
+
+
+"""____________TRANSLATORS TO OPENSTUDIO____________"""
 
 
 def people_to_openstudio(people, os_model):
@@ -307,3 +313,41 @@ def daylight_to_openstudio(daylight, os_model):
     else:
         os_daylight.setLightingControlType('Continuous')
     return os_daylight
+
+
+"""____________TRANSLATORS FROM OPENSTUDIO____________"""
+
+
+def people_from_openstudio(os_people, schedules):
+    """Convert OpenStudio People object to Honeybee People."""
+    # create the people object
+    load_def = os_people.peopleDefinition()
+    if load_def.peopleperSpaceFloorArea().is_initialized():
+        people_per_area = float(load_def.peopleperSpaceFloorArea())
+    else:
+        people_per_area = 0
+    if os_people.numberofPeopleSchedule().is_initialized():
+        schedule = os_people.numberofPeopleSchedule().get()
+        try:
+            occupancy_schedule = schedules[schedule.nameString()]
+        except KeyError:
+            occupancy_schedule = always_on
+    else:
+        occupancy_schedule = always_on
+    people = People(clean_ep_string(os_people.nameString()),
+                    people_per_area, occupancy_schedule)
+    # assign the optional attributes
+    if os_people.activityLevelSchedule().is_initialized():
+        schedule = os_people.activityLevelSchedule().get()
+        try:
+            people.activity_schedule = schedules[schedule.nameString()]
+        except KeyError:
+            pass
+    people.radiant_fraction = load_def.fractionRadiant()
+    if not load_def.isSensibleHeatFractionAutocalculated():
+        sensible_fraction = load_def.sensibleHeatFraction()
+        if sensible_fraction.is_initialized():
+            people.latent_fraction = 1 - sensible_fraction.get()
+    if os_people.displayName().is_initialized():
+        people.display_name = os_people.displayName().get()
+    return people

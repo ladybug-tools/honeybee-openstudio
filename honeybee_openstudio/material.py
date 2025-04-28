@@ -392,11 +392,17 @@ def glazing_material_from_openstudio(os_material):
         material.visible_transmittance = \
             os_material.visibleTransmittanceatNormalIncidence().get()
     if os_material.frontSideVisibleReflectanceatNormalIncidence().is_initialized():
-        material.visible_reflectance = \
-            os_material.frontSideVisibleReflectanceatNormalIncidence().get()
+        try:
+            material.visible_reflectance = \
+                os_material.frontSideVisibleReflectanceatNormalIncidence().get()
+        except AssertionError:
+            pass  # illegal combination of transmittance and reflectance
     if os_material.backSideVisibleReflectanceatNormalIncidence().is_initialized():
-        material.visible_reflectance_back = \
-            os_material.backSideVisibleReflectanceatNormalIncidence().get()
+        try:
+            material.visible_reflectance_back = \
+                os_material.backSideVisibleReflectanceatNormalIncidence().get()
+        except AssertionError:
+            pass  # illegal combination of transmittance and reflectance
     material.dirt_correction = \
         os_material.dirtCorrectionFactorforSolarandVisibleTransmittance()
     material.solar_diffusing = os_material.solarDiffusing()

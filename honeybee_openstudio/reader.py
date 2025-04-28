@@ -20,7 +20,8 @@ from honeybee_energy.construction.windowshade import WindowConstructionShade
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 
 from honeybee_openstudio.schedule import extract_all_schedules
-from honeybee_openstudio.construction import extract_all_constructions
+from honeybee_openstudio.construction import extract_all_constructions, \
+    shade_construction_from_openstudio
 
 NATIVE_EP_TOL = 0.01  # native tolerance of E+ in meters
 GLASS_CONSTR = (WindowConstruction, WindowConstructionShade, WindowConstructionDynamic)
@@ -91,13 +92,15 @@ def shades_from_openstudio(os_shade_group, constructions=None, schedules=None):
         if constructions is not None and not os_shade.isConstructionDefaulted():
             construction = os_shade.construction()
             if construction.is_initialized():
-                const_name = clean_ep_string(construction.get().nameString()) + ' Shade'
-                if const_name in constructions:
+                const_name = \
+                    '{} Shade'.format(clean_ep_string(construction.get().nameString()))
+                try:
                     shade.properties.energy.construction = constructions[const_name]
-                else:  # make a new shade construction
+                except KeyError:  # make a new shade construction
                     const_obj = construction.get()
                     const = const_obj.to_LayeredConstruction().get()
-                    # TODO: translate the layered construction to a honeybee construction
+                    construction = shade_construction_from_openstudio(const)
+                    shade.properties.energy.construction = construction
                     constructions[const_name] = const
 
         # assign the transmittance schedule if it exists
