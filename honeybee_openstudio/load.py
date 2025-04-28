@@ -4,8 +4,17 @@ from __future__ import division
 
 from honeybee.altnumber import autocalculate
 from honeybee.typing import clean_ep_string
+from honeybee_energy.schedule.ruleset import ScheduleRuleset
+from honeybee_energy.lib.scheduletypelimits import temperature
 from honeybee_energy.lib.schedules import always_on
 from honeybee_energy.load.people import People
+from honeybee_energy.load.lighting import Lighting
+from honeybee_energy.load.equipment import ElectricEquipment, GasEquipment
+from honeybee_energy.load.process import Process
+from honeybee_energy.load.hotwater import ServiceHotWater
+from honeybee_energy.load.infiltration import Infiltration
+from honeybee_energy.load.ventilation import Ventilation
+from honeybee_energy.load.setpoint import Setpoint
 
 from honeybee_openstudio.openstudio import OSPeopleDefinition, OSPeople, \
     OSLightsDefinition, OSLights, OSElectricEquipmentDefinition, OSElectricEquipment, \
@@ -119,7 +128,7 @@ def electric_equipment_to_openstudio(equipment, os_model):
 
 
 def gas_equipment_to_openstudio(equipment, os_model):
-    """Convert Honeybee ElectricEquipment object to OpenStudio ElectricEquipment object.
+    """Convert Honeybee GasEquipment object to OpenStudio GasEquipment object.
     """
     # create the OpenStudio object
     os_equip_def = OSGasEquipmentDefinition(os_model)
@@ -318,22 +327,19 @@ def daylight_to_openstudio(daylight, os_model):
 """____________TRANSLATORS FROM OPENSTUDIO____________"""
 
 
-def people_from_openstudio(os_people, schedules):
+def people_from_openstudio(os_people, schedules=None):
     """Convert OpenStudio People object to Honeybee People."""
     # create the people object
     load_def = os_people.peopleDefinition()
-    if load_def.peopleperSpaceFloorArea().is_initialized():
-        people_per_area = float(load_def.peopleperSpaceFloorArea())
-    else:
-        people_per_area = 0
-    if os_people.numberofPeopleSchedule().is_initialized():
+    people_per_area = float(load_def.peopleperSpaceFloorArea()) \
+        if load_def.peopleperSpaceFloorArea().is_initialized() else 0
+    occupancy_schedule = always_on
+    if schedules is not None and os_people.numberofPeopleSchedule().is_initialized():
         schedule = os_people.numberofPeopleSchedule().get()
         try:
             occupancy_schedule = schedules[schedule.nameString()]
         except KeyError:
             occupancy_schedule = always_on
-    else:
-        occupancy_schedule = always_on
     people = People(clean_ep_string(os_people.nameString()),
                     people_per_area, occupancy_schedule)
     # assign the optional attributes
@@ -351,3 +357,193 @@ def people_from_openstudio(os_people, schedules):
     if os_people.displayName().is_initialized():
         people.display_name = os_people.displayName().get()
     return people
+
+
+def lighting_from_openstudio(os_lighting, schedules=None):
+    """Convert OpenStudio Lights object to Honeybee Lighting."""
+    # create the lighting object
+    loads_def = os_lighting.lightsDefinition()
+    watts_per_area = float(loads_def.wattsperSpaceFloorArea().get()) \
+        if loads_def.wattsperSpaceFloorArea().is_initialized() else 0
+    schedule = always_on
+    if schedules is not None and os_lighting.schedule().is_initialized():
+        schedule = os_lighting.schedule().get()
+        try:
+            schedule = schedules[schedule.nameString()]
+        except KeyError:
+            schedule = always_on
+    lighting = Lighting(clean_ep_string(os_lighting.nameString()),
+                        watts_per_area, schedule)
+    # assign the optional attributes
+    lighting.visible_fraction = float(loads_def.fractionVisible())
+    lighting.radiant_fraction = float(loads_def.fractionRadiant())
+    lighting.return_air_fraction = float(loads_def.returnAirFraction())
+    if os_lighting.displayName().is_initialized():
+        lighting.display_name = os_lighting.displayName().get()
+    return lighting
+
+
+def electric_equipment_from_openstudio(os_equipment, schedules=None):
+    """Convert OpenStudio ElectricEquipment object to Honeybee ElectricEquipment."""
+    # create the equipment object
+    loads_def = os_equipment.electricEquipmentDefinition()
+    watts_per_area = float(loads_def.wattsperSpaceFloorArea().get()) \
+        if loads_def.wattsperSpaceFloorArea().is_initialized() else 0
+    schedule = always_on
+    if schedules is not None and os_equipment.schedule().is_initialized():
+        schedule = os_equipment.schedule().get()
+        try:
+            schedule = schedules[schedule.nameString()]
+        except KeyError:
+            schedule = always_on
+    equipment = ElectricEquipment(clean_ep_string(os_equipment.nameString()),
+                                  watts_per_area, schedule)
+    # assign the optional attributes
+    equipment.radiant_fraction = float(loads_def.fractionRadiant())
+    equipment.latent_fraction = float(loads_def.fractionLatent())
+    equipment.lost_fraction = float(loads_def.fractionLost())
+    if os_equipment.displayName().is_initialized():
+        equipment.display_name = os_equipment.displayName().get()
+    return equipment
+
+
+def gas_equipment_from_openstudio(os_equipment, schedules=None):
+    """Convert OpenStudio GasEquipment object to Honeybee GasEquipment."""
+    # create the equipment object
+    loads_def = os_equipment.gasEquipmentDefinition()
+    watts_per_area = float(loads_def.wattsperSpaceFloorArea().get()) \
+        if loads_def.wattsperSpaceFloorArea().is_initialized() else 0
+    schedule = always_on
+    if schedules is not None and os_equipment.schedule().is_initialized():
+        schedule = os_equipment.schedule().get()
+        try:
+            schedule = schedules[schedule.nameString()]
+        except KeyError:
+            schedule = always_on
+    equipment = GasEquipment(clean_ep_string(os_equipment.nameString()),
+                             watts_per_area, schedule)
+    # assign the optional attributes
+    equipment.radiant_fraction = float(loads_def.fractionRadiant())
+    equipment.latent_fraction = float(loads_def.fractionLatent())
+    equipment.lost_fraction = float(loads_def.fractionLost())
+    if os_equipment.displayName().is_initialized():
+        equipment.display_name = os_equipment.displayName().get()
+    return equipment
+
+
+def process_from_openstudio(os_process, schedules=None):
+    """Convert OpenStudio OtherEquipment object to Honeybee Process."""
+    # create the process object
+    loads_def = os_process.otherEquipmentDefinition()
+    watts = float(loads_def.designLevel().get()) \
+        if loads_def.designLevel().is_initialized() else 0
+    schedule = always_on
+    if schedules is not None and os_process.schedule().is_initialized():
+        schedule = os_process.schedule().get()
+        try:
+            schedule = schedules[schedule.nameString()]
+        except KeyError:
+            schedule = always_on
+    equipment = Process(clean_ep_string(os_process.nameString()), watts, schedule)
+    # assign the optional attributes
+    equipment.end_use_category = float(os_process.endUseSubcategory())
+    equipment.fuel_type = float(os_process.fuelType())
+    equipment.radiant_fraction = float(loads_def.fractionRadiant())
+    equipment.latent_fraction = float(loads_def.fractionLatent())
+    equipment.lost_fraction = float(loads_def.fractionLost())
+    if os_process.displayName().is_initialized():
+        equipment.display_name = os_process.displayName().get()
+    return equipment
+
+
+def hot_water_from_openstudio(os_hot_water, floor_area, schedules=None):
+    """Convert OpenStudio WaterUseConnections to Honeybee ServiceHotWater."""
+    # create the hot water object
+    load_def = os_hot_water.waterUseEquipmentDefinition()
+    peak_flow = load_def.peakFlowRate()
+    # unit for flow per area is L/h-m2 (m3/s = 3600000 L/h)
+    flow_per_area = (peak_flow * 3600000) / floor_area
+    schedule = always_on
+    if schedules is not None and os_hot_water.flowRateFractionSchedule().is_initialized():
+        schedule = os_hot_water.flowRateFractionSchedule().get()
+        try:
+            schedule = schedules[schedule.nameString()]
+        except KeyError:
+            schedule = always_on
+    hot_water = ServiceHotWater(clean_ep_string(os_hot_water.nameString()),
+                                flow_per_area, schedule)
+    # assign the optional attributes
+    if os_hot_water.displayName().is_initialized():
+        hot_water.display_name = os_hot_water.displayName().get()
+    return hot_water
+
+
+def infiltration_from_openstudio(os_infiltration, schedules=None):
+    """Convert OpenStudio SpaceInfiltrationDesignFlowRate to Honeybee Infiltration."""
+    # create the infiltration object
+    flow_per_exterior_area = os_infiltration.flowperExteriorSurfaceArea().get() \
+        if os_infiltration.flowperExteriorSurfaceArea().is_initialized() else 0
+    schedule = always_on
+    if schedules is not None and os_infiltration().is_initialized():
+        try:
+            schedule = schedules[os_infiltration.schedule().get().nameString()]
+        except KeyError:
+            schedule = always_on
+    infiltration = Infiltration(clean_ep_string(os_infiltration.nameString()),
+                                flow_per_exterior_area, schedule)
+    # assign the optional attributes
+    infiltration.constant_coefficient = os_infiltration.constantTermCoefficient()
+    infiltration.temperature_coefficient = os_infiltration.temperatureTermCoefficient()
+    infiltration.velocity_coefficient = os_infiltration.velocityTermCoefficient()
+    if os_infiltration.displayName().is_initialized():
+        infiltration.display_name = os_infiltration.displayName().get()
+    return infiltration
+
+
+def ventilation_from_openstudio(os_ventilation, schedules=None):
+    """Convert OpenStudio DesignSpecificationOutdoorAir to Honeybee Ventilation."""
+    # create the ventilation object
+    ventilation = Ventilation(clean_ep_string(os_ventilation.nameString()))
+    # assign the optional attributes
+    ventilation.air_changes_per_hour = os_ventilation.outdoorAirFlowAirChangesperHour()
+    ventilation.flow_per_zone = os_ventilation.outdoorAirFlowRate()
+    ventilation.flow_per_person = os_ventilation.outdoorAirFlowperPerson()
+    ventilation.flow_per_area = os_ventilation.outdoorAirFlowperFloorArea()
+    if schedules is not None and \
+            os_ventilation.outdoorAirFlowRateFractionSchedule().is_initialized():
+        schedule = os_ventilation.outdoorAirFlowRateFractionSchedule().get()
+        try:
+            schedule = schedules[schedule.nameString()]
+        except KeyError:
+            pass
+    if os_ventilation.displayName().is_initialized():
+        ventilation.display_name = os_ventilation.displayName().get()
+    return ventilation
+
+
+def setpoint_from_openstudio_thermostat(os_thermostat, schedules=None):
+    """Convert OpenStudio ThermostatSetpointDualSetpoint to Honeybee Setpoint."""
+    # create the setpoint object
+    heat_sch = None
+    if os_thermostat.heatingSetpointTemperatureSchedule().is_initialized():
+        heat_sch = os_thermostat.heatingSetpointTemperatureSchedule().get()
+        try:
+            heat_sch = schedules[heat_sch.nameString()]
+        except KeyError:
+            heat_sch = None
+    if heat_sch is None:
+        heat_sch = ScheduleRuleset.from_constant_value('No Heating', -100, temperature)
+    cool_sch = None
+    if os_thermostat.coolingSetpointTemperatureSchedule().is_initialized():
+        cool_sch = os_thermostat.coolingSetpointTemperatureSchedule().get()
+        try:
+            cool_sch = schedules[cool_sch.nameString()]
+        except KeyError:
+            cool_sch = None
+    if cool_sch is None:
+        cool_sch = ScheduleRuleset.from_constant_value('No Cooling', 100, temperature)
+    setpoint = Setpoint(clean_ep_string(os_thermostat.nameString()), heat_sch, cool_sch)
+    # assign the optional attributes
+    if os_thermostat.displayName().is_initialized():
+        setpoint.display_name = os_thermostat.displayName().get()
+    return setpoint
