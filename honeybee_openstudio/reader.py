@@ -397,8 +397,9 @@ def room_from_openstudio(os_space, constructions=None, schedules=None):
                 room.properties.energy.gas_equipment = \
                     gas_equipment_from_openstudio(os_equip, schedules)
         # assign hot water
-        room.properties.energy.service_hot_water = hot_water_from_openstudio(
-            os_space.waterUseEquipment(), room.floor_area, schedules)
+        if sys.version_info >= (3, 0):
+            room.properties.energy.service_hot_water = hot_water_from_openstudio(
+                os_space.waterUseEquipment(), room.floor_area, schedules)
         # assign process loads
         process_loads = []
         for os_other_eq in os_space.otherEquipment():
@@ -485,13 +486,16 @@ def model_from_openstudio(os_model, reset_properties=False):
                     construction_sets[os_con_set.nameString()]
             except KeyError:
                 pass
-        if program_types is not None and os_space.spaceType().is_initialized():
-            os_space_type = os_space.spaceType().get()
-            try:
-                room.properties.energy.program_type = \
-                    program_types[os_space_type.nameString()]
-            except KeyError:
-                pass
+        if program_types is not None:
+            os_space_type = os_space.spaceType if sys.version_info < (3, 0) \
+                else os_space.spaceType()
+            if os_space_type.is_initialized():
+                os_space_type = os_space.spaceType().get()
+                try:
+                    room.properties.energy.program_type = \
+                        program_types[os_space_type.nameString()]
+                except KeyError:
+                    pass
         rooms.append(room)
 
     # load all of the shades

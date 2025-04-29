@@ -915,7 +915,7 @@ def model_to_openstudio(
             adj_os_sub_face = adj_map['sub_faces'][adj_id]
             base_os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
 
-    # if simple ventilation is being used
+    # if simple ventilation is being used, write the relevant objects
     if use_simple_vent:
         for room in model.rooms:  # add simple add air mixing and window ventilation
             for face in room.faces:
