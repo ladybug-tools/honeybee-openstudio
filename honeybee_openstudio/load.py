@@ -2,6 +2,7 @@
 """OpenStudio load translators."""
 from __future__ import division
 
+from ladybug_geometry.geometry3d import Point3D
 from honeybee.altnumber import autocalculate
 from honeybee.typing import clean_ep_string
 from honeybee_energy.schedule.ruleset import ScheduleRuleset
@@ -15,6 +16,7 @@ from honeybee_energy.load.hotwater import ServiceHotWater
 from honeybee_energy.load.infiltration import Infiltration
 from honeybee_energy.load.ventilation import Ventilation
 from honeybee_energy.load.setpoint import Setpoint
+from honeybee_energy.load.daylight import DaylightingControl
 
 from honeybee_openstudio.openstudio import OSPeopleDefinition, OSPeople, \
     OSLightsDefinition, OSLights, OSElectricEquipmentDefinition, OSElectricEquipment, \
@@ -444,10 +446,11 @@ def process_from_openstudio(os_process, schedules=None):
             schedule = schedules[schedule.nameString()]
         except KeyError:
             schedule = always_on
-    equipment = Process(clean_ep_string(os_process.nameString()), watts, schedule)
+    fuel_type = os_process.fuelType()
+    equipment = Process(clean_ep_string(os_process.nameString()),
+                        watts, schedule, fuel_type)
     # assign the optional attributes
-    equipment.end_use_category = float(os_process.endUseSubcategory())
-    equipment.fuel_type = float(os_process.fuelType())
+    equipment.end_use_category = os_process.endUseSubcategory()
     equipment.radiant_fraction = float(loads_def.fractionRadiant())
     equipment.latent_fraction = float(loads_def.fractionLatent())
     equipment.lost_fraction = float(loads_def.fractionLost())
@@ -458,18 +461,19 @@ def process_from_openstudio(os_process, schedules=None):
 
 def hot_water_from_openstudio(os_hot_water, floor_area, schedules=None):
     """Convert OpenStudio WaterUseConnections to Honeybee ServiceHotWater."""
-    # create the hot water object
-    load_def = os_hot_water.waterUseEquipmentDefinition()
-    peak_flow = load_def.peakFlowRate()
-    # unit for flow per area is L/h-m2 (m3/s = 3600000 L/h)
-    flow_per_area = (peak_flow * 3600000) / floor_area
-    schedule = always_on
-    if schedules is not None and os_hot_water.flowRateFractionSchedule().is_initialized():
-        schedule = os_hot_water.flowRateFractionSchedule().get()
-        try:
-            schedule = schedules[schedule.nameString()]
-        except KeyError:
-            schedule = always_on
+    # sum up all of the flow rates
+    flow_per_area, schedule = 0, always_on
+    for load in os_hot_water.waterUseEquipment():
+        load_def = load.waterUseEquipmentDefinition()
+        peak_flow = load_def.peakFlowRate()
+        # unit for flow per area is L/h-m2 (m3/s = 3600000 L/h)
+        flow_per_area += ((peak_flow * 3600000.) / floor_area)
+        if schedules is not None and load.flowRateFractionSchedule().is_initialized():
+            schedule = load.flowRateFractionSchedule().get()
+            try:
+                schedule = schedules[schedule.nameString()]
+            except KeyError:
+                pass
     hot_water = ServiceHotWater(clean_ep_string(os_hot_water.nameString()),
                                 flow_per_area, schedule)
     # assign the optional attributes
@@ -484,7 +488,7 @@ def infiltration_from_openstudio(os_infiltration, schedules=None):
     flow_per_exterior_area = os_infiltration.flowperExteriorSurfaceArea().get() \
         if os_infiltration.flowperExteriorSurfaceArea().is_initialized() else 0
     schedule = always_on
-    if schedules is not None and os_infiltration().is_initialized():
+    if schedules is not None and os_infiltration.schedule().is_initialized():
         try:
             schedule = schedules[os_infiltration.schedule().get().nameString()]
         except KeyError:
@@ -513,7 +517,7 @@ def ventilation_from_openstudio(os_ventilation, schedules=None):
             os_ventilation.outdoorAirFlowRateFractionSchedule().is_initialized():
         schedule = os_ventilation.outdoorAirFlowRateFractionSchedule().get()
         try:
-            schedule = schedules[schedule.nameString()]
+            ventilation.schedule = schedules[schedule.nameString()]
         except KeyError:
             pass
     if os_ventilation.displayName().is_initialized():
@@ -547,3 +551,39 @@ def setpoint_from_openstudio_thermostat(os_thermostat, schedules=None):
     if os_thermostat.displayName().is_initialized():
         setpoint.display_name = os_thermostat.displayName().get()
     return setpoint
+
+
+def setpoint_from_openstudio_humidistat(os_humidistat, setpoint, schedules=None):
+    """Convert OpenStudio ZoneControlHumidistat to Honeybee Setpoint."""
+    # create the setpoint object
+    if os_humidistat.humidifyingRelativeHumiditySetpointSchedule().is_initialized():
+        humid_sch = os_humidistat.humidifyingRelativeHumiditySetpointSchedule().get()
+        try:
+            setpoint.humidifying_schedule = schedules[humid_sch.nameString()]
+        except KeyError:
+            pass
+    if os_humidistat.dehumidifyingRelativeHumiditySetpointSchedule().is_initialized():
+        dehumid_sch = os_humidistat.dehumidifyingRelativeHumiditySetpointSchedule().get()
+        try:
+            setpoint.dehumidifying_schedule = schedules[dehumid_sch.nameString()]
+        except KeyError:
+            pass
+    return setpoint
+
+
+def daylight_from_openstudio(os_daylight):
+    """Convert OpenStudio DaylightingControl to Honeybee DaylightingControl."""
+    # create the daylight control object
+    sensor_position = Point3D(
+        os_daylight.positionXCoordinate(), os_daylight.positionYCoordinate(),
+        os_daylight.positionZCoordinate())
+    daylight = DaylightingControl(sensor_position)
+    # assign all of the optional attributes
+    daylight.illuminance_setpoint = os_daylight.illuminanceSetpoint()
+    daylight.min_power_input = \
+        os_daylight.minimumInputPowerFractionforContinuousDimmingControl()
+    daylight.min_light_output = \
+        os_daylight.minimumLightOutputFractionforContinuousDimmingControl()
+    control_type = os_daylight.lightingControlType().lower()
+    daylight.off_at_minimum = True if control_type == 'continuous/off' else False
+    return daylight
