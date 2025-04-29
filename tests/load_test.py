@@ -383,7 +383,8 @@ def test_hot_water_from_openstudio():
     os_water_equip = hot_water_to_openstudio(shw, room, os_model)
 
     schedules = extract_all_schedules(os_model)
-    rebuilt_shw = hot_water_from_openstudio(os_water_equip, room.floor_area, schedules)
+    rebuilt_shw = hot_water_from_openstudio(
+        os_water_equip.waterUseEquipment(), room.floor_area, schedules)
     assert shw.flow_per_area - 0.001 < rebuilt_shw.flow_per_area < shw.flow_per_area + 0.001
     assert shw.schedule.identifier == rebuilt_shw.schedule.identifier
 
