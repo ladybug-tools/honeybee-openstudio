@@ -24,7 +24,7 @@ from honeybee_openstudio.openstudio import OSPeopleDefinition, OSPeople, \
     OSOtherEquipment, OSWaterUseEquipmentDefinition, OSWaterUseEquipment, \
     OSWaterUseConnections, OSSpaceInfiltrationDesignFlowRate, \
     OSDesignSpecificationOutdoorAir, OSThermostatSetpointDualSetpoint, \
-    OSZoneControlHumidistat, OSDaylightingControl, OSScheduleRuleset
+    OSZoneControlHumidistat, OSDaylightingControl, OSScheduleRuleset, os_vector_len
 
 
 def _create_constant_schedule(schedule_name, schedule_value, os_model):
@@ -460,10 +460,14 @@ def process_from_openstudio(os_process, schedules=None):
 
 
 def hot_water_from_openstudio(os_hot_water, floor_area, schedules=None):
-    """Convert OpenStudio WaterUseConnections to Honeybee ServiceHotWater."""
+    """Convert list of OpenStudio WaterUseEquipment to Honeybee ServiceHotWater."""
+    if isinstance(os_hot_water, (list, tuple)) and len(os_hot_water) == 0:
+        return None
+    elif os_vector_len(os_hot_water) == 0:
+        return None
     # sum up all of the flow rates
     flow_per_area, schedule = 0, always_on
-    for load in os_hot_water.waterUseEquipment():
+    for load in os_hot_water:
         load_def = load.waterUseEquipmentDefinition()
         peak_flow = load_def.peakFlowRate()
         # unit for flow per area is L/h-m2 (m3/s = 3600000 L/h)
@@ -474,11 +478,11 @@ def hot_water_from_openstudio(os_hot_water, floor_area, schedules=None):
                 schedule = schedules[schedule.nameString()]
             except KeyError:
                 pass
-    hot_water = ServiceHotWater(clean_ep_string(os_hot_water.nameString()),
+    hot_water = ServiceHotWater(clean_ep_string(load.nameString()),
                                 flow_per_area, schedule)
     # assign the optional attributes
-    if os_hot_water.displayName().is_initialized():
-        hot_water.display_name = os_hot_water.displayName().get()
+    if load.displayName().is_initialized():
+        hot_water.display_name = load.displayName().get()
     return hot_water
 
 

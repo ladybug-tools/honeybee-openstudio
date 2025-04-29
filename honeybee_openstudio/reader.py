@@ -19,9 +19,17 @@ from honeybee_energy.construction.window import WindowConstruction
 from honeybee_energy.construction.windowshade import WindowConstructionShade
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 
+from honeybee_openstudio.openstudio import os_vector_len
 from honeybee_openstudio.schedule import extract_all_schedules
 from honeybee_openstudio.construction import extract_all_constructions, \
     shade_construction_from_openstudio
+from honeybee_openstudio.constructionset import construction_set_from_openstudio
+from honeybee_openstudio.load import people_from_openstudio, lighting_from_openstudio, \
+    electric_equipment_from_openstudio, gas_equipment_from_openstudio, \
+    process_from_openstudio, hot_water_from_openstudio, infiltration_from_openstudio, \
+    ventilation_from_openstudio, setpoint_from_openstudio_thermostat, \
+    setpoint_from_openstudio_humidistat, daylight_from_openstudio
+from honeybee_openstudio.programtype import program_type_from_openstudio
 
 NATIVE_EP_TOL = 0.01  # native tolerance of E+ in meters
 GLASS_CONSTR = (WindowConstruction, WindowConstructionShade, WindowConstructionDynamic)
@@ -362,7 +370,71 @@ def room_from_openstudio(os_space, constructions=None, schedules=None):
         shades.extend(shades_from_openstudio(os_shade_group, constructions, schedules))
     room.add_outdoor_shades(shades)
 
-    # TODO: apply the program from the space type along with all loads
+    # apply all of the loads
+    if schedules is not None:
+        # assign people
+        for os_people in os_space.people():
+            people_def = os_people.peopleDefinition()
+            if people_def.peopleperSpaceFloorArea().is_initialized():
+                room.properties.energy.people = \
+                    people_from_openstudio(os_people, schedules)
+        # assign lighting
+        for os_lights in os_space.lights():
+            light_def = os_lights.lightsDefinition()
+            if light_def.wattsperSpaceFloorArea().is_initialized():
+                room.properties.energy.lighting = \
+                    lighting_from_openstudio(os_lights, schedules)
+        # assign electric equipment
+        for os_equip in os_space.electricEquipment():
+            electric_eq_def = os_equip.electricEquipmentDefinition()
+            if electric_eq_def.wattsperSpaceFloorArea().is_initialized():
+                room.properties.energy.electric_equipment = \
+                    electric_equipment_from_openstudio(os_equip, schedules)
+        # assign gas equipment
+        for os_equip in os_space.gasEquipment():
+            electric_eq_def = os_equip.gasEquipmentDefinition()
+            if electric_eq_def.wattsperSpaceFloorArea().is_initialized():
+                room.properties.energy.gas_equipment = \
+                    gas_equipment_from_openstudio(os_equip, schedules)
+        # assign hot water
+        room.properties.energy.service_hot_water = hot_water_from_openstudio(
+            os_space.waterUseEquipment(), room.floor_area, schedules)
+        # assign process loads
+        process_loads = []
+        for os_other_eq in os_space.otherEquipment():
+            other_eq_def = os_other_eq.otherEquipmentDefinition()
+            if other_eq_def.designLevel.empty().is_initialized():
+                p_load = process_from_openstudio(other_eq_def, schedules)
+                process_loads.append(p_load)
+        if len(process_loads) != 0:
+            room.properties.energy.process_loads = process_loads
+        # assign infiltration
+        for os_inf in os_space.spaceInfiltrationDesignFlowRates():
+            if os_inf.flowperExteriorSurfaceArea().is_initialized():
+                room.properties.energy.infiltration = \
+                    infiltration_from_openstudio(os_inf, schedules)
+        # assign ventilation
+        if os_space.designSpecificationOutdoorAir().is_initialized():
+            os_vent = os_space.designSpecificationOutdoorAir().get()
+            room.properties.energy.ventilation = \
+                ventilation_from_openstudio(os_vent, schedules)
+        # assign setpoint
+        os_zone = os_space.thermalZone()
+        if os_zone.is_initialized():
+            os_zone = os_zone.get()
+            if os_zone.thermostatSetpointDualSetpoint().is_initialized():
+                os_thermostat = os_zone.thermostatSetpointDualSetpoint().get()
+                setpoint = setpoint_from_openstudio_thermostat(os_thermostat, schedules)
+                if os_zone.zoneControlHumidistat().is_initialized():
+                    os_humidistat = os_zone.zoneControlHumidistat().get()
+                    setpoint = setpoint_from_openstudio_humidistat(
+                        os_humidistat, setpoint, schedules)
+                room.properties.energy.ventilation = setpoint
+        # assign daylight
+        if os_vector_len(os_space.daylightingControls()) != 0:
+            os_daylight = os_space.daylightingControls()[0]
+            room.properties.energy.daylighting_control = \
+                daylight_from_openstudio(os_daylight)
     return room
 
 
@@ -384,19 +456,44 @@ def model_from_openstudio(os_model, reset_properties=False):
     Returns:
         A honeybee Model.
     """
+    # load all of the energy properties from the model
     if reset_properties:
         schedules, constructions = None, None
-        # construction_sets, program_types = None, None
+        construction_sets, program_types = None, None
     else:
         schedules = extract_all_schedules(os_model)
         constructions = extract_all_constructions(os_model, schedules)
-        # load the construction sets
-        # load the program types
+        construction_sets = {}
+        for os_cons_set in os_model.getDefaultConstructionSets():
+            if os_cons_set.nameString() != 'Default Generic Construction Set':
+                con_set = construction_set_from_openstudio(os_cons_set, constructions)
+                construction_sets[con_set.identifier] = con_set
+        program_types = {}
+        for os_space_type in os_model.getSpaceTypes():
+            program = program_type_from_openstudio(os_space_type, schedules)
+            program_types[program.identifier] = program
 
     # load all of the rooms
     rooms = []
     for os_space in os_model.getSpaces():
-        rooms.append(room_from_openstudio(os_space, constructions, schedules))
+        room = room_from_openstudio(os_space, constructions, schedules)
+        if construction_sets is not None and \
+                os_space.defaultConstructionSet().is_initialized():
+            os_con_set = os_space.defaultConstructionSet().get()
+            try:
+                room.properties.energy.construction_set = \
+                    construction_sets[os_con_set.nameString()]
+            except KeyError:
+                pass
+        if program_types is not None and os_space.spaceType().is_initialized():
+            os_space_type = os_space.spaceType().get()
+            try:
+                room.properties.energy.program_type = \
+                    program_types[os_space_type.nameString()]
+            except KeyError:
+                pass
+        rooms.append(room)
+
     # load all of the shades
     shades = []
     for os_shade_group in os_model.getShadingSurfaceGroups():
