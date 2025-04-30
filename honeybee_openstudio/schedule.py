@@ -354,13 +354,6 @@ def schedule_ruleset_from_openstudio(os_schedule, type_limits=None):
     for os_rule in os_schedule.scheduleRules():
         rule = _schedule_rule_from_openstudio(os_rule, schedule_days)
         schedule_rules.append(rule)
-    # remove the bogus default day schedule that OpenStudio adds upon import from IDF
-    if default_day_schedule.startswith('Schedule Day '):
-        if schedule_days[default_day_schedule].values == (0,) and \
-                len(schedule_rules) > 0:
-            default_day_schedule = schedule_rules[0].schedule_day.identifier
-            schedule_rules.pop(0)
-            schedule_days.pop(default_day_schedule)
     # get any schedule type limits if they exist
     typ_lim = None
     if type_limits is not None and os_schedule.scheduleTypeLimits().is_initialized():
