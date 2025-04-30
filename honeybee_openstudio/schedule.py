@@ -318,7 +318,11 @@ def _schedule_rule_from_openstudio(os_sch_rule, day_schedules):
         end_date_arr = [start_date.monthOfYear().value(), end_date.dayOfMonth()]
         if end_date.isLeapYear():
             end_date_arr.append(True)
-        sch_rule.end_date = Date.from_array(end_date_arr)
+        try:
+            sch_rule.end_date = Date.from_array(end_date_arr)
+        except ValueError:  # OpenStudio parsers messed up the date (eg. 9/31)
+            end_date_arr[1] = end_date_arr[1] - 1
+            sch_rule.end_date = Date.from_array(end_date_arr)
     return sch_rule
 
 
