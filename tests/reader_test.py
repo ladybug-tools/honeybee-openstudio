@@ -17,7 +17,8 @@ from honeybee_openstudio.openstudio import OSModel
 from honeybee_openstudio.writer import model_to_openstudio, room_to_openstudio
 from honeybee_openstudio.reader import shades_from_openstudio, door_from_openstudio, \
     aperture_from_openstudio, face_from_openstudio, room_from_openstudio, \
-    model_from_openstudio, model_from_osm_file
+    model_from_openstudio, model_from_osm_file, model_from_idf_file, \
+    model_from_gbxml_file
 
 
 def test_shade_reader():
@@ -172,11 +173,28 @@ def test_model_reader():
     assert rebuilt_room.properties.energy.hvac is None
 
 
-def test_model_writer_from_complete_hbjson():
+def test_model_from_osm_file():
     """Test the translation of a Model with programs, constructions and HVAC from OSM."""
     standard_test = 'assets/large_revit_sample.osm'
     standard_test = os.path.join(os.path.dirname(__file__), standard_test)
-    model = model_from_osm_file(standard_test)
+    model = model_from_osm_file(standard_test, print_warnings=True)
+    assert isinstance(model, Model)
+    assert len(model.rooms) == 102
 
+
+def test_model_from_idf_file():
+    """Test the translation from IDF to a Honeybee Model."""
+    standard_test = 'assets/large_revit_sample.idf'
+    standard_test = os.path.join(os.path.dirname(__file__), standard_test)
+    model = model_from_idf_file(standard_test, print_warnings=True)
+    assert isinstance(model, Model)
+    assert len(model.rooms) == 102
+
+
+def test_model_from_gbxml_file():
+    """Test the translation from gbXML to a Honeybee Model."""
+    standard_test = 'assets/large_revit_sample.xml'
+    standard_test = os.path.join(os.path.dirname(__file__), standard_test)
+    model = model_from_gbxml_file(standard_test, print_warnings=True)
     assert isinstance(model, Model)
     assert len(model.rooms) == 102

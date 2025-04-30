@@ -531,7 +531,7 @@ def model_from_openstudio(os_model, reset_properties=False):
     return model
 
 
-def model_from_osm(osm_str, reset_properties=False):
+def model_from_osm(osm_str, reset_properties=False, print_warnings=False):
     """Translate an OSM string to a Honeybee Model.
 
     Args:
@@ -540,6 +540,8 @@ def model_from_osm(osm_str, reset_properties=False):
         reset_properties: Boolean to note whether all energy properties should be
             reset to defaults upon import, meaning that only the geometry and boundary
             conditions are imported from the Openstudio Model. (Default: False).
+        print_warnings: Boolean for whether warnings about unimported objects
+            should be printed. (Default: False).
     """
     # get the version translator
     if (sys.version_info < (3, 0)):
@@ -547,13 +549,18 @@ def model_from_osm(osm_str, reset_properties=False):
     else:
         ver_translator = openstudio.osversion.VersionTranslator()
     os_model = ver_translator.loadModelFromString(osm_str)
+    # print errors and warnings from the translation process
     if not os_model.is_initialized():
-        raise ValueError('Failed to load model from OSM')
+        errors = '\n'.join(str(err.logMessage()) for err in ver_translator.errors())
+        raise ValueError('Failed to load model from OSM.\n{}'.format(errors))
+    if print_warnings:
+        for warn in ver_translator.warnings():
+            print(warn.logMessage())
     # translate the OpenStudio Model to Honeybee
     return model_from_openstudio(os_model.get(), reset_properties)
 
 
-def model_from_osm_file(osm_file, reset_properties=False):
+def model_from_osm_file(osm_file, reset_properties=False, print_warnings=False):
     """Translate an OSM file to a Honeybee Model.
 
     Args:
@@ -562,6 +569,8 @@ def model_from_osm_file(osm_file, reset_properties=False):
         reset_properties: Boolean to note whether all energy properties should be
             reset to defaults upon import, meaning that only the geometry and boundary
             conditions are imported from the Openstudio Model. (Default: False).
+        print_warnings: Boolean for whether warnings about unimported objects
+            should be printed. (Default: False).
     """
     # get the version translator
     assert os.path.isfile(osm_file), 'No file was found at: {}.'.format(osm_file)
@@ -570,7 +579,80 @@ def model_from_osm_file(osm_file, reset_properties=False):
     else:
         ver_translator = openstudio.osversion.VersionTranslator()
     os_model = ver_translator.loadModel(os_path(osm_file))
+    # print errors and warnings from the translation process
     if not os_model.is_initialized():
-        raise ValueError('Failed to load model from OSM')
+        errors = '\n'.join(str(err.logMessage()) for err in ver_translator.errors())
+        raise ValueError('Failed to load model from OSM.\n{}'.format(errors))
+    if print_warnings:
+        for warn in ver_translator.warnings():
+            print(warn.logMessage())
     # translate the OpenStudio Model to Honeybee
     return model_from_openstudio(os_model.get(), reset_properties)
+
+
+def model_from_idf_file(idf_file, reset_properties=False, print_warnings=False):
+    """Translate an IDF file to a Honeybee Model.
+
+    Args:
+        idf_file: Text string for the path to the IDF file to be converted to a
+            Honeybee Model.
+        reset_properties: Boolean to note whether all energy properties should be
+            reset to defaults upon import, meaning that only the geometry and boundary
+            conditions are imported from the Openstudio Model. (Default: False).
+        print_warnings: Boolean for whether warnings about unimported objects
+            should be printed. (Default: False).
+    """
+    # get the version translator
+    assert os.path.isfile(idf_file), 'No file was found at: {}.'.format(idf_file)
+    if (sys.version_info < (3, 0)):
+        idf_translator = openstudio.EnergyPlusReverseTranslator()
+    else:
+        idf_translator = openstudio.energyplus.ReverseTranslator()
+    os_model = idf_translator.loadModel(os_path(idf_file))
+    # print errors and warnings from the translation process
+    if not os_model.is_initialized():
+        errors = '\n'.join(str(err.logMessage()) for err in idf_translator.errors())
+        raise ValueError('Failed to load model from IDF.\n{}'.format(errors))
+    if print_warnings:
+        for warn in idf_translator.warnings():
+            print(warn.logMessage())
+    # translate the OpenStudio Model to Honeybee
+    return model_from_openstudio(os_model.get(), reset_properties)
+
+
+def model_from_gbxml_file(gbxml_file, reset_properties=False, print_warnings=False):
+    """Translate a gbXML file to a Honeybee Model.
+
+    Args:
+        gbxml_file: Text string for the path to the gbXML file to be converted
+            to a Honeybee Model.
+        reset_properties: Boolean to note whether all energy properties should be
+            reset to defaults upon import, meaning that only the geometry and boundary
+            conditions are imported from the Openstudio Model. (Default: False).
+        print_warnings: Boolean for whether warnings about unimported objects
+            should be printed. (Default: False).
+    """
+    # get the version translator
+    assert os.path.isfile(gbxml_file), 'No file was found at: {}.'.format(gbxml_file)
+    if (sys.version_info < (3, 0)):
+        gbxml_translator = openstudio.GbXMLReverseTranslator()
+    else:
+        gbxml_translator = openstudio.gbxml.GbXMLReverseTranslator()
+    os_model = gbxml_translator.loadModel(os_path(gbxml_file))
+    # print errors and warnings from the translation process
+    if not os_model.is_initialized():
+        errors = '\n'.join(str(err.logMessage()) for err in gbxml_translator.errors())
+        raise ValueError('Failed to load model from OSM.\n{}'.format(errors))
+    if print_warnings:
+        for warn in gbxml_translator.warnings():
+            print(warn.logMessage())
+    # remove any shade groups that were translated as spaces
+    os_model = os_model.get()
+    os_spaces = os_model.getSpaces()
+    for os_space in os_spaces:
+        os_surfaces = os_space.surfaces if sys.version_info < (3, 0) \
+            else os_space.surfaces()
+        if os_vector_len(os_surfaces) == 0:
+            os_space.remove()
+    # translate the OpenStudio Model to Honeybee
+    return model_from_openstudio(os_model, reset_properties)

@@ -23,7 +23,7 @@ def test_osm_to_idf_cli():
     """Test the translation of an OSM to IDF."""
     runner = CliRunner()
     input_osm = './tests/assets/large_revit_sample.osm'
-    out_file = './tests/assets/large_revit_sample.idf'
+    out_file = './tests/assets/2023_rac_advanced_sample_project.idf'
 
     in_args = [input_osm, '--output-file', out_file]
     result = runner.invoke(osm_to_idf_cli, in_args)
