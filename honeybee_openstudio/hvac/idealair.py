@@ -1,7 +1,11 @@
 # coding=utf-8
 """OpenStudio IdealLoadsAirSystem translator."""
 from __future__ import division
-from honeybee.altnumber import autosize, no_limit
+
+from honeybee.altnumber import no_limit
+from honeybee.typing import clean_ep_string
+from honeybee_energy.altnumber import autosize
+from honeybee_energy.hvac.idealair import IdealAirSystem
 
 from honeybee_openstudio.openstudio import OSZoneHVACIdealLoadsAirSystem
 
@@ -85,3 +89,46 @@ def ideal_air_system_to_openstudio(hvac, os_model, room=None):
             os_schedule = os_schedule.get()
             os_ideal_air.setCoolingAvailabilitySchedule(os_schedule)
     return os_ideal_air
+
+
+def ideal_air_system_from_openstudio(os_hvac, schedules=None):
+    """Convert OpenStudio ZoneHVACIdealLoadsAirSystem to Honeybee IdealAirSystem."""
+    hvac = IdealAirSystem(clean_ep_string(os_hvac.nameString()))
+    hvac.economizer_type = os_hvac.outdoorAirEconomizerType()
+    hvac.demand_controlled_ventilation = False \
+        if os_hvac.demandControlledVentilationType().lower() in ('none', '') else True
+    hvac.sensible_heat_recovery = hvac.sensibleHeatRecoveryEffectiveness()
+    hvac.latent_heat_recovery = hvac.latentHeatRecoveryEffectiveness()
+    hvac.heating_air_temperature = hvac.maximumHeatingSupplyAirTemperature()
+    hvac.cooling_air_temperature = hvac.minimumCoolingSupplyAirTemperature()
+    if not os_hvac.isHeatingLimitDefaulted():
+        if os_hvac.heatingLimit().lower() == 'nolimit':
+            hvac.heating_limit = no_limit
+        elif os_hvac.heatingLimit().lower() == 'limitcapacity':
+            if os_hvac.isMaximumSensibleHeatingCapacityAutosized():
+                hvac.heating_limit = autosize
+            elif os_hvac.maximumSensibleHeatingCapacity().is_initialized():
+                hvac.heating_limit = os_hvac.maximumSensibleHeatingCapacity().get()
+    if not os_hvac.isCoolingLimitDefaulted():
+        if os_hvac.coolingLimit().lower() == 'nolimit':
+            hvac.cooling_limit = no_limit
+        elif os_hvac.coolingLimit().lower() == 'limitcapacity':
+            if hvac.isMaximumTotalCoolingCapacityAutosized():
+                hvac.cooling_limit = autosize
+            elif os_hvac.maximumTotalCoolingCapacity().is_initialized():
+                hvac.cooling_limit = os_hvac.maximumTotalCoolingCapacity()
+    if schedules is not None and os_hvac.heatingAvailabilitySchedule().is_initialized():
+        schedule = os_hvac.heatingAvailabilitySchedule().get()
+        try:
+            hvac.heating_availability = schedules[schedule.nameString()]
+        except KeyError:
+            pass
+    if schedules is not None and os_hvac.coolingAvailabilitySchedule().is_initialized():
+        schedule = os_hvac.coolingAvailabilitySchedule().get()
+        try:
+            hvac.cooling_availability = schedules[schedule.nameString()]
+        except KeyError:
+            pass
+    if os_hvac.displayName().is_initialized():
+        hvac.display_name = os_hvac.displayName().get()
+    return hvac

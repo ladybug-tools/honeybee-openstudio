@@ -30,6 +30,7 @@ from honeybee_openstudio.load import people_from_openstudio, lighting_from_opens
     ventilation_from_openstudio, setpoint_from_openstudio_thermostat, \
     setpoint_from_openstudio_humidistat, daylight_from_openstudio
 from honeybee_openstudio.programtype import program_type_from_openstudio
+from honeybee_openstudio.hvac.idealair import ideal_air_system_from_openstudio
 
 NATIVE_EP_TOL = 0.01  # native tolerance of E+ in meters
 GLASS_CONSTR = (WindowConstruction, WindowConstructionShade, WindowConstructionDynamic)
@@ -420,9 +421,8 @@ def room_from_openstudio(os_space, constructions=None, schedules=None):
             room.properties.energy.ventilation = \
                 ventilation_from_openstudio(os_vent, schedules)
         # assign setpoint
-        os_zone = os_space.thermalZone()
-        if os_zone.is_initialized():
-            os_zone = os_zone.get()
+        if os_space.thermalZone().is_initialized():
+            os_zone = os_space.thermalZone().get()
             if os_zone.thermostatSetpointDualSetpoint().is_initialized():
                 os_thermostat = os_zone.thermostatSetpointDualSetpoint().get()
                 setpoint = setpoint_from_openstudio_thermostat(os_thermostat, schedules)
@@ -497,6 +497,11 @@ def model_from_openstudio(os_model, reset_properties=False):
                 except KeyError:
                     pass
         rooms.append(room)
+
+    # assign ideal air systems to any relevant zones
+    if schedules is not None:
+        for os_hvac in os_model.getZoneHVACIdealLoadsAirSystems():
+            hvac = ideal_air_system_from_openstudio(os_hvac, schedules)
 
     # load all of the shades
     shades = []
