@@ -2,6 +2,7 @@
 """Methods to read OpenStudio Models into Honeybee Models."""
 from __future__ import division
 import sys
+import os
 
 from ladybug_geometry.geometry3d import Point3D, Face3D
 from honeybee.typing import clean_string, clean_ep_string
@@ -19,7 +20,7 @@ from honeybee_energy.construction.window import WindowConstruction
 from honeybee_energy.construction.windowshade import WindowConstructionShade
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 
-from honeybee_openstudio.openstudio import os_vector_len
+from honeybee_openstudio.openstudio import openstudio, os_vector_len, os_path
 from honeybee_openstudio.schedule import extract_all_schedules
 from honeybee_openstudio.construction import extract_all_constructions, \
     shade_construction_from_openstudio
@@ -430,7 +431,7 @@ def room_from_openstudio(os_space, constructions=None, schedules=None):
                     os_humidistat = os_zone.zoneControlHumidistat().get()
                     setpoint = setpoint_from_openstudio_humidistat(
                         os_humidistat, setpoint, schedules)
-                room.properties.energy.ventilation = setpoint
+                room.properties.energy.setpoint = setpoint
         # assign daylight
         if os_vector_len(os_space.daylightingControls()) != 0:
             os_daylight = os_space.daylightingControls()[0]
@@ -475,7 +476,7 @@ def model_from_openstudio(os_model, reset_properties=False):
             program_types[program.identifier] = program
 
     # load all of the rooms
-    rooms = []
+    rooms, zone_map = [], {}
     for os_space in os_model.getSpaces():
         room = room_from_openstudio(os_space, constructions, schedules)
         if construction_sets is not None and \
@@ -490,18 +491,28 @@ def model_from_openstudio(os_model, reset_properties=False):
             os_space_type = os_space.spaceType if sys.version_info < (3, 0) \
                 else os_space.spaceType()
             if os_space_type.is_initialized():
-                os_space_type = os_space.spaceType().get()
+                os_space_type = os_space_type.get()
                 try:
                     room.properties.energy.program_type = \
                         program_types[os_space_type.nameString()]
                 except KeyError:
                     pass
+        if os_space.thermalZone().is_initialized():
+            zone_id = os_space.thermalZone().get().nameString()
+            try:
+                zone_map[zone_id].append(room)
+            except KeyError:  # first Room in the zone
+                zone_map[zone_id] = [room]
         rooms.append(room)
 
     # assign ideal air systems to any relevant zones
     if schedules is not None:
         for os_hvac in os_model.getZoneHVACIdealLoadsAirSystems():
-            hvac = ideal_air_system_from_openstudio(os_hvac, schedules)
+            if os_hvac.thermalZone().is_initialized():
+                zone_id = os_hvac.thermalZone().get().nameString()
+                hvac = ideal_air_system_from_openstudio(os_hvac, schedules)
+                for room in zone_map[zone_id]:
+                    room.properties.energy.hvac = hvac
 
     # load all of the shades
     shades = []
@@ -518,3 +529,48 @@ def model_from_openstudio(os_model, reset_properties=False):
                   units='Meters', tolerance=0.01, angle_tolerance=1.0)
     model.display_name = model_name
     return model
+
+
+def model_from_osm(osm_str, reset_properties=False):
+    """Translate an OSM string to a Honeybee Model.
+
+    Args:
+        osm_str: Text string for the contents of an OSM to be converted to a
+            Honeybee Model.
+        reset_properties: Boolean to note whether all energy properties should be
+            reset to defaults upon import, meaning that only the geometry and boundary
+            conditions are imported from the Openstudio Model. (Default: False).
+    """
+    # get the version translator
+    if (sys.version_info < (3, 0)):
+        ver_translator = openstudio.VersionTranslator()
+    else:
+        ver_translator = openstudio.osversion.VersionTranslator()
+    os_model = ver_translator.loadModelFromString(osm_str)
+    if not os_model.is_initialized():
+        raise ValueError('Failed to load model from OSM')
+    # translate the OpenStudio Model to Honeybee
+    return model_from_openstudio(os_model.get(), reset_properties)
+
+
+def model_from_osm_file(osm_file, reset_properties=False):
+    """Translate an OSM file to a Honeybee Model.
+
+    Args:
+        osm_file: Text string for the path to the OSM file to be converted to a
+            Honeybee Model.
+        reset_properties: Boolean to note whether all energy properties should be
+            reset to defaults upon import, meaning that only the geometry and boundary
+            conditions are imported from the Openstudio Model. (Default: False).
+    """
+    # get the version translator
+    assert os.path.isfile(osm_file), 'No file was found at: {}.'.format(osm_file)
+    if (sys.version_info < (3, 0)):
+        ver_translator = openstudio.VersionTranslator()
+    else:
+        ver_translator = openstudio.osversion.VersionTranslator()
+    os_model = ver_translator.loadModel(os_path(osm_file))
+    if not os_model.is_initialized():
+        raise ValueError('Failed to load model from OSM')
+    # translate the OpenStudio Model to Honeybee
+    return model_from_openstudio(os_model.get(), reset_properties)
