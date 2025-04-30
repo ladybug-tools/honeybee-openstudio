@@ -97,10 +97,10 @@ def ideal_air_system_from_openstudio(os_hvac, schedules=None):
     hvac.economizer_type = os_hvac.outdoorAirEconomizerType()
     hvac.demand_controlled_ventilation = False \
         if os_hvac.demandControlledVentilationType().lower() in ('none', '') else True
-    hvac.sensible_heat_recovery = hvac.sensibleHeatRecoveryEffectiveness()
-    hvac.latent_heat_recovery = hvac.latentHeatRecoveryEffectiveness()
-    hvac.heating_air_temperature = hvac.maximumHeatingSupplyAirTemperature()
-    hvac.cooling_air_temperature = hvac.minimumCoolingSupplyAirTemperature()
+    hvac.sensible_heat_recovery = os_hvac.sensibleHeatRecoveryEffectiveness()
+    hvac.latent_heat_recovery = os_hvac.latentHeatRecoveryEffectiveness()
+    hvac.heating_air_temperature = os_hvac.maximumHeatingSupplyAirTemperature()
+    hvac.cooling_air_temperature = os_hvac.minimumCoolingSupplyAirTemperature()
     if not os_hvac.isHeatingLimitDefaulted():
         if os_hvac.heatingLimit().lower() == 'nolimit':
             hvac.heating_limit = no_limit

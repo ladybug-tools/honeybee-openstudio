@@ -1,5 +1,7 @@
 # coding=utf-8
 """Test the translators for geometry from OpenStudio."""
+import os
+
 from ladybug_geometry.geometry3d import Point3D, Vector3D, Mesh3D
 from honeybee.model import Model
 from honeybee.room import Room
@@ -8,13 +10,14 @@ from honeybee.aperture import Aperture
 from honeybee.door import Door
 from honeybee.shade import Shade
 from honeybee.shademesh import ShadeMesh
+from honeybee_energy.hvac.idealair import IdealAirSystem
 from honeybee_energy.lib.programtypes import office_program
 
 from honeybee_openstudio.openstudio import OSModel
 from honeybee_openstudio.writer import model_to_openstudio, room_to_openstudio
 from honeybee_openstudio.reader import shades_from_openstudio, door_from_openstudio, \
     aperture_from_openstudio, face_from_openstudio, room_from_openstudio, \
-    model_from_openstudio
+    model_from_openstudio, model_from_osm_file
 
 
 def test_shade_reader():
@@ -133,6 +136,7 @@ def test_model_reader():
     mesh = Mesh3D(pts, [(0, 1, 2, 3), (2, 3, 4)])
     awning_1 = ShadeMesh('Awning_1', mesh)
     room.properties.energy.program_type = office_program
+    room.properties.energy.add_default_ideal_air()
 
     model = Model('Tiny_House', [room], shade_meshes=[awning_1])
 
@@ -142,9 +146,37 @@ def test_model_reader():
     rebuilt_room = rebuilt_model.rooms[0]
     assert rebuilt_room.properties.energy.program_type.identifier == \
         office_program.identifier
-    
+    assert rebuilt_room.properties.energy.people.people_per_area == \
+        office_program.people.people_per_area
+    assert rebuilt_room.properties.energy.lighting.watts_per_area == \
+        office_program.lighting.watts_per_area
+    assert rebuilt_room.properties.energy.electric_equipment.watts_per_area == \
+        office_program.electric_equipment.watts_per_area
+    assert rebuilt_room.properties.energy.gas_equipment is None
+    assert rebuilt_room.properties.energy.infiltration.flow_per_exterior_area == \
+        office_program.infiltration.flow_per_exterior_area
+    assert rebuilt_room.properties.energy.ventilation.flow_per_person == \
+        office_program.ventilation.flow_per_person
+    assert rebuilt_room.properties.energy.ventilation.flow_per_area == \
+        office_program.ventilation.flow_per_area
+    assert rebuilt_room.properties.energy.setpoint.heating_setpoint == \
+        office_program.setpoint.heating_setpoint
+    assert rebuilt_room.properties.energy.setpoint.cooling_setpoint == \
+        office_program.setpoint.cooling_setpoint
+    assert isinstance(rebuilt_room.properties.energy.hvac, IdealAirSystem)
+
     rebuilt_model = model_from_openstudio(os_model, reset_properties=True)
     assert isinstance(rebuilt_model, Model)
     rebuilt_room = rebuilt_model.rooms[0]
-    assert rebuilt_room.properties.energy.program_type.identifier == \
-        office_program.identifier
+    assert rebuilt_room.properties.energy.program_type.identifier == 'Plenum'
+    assert rebuilt_room.properties.energy.hvac is None
+
+
+def test_model_writer_from_complete_hbjson():
+    """Test the translation of a Model with programs, constructions and HVAC from OSM."""
+    standard_test = 'assets/large_revit_sample.osm'
+    standard_test = os.path.join(os.path.dirname(__file__), standard_test)
+    model = model_from_osm_file(standard_test)
+
+    assert isinstance(model, Model)
+    assert len(model.rooms) == 102
