@@ -8,10 +8,10 @@ from honeybee.aperture import Aperture
 from honeybee.door import Door
 from honeybee.shade import Shade
 from honeybee.shademesh import ShadeMesh
+from honeybee_energy.lib.programtypes import office_program
 
 from honeybee_openstudio.openstudio import OSModel
 from honeybee_openstudio.writer import model_to_openstudio, room_to_openstudio
-
 from honeybee_openstudio.reader import shades_from_openstudio, door_from_openstudio, \
     aperture_from_openstudio, face_from_openstudio, room_from_openstudio, \
     model_from_openstudio
@@ -132,9 +132,19 @@ def test_model_reader():
            Point3D(2, 0, 4), Point3D(4, 0, 4))
     mesh = Mesh3D(pts, [(0, 1, 2, 3), (2, 3, 4)])
     awning_1 = ShadeMesh('Awning_1', mesh)
+    room.properties.energy.program_type = office_program
 
     model = Model('Tiny_House', [room], shade_meshes=[awning_1])
 
     os_model = model_to_openstudio(model)
     rebuilt_model = model_from_openstudio(os_model)
     assert isinstance(rebuilt_model, Model)
+    rebuilt_room = rebuilt_model.rooms[0]
+    assert rebuilt_room.properties.energy.program_type.identifier == \
+        office_program.identifier
+    
+    rebuilt_model = model_from_openstudio(os_model, reset_properties=True)
+    assert isinstance(rebuilt_model, Model)
+    rebuilt_room = rebuilt_model.rooms[0]
+    assert rebuilt_room.properties.energy.program_type.identifier == \
+        office_program.identifier
