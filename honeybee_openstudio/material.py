@@ -368,6 +368,8 @@ def _apply_roughness(os_material, material):
 
 def glazing_material_from_openstudio(os_material):
     """Convert OpenStudio StandardGlazing to Honeybee EnergyWindowMaterialGlazing."""
+    if os_material.opticalDataType().lower() == 'spectral':
+        return None
     # get the solar transmittance
     try:
         solar_transmittance = os_material.solarTransmittance()
