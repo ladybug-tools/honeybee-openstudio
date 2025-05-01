@@ -362,7 +362,10 @@ def schedule_ruleset_from_openstudio(os_schedule, type_limits=None):
     typ_lim = None
     if type_limits is not None and os_schedule.scheduleTypeLimits().is_initialized():
         typ_lim = os_schedule.scheduleTypeLimits().get()
-        typ_lim = type_limits[clean_ep_string(typ_lim.nameString())]
+        try:
+            typ_lim = type_limits[clean_ep_string(typ_lim.nameString())]
+        except KeyError:  # type limit that could not be re-serialized
+            typ_lim = None
 
     # create the schedule object
     schedule = ScheduleRuleset(
@@ -387,7 +390,10 @@ def schedule_fixed_interval_from_openstudio(os_schedule, type_limits=None,
     typ_lim = None
     if type_limits is not None and os_schedule.scheduleTypeLimits().is_initialized():
         typ_lim = os_schedule.scheduleTypeLimits().get()
-        typ_lim = type_limits[clean_ep_string(typ_lim.nameString())]
+        try:
+            typ_lim = type_limits[clean_ep_string(typ_lim.nameString())]
+        except KeyError:  # type limits that could not be re-serialized
+            typ_lim = None
     # compute the timestep
     interval_length = os_schedule.intervalLength()
     timestep = 60 / int(interval_length)

@@ -200,92 +200,146 @@ def construction_set_from_openstudio(os_construction_set, constructions):
         os_int_set = os_construction_set.defaultInteriorSurfaceConstructions().get()
         if os_int_set.wallConstruction().is_initialized():
             int_wall_const = os_int_set.wallConstruction().get().nameString()
-            int_wall_const = constructions[clean_ep_string(int_wall_const)]
-            con_set.wall_set.interior_construction = int_wall_const
+            try:
+                int_wall_const = constructions[clean_ep_string(int_wall_const)]
+                con_set.wall_set.interior_construction = int_wall_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
         if os_int_set.floorConstruction().is_initialized():
             int_floor_const = os_int_set.floorConstruction().get().nameString()
-            int_floor_const = constructions[clean_ep_string(int_floor_const)]
-            con_set.floor_set.interior_construction = int_floor_const
+            try:
+                int_floor_const = constructions[clean_ep_string(int_floor_const)]
+                con_set.floor_set.interior_construction = int_floor_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
         if os_int_set.roofCeilingConstruction().is_initialized():
             int_roof_const = os_int_set.roofCeilingConstruction().get().nameString()
-            int_roof_const = constructions[clean_ep_string(int_roof_const)]
-            con_set.roof_ceiling_set.interior_construction = int_roof_const
+            try:
+                int_roof_const = constructions[clean_ep_string(int_roof_const)]
+                con_set.roof_ceiling_set.interior_construction = int_roof_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
 
     # get interior subsurface constructions
     if os_construction_set.defaultInteriorSubSurfaceConstructions().is_initialized():
         int_subset = os_construction_set.defaultInteriorSubSurfaceConstructions().get()
         if int_subset.fixedWindowConstruction().is_initialized():
             int_wind_const = int_subset.fixedWindowConstruction().get().nameString()
-            int_wind_const = constructions[clean_ep_string(int_wind_const)]
-            con_set.aperture_set.interior_construction = int_wind_const
+            try:
+                int_wind_const = constructions[clean_ep_string(int_wind_const)]
+                con_set.aperture_set.interior_construction = int_wind_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
         if int_subset.doorConstruction().is_initialized():
             int_door_const = int_subset.doorConstruction().get().nameString()
-            int_door_const = constructions[clean_ep_string(int_door_const)]
-            con_set.door_set.interior_construction = int_door_const
+            try:
+                int_door_const = constructions[clean_ep_string(int_door_const)]
+                con_set.door_set.interior_construction = int_door_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
         if int_subset.glassDoorConstruction().is_initialized():
-            int_glass_door_const = int_subset.glassDoorConstruction().get().nameString()
-            int_glass_door_const = constructions[clean_ep_string(int_glass_door_const)]
-            con_set.door_set.interior_glass_construction = int_glass_door_const
+            int_glass_door_con = int_subset.glassDoorConstruction().get().nameString()
+            try:
+                int_glass_door_con = constructions[clean_ep_string(int_glass_door_con)]
+                con_set.door_set.interior_glass_construction = int_glass_door_con
+            except KeyError:
+                pass  # construction that could not be re-serialized
 
     # get exterior surface constructions
     if os_construction_set.defaultExteriorSurfaceConstructions().is_initialized():
         os_ext_set = os_construction_set.defaultExteriorSurfaceConstructions().get()
         if os_ext_set.wallConstruction().is_initialized():
             ext_wall_const = os_ext_set.wallConstruction().get().nameString()
-            ext_wall_const = constructions[clean_ep_string(ext_wall_const)]
-            con_set.wall_set.exterior_construction = ext_wall_const
+            try:
+                ext_wall_const = constructions[clean_ep_string(ext_wall_const)]
+                con_set.wall_set.exterior_construction = ext_wall_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
         if os_ext_set.floorConstruction().is_initialized():
             ext_floor_const = os_ext_set.floorConstruction().get().nameString()
-            ext_floor_const = constructions[clean_ep_string(ext_floor_const)]
-            con_set.floor_set.exterior_construction = ext_floor_const
+            try:
+                ext_floor_const = constructions[clean_ep_string(ext_floor_const)]
+                con_set.floor_set.exterior_construction = ext_floor_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
         if os_ext_set.roofCeilingConstruction().is_initialized():
             ext_roof_const = os_ext_set.roofCeilingConstruction().get().nameString()
-            ext_roof_const = constructions[clean_ep_string(ext_roof_const)]
-            con_set.roof_ceiling_set.exterior_construction = ext_roof_const
+            try:
+                ext_roof_const = constructions[clean_ep_string(ext_roof_const)]
+                con_set.roof_ceiling_set.exterior_construction = ext_roof_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
 
     # get exterior subsurface construction
     if os_construction_set.defaultExteriorSubSurfaceConstructions().is_initialized():
         ext_subset = os_construction_set.defaultExteriorSubSurfaceConstructions().get()
         if ext_subset.fixedWindowConstruction().is_initialized():
             ext_wind_const = ext_subset.fixedWindowConstruction().get().nameString()
-            ext_wind_const = constructions[clean_ep_string(ext_wind_const)]
-            con_set.aperture_set.window_construction = ext_wind_const
+            try:
+                ext_wind_const = constructions[clean_ep_string(ext_wind_const)]
+                con_set.aperture_set.window_construction = ext_wind_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
         if ext_subset.operableWindowConstruction().is_initialized():
             op_wind_const = ext_subset.operableWindowConstruction().get().nameString()
-            op_wind_const = constructions[clean_ep_string(op_wind_const)]
-            con_set.aperture_set.operable_construction = op_wind_const
+            try:
+                op_wind_const = constructions[clean_ep_string(op_wind_const)]
+                con_set.aperture_set.operable_construction = op_wind_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
         if ext_subset.skylightConstruction().is_initialized():
             ext_skylight_const = ext_subset.skylightConstruction().get().nameString()
-            ext_skylight_const = constructions[clean_ep_string(ext_skylight_const)]
-            con_set.aperture_set.skylight_construction = ext_skylight_const
+            try:
+                ext_skylight_const = constructions[clean_ep_string(ext_skylight_const)]
+                con_set.aperture_set.skylight_construction = ext_skylight_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
         if ext_subset.doorConstruction().is_initialized():
             ext_door_const = ext_subset.doorConstruction().get().nameString()
-            ext_door_const = constructions[clean_ep_string(ext_door_const)]
-            con_set.door_set.exterior_construction = ext_door_const
+            try:
+                ext_door_const = constructions[clean_ep_string(ext_door_const)]
+                con_set.door_set.exterior_construction = ext_door_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
         if ext_subset.overheadDoorConstruction().is_initialized():
             ext_ovhd_door = ext_subset.overheadDoorConstruction().get().nameString()
-            ext_ovhd_door = constructions[clean_ep_string(ext_ovhd_door)]
-            con_set.door_set.overhead_construction = ext_ovhd_door
+            try:
+                ext_ovhd_door = constructions[clean_ep_string(ext_ovhd_door)]
+                con_set.door_set.overhead_construction = ext_ovhd_door
+            except KeyError:
+                pass  # construction that could not be re-serialized
         if ext_subset.glassDoorConstruction().is_initialized():
             ext_glz_door = ext_subset.glassDoorConstruction().get().nameString()
-            ext_glz_door = constructions[clean_ep_string(ext_glz_door)]
-            con_set.door_set.exterior_glass_construction = ext_glz_door
+            try:
+                ext_glz_door = constructions[clean_ep_string(ext_glz_door)]
+                con_set.door_set.exterior_glass_construction = ext_glz_door
+            except KeyError:
+                pass  # construction that could not be re-serialized
 
     # assign the ground construction and other attributes
     if os_construction_set.defaultGroundContactSurfaceConstructions().is_initialized():
         os_gnd_set = os_construction_set.defaultGroundContactSurfaceConstructions().get()
         if os_gnd_set.wallConstruction().is_initialized():
             gnd_wall_const = os_gnd_set.wallConstruction().get().nameString()
-            gnd_wall_const = constructions[clean_ep_string(gnd_wall_const)]
-            con_set.wall_set.ground_construction = gnd_wall_const
+            try:
+                gnd_wall_const = constructions[clean_ep_string(gnd_wall_const)]
+                con_set.wall_set.ground_construction = gnd_wall_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
         if os_gnd_set.floorConstruction().is_initialized():
             gnd_floor_const = os_gnd_set.floorConstruction().get().nameString()
-            gnd_floor_const = constructions[clean_ep_string(gnd_floor_const)]
-            con_set.floor_set.ground_construction = gnd_floor_const
+            try:
+                gnd_floor_const = constructions[clean_ep_string(gnd_floor_const)]
+                con_set.floor_set.ground_construction = gnd_floor_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
         if os_gnd_set.roofCeilingConstruction().is_initialized():
             gnd_roof_const = os_gnd_set.roofCeilingConstruction().get().nameString()
-            gnd_roof_const = constructions[clean_ep_string(gnd_roof_const)]
-            con_set.roof_ceiling_set.ground_construction = gnd_roof_const
+            try:
+                gnd_roof_const = constructions[clean_ep_string(gnd_roof_const)]
+                con_set.roof_ceiling_set.ground_construction = gnd_roof_const
+            except KeyError:
+                pass  # construction that could not be re-serialized
 
     # assign shade and other optional attributes
     if os_construction_set.spaceShadingConstruction().is_initialized():
