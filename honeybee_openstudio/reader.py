@@ -65,7 +65,10 @@ def face_3d_from_openstudio(os_vertices):
 
     # separate the boundary and holes if necessary
     if separate_holes:
-        return face_3d.separate_boundary_and_holes(NATIVE_EP_TOL)
+        try:
+            return face_3d.separate_boundary_and_holes(NATIVE_EP_TOL)
+        except AssertionError:  # invalid face to be removed later
+            pass
     return face_3d
 
 
