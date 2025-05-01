@@ -182,6 +182,15 @@ def test_model_from_osm_file():
     assert len(model.rooms) == 102
 
 
+def test_model_from_osm_file_old_osm():
+    """Test the translation of a Model from an old OSM."""
+    standard_test = 'assets/MidriseApartment-90.1-2019_CZ5.osm'
+    standard_test = os.path.join(os.path.dirname(__file__), standard_test)
+    model = model_from_osm_file(standard_test, print_warnings=True)
+    assert isinstance(model, Model)
+    assert len(model.rooms) == 0
+
+
 def test_model_from_idf_file():
     """Test the translation from IDF to a Honeybee Model."""
     standard_test = 'assets/large_revit_sample.idf'
