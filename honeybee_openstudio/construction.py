@@ -269,8 +269,12 @@ def construction_to_openstudio(construction, os_model):
 
 def opaque_construction_from_openstudio(os_construction, materials):
     """Convert OpenStudio Construction to Honeybee OpaqueConstruction."""
-    layers = [materials[clean_ep_string(layer.nameString())]
-              for layer in os_construction.layers()]
+    layers = []
+    for layer in os_construction.layers():
+        try:
+            layers.append(materials[clean_ep_string(layer.nameString())])
+        except KeyError:  # material that could not be serialized
+            return None
     construct = OpaqueConstruction(clean_ep_string(os_construction.nameString()), layers)
     if os_construction.displayName().is_initialized():
         construct.display_name = os_construction.displayName().get()
@@ -285,7 +289,10 @@ def window_construction_from_openstudio(os_construction, materials):
         if skip:
             skip = False
             continue
-        mat = materials[clean_ep_string(layer.nameString())]
+        try:
+            mat = materials[clean_ep_string(layer.nameString())]
+        except KeyError:  # material that could not be serialized
+            return None
         if not isinstance(mat, (EnergyWindowMaterialShade, EnergyWindowMaterialBlind)):
             layers.append(mat)
         elif i not in (0, os_vector_len(all_layers) - 1):
@@ -301,7 +308,11 @@ def air_construction_from_openstudio(os_construction, schedules=None):
     construct = AirBoundaryConstruction(clean_ep_string(os_construction.nameString()))
     if schedules is not None and os_construction.simpleMixingSchedule().is_initialized():
         schedule = os_construction.simpleMixingSchedule().get()
-        construct.air_mixing_schedule = schedules[clean_ep_string(schedule.nameString())]
+        try:
+            construct.air_mixing_schedule = \
+                schedules[clean_ep_string(schedule.nameString())]
+        except KeyError:  # schedule that could not be serialized
+            pass
     if os_construction.displayName().is_initialized():
         construct.display_name = os_construction.displayName().get()
     return construct
@@ -373,8 +384,10 @@ def extract_all_constructions(os_model, schedules=None):
                 opaque_construction = True
             if window_construction:
                 constr = window_construction_from_openstudio(os_construction, materials)
-                constructions[constr.identifier] = constr
+                if constr is not None:
+                    constructions[constr.identifier] = constr
             elif opaque_construction:
                 constr = opaque_construction_from_openstudio(os_construction, materials)
-                constructions[constr.identifier] = constr
+                if constr is not None:
+                    constructions[constr.identifier] = constr
     return constructions

@@ -300,7 +300,10 @@ def opaque_no_mass_material_from_openstudio(os_material):
     r_value = os_material.thermalResistance()
     material = EnergyMaterialNoMass(clean_ep_string(os_material.nameString()), r_value)
     # set the optional properties of the material
-    _apply_roughness(os_material, material)
+    try:
+        _apply_roughness(os_material, material)
+    except AttributeError:
+        return material  # OpenStudio AirGap material with no roughness
     if os_material.thermalAbsorptance().is_initialized():
         material.thermal_absorptance = os_material.thermalAbsorptance().get()
     if os_material.solarAbsorptance().is_initialized():
