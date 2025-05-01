@@ -380,13 +380,10 @@ def glazing_material_from_openstudio(os_material):
     emissivity = os_material.frontSideInfraredHemisphericalEmissivity()
     emissivity_back = os_material.backSideInfraredHemisphericalEmissivity()
     conductivity = os_material.thermalConductivity()
-    try:
-        material = EnergyWindowMaterialGlazing(
-            clean_ep_string(os_material.nameString()), thickness, solar_transmittance,
-            conductivity=conductivity, infrared_transmittance=infrared_transmittance,
-            emissivity=emissivity, emissivity_back=emissivity_back)
-    except AttributeError:  # some materials don't have nameString?
-        return None
+    material = EnergyWindowMaterialGlazing(
+        clean_ep_string(os_material.nameString()), thickness, solar_transmittance,
+        conductivity=conductivity, infrared_transmittance=infrared_transmittance,
+        emissivity=emissivity, emissivity_back=emissivity_back)
     # set all of the optional properties
     if os_material.frontSideSolarReflectanceatNormalIncidence().is_initialized():
         material.solar_reflectance = \
