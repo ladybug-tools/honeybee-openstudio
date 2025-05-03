@@ -439,7 +439,10 @@ def room_to_openstudio(room, os_model, adj_map=None, include_infiltration=True,
             os_space.setString(11, 'No')
         else:
             os_space.setPartofTotalFloorArea(False)
-    os_space.setVolume(room.volume)
+    try:
+        os_space.setVolume(room.volume)
+    except AttributeError:  # older OpenStudio bindings where method was not implemented
+        pass
 
     # assign the construction set if specified
     if room.properties.energy._construction_set is not None:
