@@ -4219,7 +4219,10 @@ def model_add_window_ac(model, thermal_zones):
             model, name='{} Window AC Cooling Coil'.format(zone_name),
             type='Window AC', cop=cop)
         clg_coil.setRatedSensibleHeatRatio(shr)
-        clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate2017(773.3)
+        if model.version() < openstudio.VersionString('3.5.0'):
+            clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate(773.3)
+        else:
+            clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate2017(773.3)
         clg_coil.setEvaporativeCondenserEffectiveness(0.9)
         clg_coil.setMaximumOutdoorDryBulbTemperatureForCrankcaseHeaterOperation(10)
         clg_coil.setBasinHeaterSetpointTemperature(2)
@@ -4326,8 +4329,11 @@ def model_add_furnace_central_ac(
                 type='Residential Central AC')
             clg_coil.setRatedSensibleHeatRatio(shr)
             clg_coil.setRatedCOP(eer_to_cop_no_fan(eer))
-            clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate2017(
-                ac_w_per_cfm / FLOW_RATE.to_unit([1.0], 'm3/s', 'cfm')[0])
+            ac_w_per_mps = ac_w_per_cfm / FLOW_RATE.to_unit([1.0], 'm3/s', 'cfm')[0]
+            if model.version() < openstudio.VersionString('3.5.0'):
+                clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate(ac_w_per_mps)
+            else:
+                clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate2017(ac_w_per_mps)
             clg_coil.setNominalTimeForCondensateRemovalToBegin(1000.0)
             clg_coil.setRatioOfInitialMoistureEvaporationRateAndSteadyStateLatentCapacity(1.5)
             clg_coil.setMaximumCyclingRate(3.0)
@@ -4478,8 +4484,11 @@ def model_add_central_air_source_heat_pump(
                 model, name='{} Cooling Coil'.format(loop_name),
                 type='Residential Central ASHP', cop=cop)
             clg_coil.setRatedSensibleHeatRatio(shr)
-            clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate2017(
-                ac_w_per_cfm / FLOW_RATE.to_unit([1.0], 'm3/s', 'cfm')[0])
+            ac_w_per_mps = ac_w_per_cfm / FLOW_RATE.to_unit([1.0], 'm3/s', 'cfm')[0]
+            if model.version() < openstudio.VersionString('3.5.0'):
+                clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate(ac_w_per_mps)
+            else:
+                clg_coil.setRatedEvaporatorFanPowerPerVolumeFlowRate2017(ac_w_per_mps)
             clg_coil.setNominalTimeForCondensateRemovalToBegin(1000.0)
             clg_coil.setRatioOfInitialMoistureEvaporationRateAndSteadyStateLatentCapacity(1.5)
             clg_coil.setMaximumCyclingRate(3.0)

@@ -167,4 +167,3 @@ OSRunPeriodControlSpecialDays = openstudio_model.RunPeriodControlSpecialDays
 OSMonthOfYear = openstudio.MonthOfYear
 OSOutputVariable = openstudio_model.OutputVariable
 OSDesignDay = openstudio_model.DesignDay
-OSEpwFile = openstudio.EpwFile
