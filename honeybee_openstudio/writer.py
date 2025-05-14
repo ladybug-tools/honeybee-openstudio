@@ -806,6 +806,8 @@ def model_to_openstudio(
     for room in single_zones:
         os_zone = OSThermalZone(os_model)
         os_zone.setName(room.identifier)
+        if room._display_name is not None:
+            os_zone.setDisplayName(room.display_name)
         os_space = space_map[room.identifier]
         os_space.setThermalZone(os_zone)
         zone_map[room.identifier] = os_zone
