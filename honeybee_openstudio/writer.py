@@ -1314,6 +1314,18 @@ def model_to_gbxml(
     assert isinstance(model, Model), \
         'Expected Honeybee Model for model_to_gbxml. Got {}.'.format(type(model))
 
+    # remove degenerate geometry within native DesignBuilder tolerance of 0.02 meters
+    original_model = model
+    model = model.duplicate()  # duplicate to avoid mutating the input
+    if model.units != 'Meters':
+        model.convert_to_units('Meters')
+    try:
+        model.remove_degenerate_geometry(0.02)
+    except ValueError:
+        error = 'Failed to remove degenerate Rooms.\nYour Model units system is: {}. ' \
+            'Is this correct?'.format(original_model.units)
+        raise ValueError(error)
+
     # remove any detailed HVAC or AFN as this will only slow the translation down
     v_control = model.properties.energy.ventilation_simulation_control
     det_hvac_count = 0
@@ -1321,7 +1333,6 @@ def model_to_gbxml(
         if hvac is not None and not isinstance(hvac, IdealAirSystem):
             det_hvac_count += 1
     if v_control.vent_control_type != 'SingleZone' or det_hvac_count != 0:
-        model = model.duplicate()  # duplicate to avoid mutating the input
         for room in model.rooms:
             room.properties.energy.assign_ideal_air_equivalent()
         v_control.vent_control_type = 'SingleZone'
