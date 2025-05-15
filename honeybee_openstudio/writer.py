@@ -903,22 +903,38 @@ def model_to_openstudio(
                     adj_id = face.boundary_condition.boundary_condition_object
                     already_adj.add(adj_id)
                     # get the openstudio Surfaces and set the adjacency
-                    base_os_face = adj_map['faces'][face.identifier]
-                    adj_os_face = adj_map['faces'][adj_id]
+                    try:
+                        base_os_face = adj_map['faces'][face.identifier]
+                        adj_os_face = adj_map['faces'][adj_id]
+                    except KeyError:
+                        msg = 'Missing adjacency exists between Face "{}" ' \
+                            'and Face "{}."'.format(face.identifier, adj_id)
+                        raise ValueError(msg)
                     base_os_face.setAdjacentSurface(adj_os_face)
                     # set the adjacency of all sub-faces
                     for sub_face in face.sub_faces:
                         if len(sub_face.geometry) <= 4 or not triangulate_subfaces:
                             adj_id = sub_face.boundary_condition.boundary_condition_object
-                            base_os_sub_face = adj_map['sub_faces'][sub_face.identifier]
-                            adj_os_sub_face = adj_map['sub_faces'][adj_id]
-                            base_os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
+                            try:
+                                os_sub_face = adj_map['sub_faces'][sub_face.identifier]
+                                adj_os_sub_face = adj_map['sub_faces'][adj_id]
+                            except KeyError:
+                                msg = 'Missing adjacency exists between subface "{}" ' \
+                                    'and subface "{}."'.format(
+                                        sub_face.identifier, adj_id)
+                                raise ValueError(msg)
+                            os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
     for sub_face in tri_sub_faces:
         if isinstance(sub_face.boundary_condition, Surface):
             adj_id = sub_face.boundary_condition.boundary_condition_object
-            base_os_sub_face = adj_map['sub_faces'][sub_face.identifier]
-            adj_os_sub_face = adj_map['sub_faces'][adj_id]
-            base_os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
+            try:
+                os_sub_face = adj_map['sub_faces'][sub_face.identifier]
+                adj_os_sub_face = adj_map['sub_faces'][adj_id]
+            except KeyError:
+                msg = 'Missing adjacency exists between subface "{}" ' \
+                    'and subface "{}."'.format(sub_face.identifier, adj_id)
+                raise ValueError(msg)
+            os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
 
     # if simple ventilation is being used, write the relevant objects
     if use_simple_vent:
