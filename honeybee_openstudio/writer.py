@@ -909,7 +909,7 @@ def model_to_openstudio(
                     except KeyError:
                         msg = 'Missing adjacency exists between Face "{}" ' \
                             'and Face "{}."'.format(face.identifier, adj_id)
-                        raise ValueError(msg)
+                        print(msg)
                     base_os_face.setAdjacentSurface(adj_os_face)
                     # set the adjacency of all sub-faces
                     for sub_face in face.sub_faces:
@@ -922,7 +922,7 @@ def model_to_openstudio(
                                 msg = 'Missing adjacency exists between subface "{}" ' \
                                     'and subface "{}."'.format(
                                         sub_face.identifier, adj_id)
-                                raise ValueError(msg)
+                                print(msg)
                             os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
     for sub_face in tri_sub_faces:
         if isinstance(sub_face.boundary_condition, Surface):
@@ -933,7 +933,7 @@ def model_to_openstudio(
             except KeyError:
                 msg = 'Missing adjacency exists between subface "{}" ' \
                     'and subface "{}."'.format(sub_face.identifier, adj_id)
-                raise ValueError(msg)
+                print(msg)
             os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
 
     # if simple ventilation is being used, write the relevant objects
