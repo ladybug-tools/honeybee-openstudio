@@ -96,6 +96,7 @@ def thermal_zone_get_occupancy_schedule(model, thermal_zone):
     # Get all the occupancy schedules in spaces.
     # Check people added via the SpaceType and hard-assigned to the Space itself.
     occupancy_sch = None
+    num_ppl_sch = None
     for space in thermal_zone.spaces():
         # From the space type
         space_type = space.spaceType() if sys.version_info >= (3, 0) else space.spaceType
