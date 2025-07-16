@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>honeybee_openstudio.hvac.standards.coil_heating &#8212; honeybee-openstudio  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/bootstrap-sphinx.css?v=0bf093e7" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=e6365d57" />
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="icon" type="image/x-icon" href="https://github.com/ladybug-tools/artwork/raw/refs/heads/master/icons_bugs/ico/honeybee.ico">
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../../../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../../../../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../../../../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../../../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-inverse navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../../index.html">
+          honeybee-openstudio</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../../../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../cli/index.html">CLI Docs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cli/index.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cli/index.html#commands">Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../cli/translate.html">translate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../cli/translate.html#honeybee-openstudio-translate">honeybee-openstudio translate</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../../../../cli/translate.html#honeybee-openstudio-translate-append-to-osm">append-to-osm</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../../../cli/translate.html#honeybee-openstudio-translate-model-to-osm">model-to-osm</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../../../cli/translate.html#honeybee-openstudio-translate-osm-to-idf">osm-to-idf</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../honeybee_openstudio.html">honeybee_openstudio package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../honeybee_openstudio.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.cli.html">honeybee_openstudio.cli package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.cli.html#submodules">Submodules</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../../../../honeybee_openstudio.cli.translate.html">honeybee_openstudio.cli.translate module</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="../../../../honeybee_openstudio.cli.translate.html#honeybee_openstudio.cli.translate.append_to_osm"><code class="docutils literal notranslate"><span class="pre">append_to_osm()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="../../../../honeybee_openstudio.cli.translate.html#honeybee_openstudio.cli.translate.model_to_osm"><code class="docutils literal notranslate"><span class="pre">model_to_osm()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="../../../../honeybee_openstudio.cli.translate.html#honeybee_openstudio.cli.translate.osm_to_idf"><code class="docutils literal notranslate"><span class="pre">osm_to_idf()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.cli.html#module-honeybee_openstudio.cli">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.html">honeybee_openstudio.hvac package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.html">honeybee_openstudio.hvac.standards package</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.data.html">honeybee_openstudio.hvac.standards.data package</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.data.html#module-honeybee_openstudio.hvac.standards.data">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.html#submodules">Submodules</a><ul>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.air_conditioner_variable_refrigerant_flow.html">honeybee_openstudio.hvac.standards.air_conditioner_variable_refrigerant_flow module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.air_conditioner_variable_refrigerant_flow.html#honeybee_openstudio.hvac.standards.air_conditioner_variable_refrigerant_flow.create_air_conditioner_variable_refrigerant_flow"><code class="docutils literal notranslate"><span class="pre">create_air_conditioner_variable_refrigerant_flow()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.boiler_hot_water.html">honeybee_openstudio.hvac.standards.boiler_hot_water module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.boiler_hot_water.html#honeybee_openstudio.hvac.standards.boiler_hot_water.create_boiler_hot_water"><code class="docutils literal notranslate"><span class="pre">create_boiler_hot_water()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.central_air_source_heat_pump.html">honeybee_openstudio.hvac.standards.central_air_source_heat_pump module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.central_air_source_heat_pump.html#honeybee_openstudio.hvac.standards.central_air_source_heat_pump.create_central_air_source_heat_pump"><code class="docutils literal notranslate"><span class="pre">create_central_air_source_heat_pump()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.coil_cooling.html">honeybee_openstudio.hvac.standards.coil_cooling module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.coil_cooling.html#honeybee_openstudio.hvac.standards.coil_cooling.create_coil_cooling_dx_single_speed"><code class="docutils literal notranslate"><span class="pre">create_coil_cooling_dx_single_speed()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.coil_cooling.html#honeybee_openstudio.hvac.standards.coil_cooling.create_coil_cooling_dx_two_speed"><code class="docutils literal notranslate"><span class="pre">create_coil_cooling_dx_two_speed()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.coil_cooling.html#honeybee_openstudio.hvac.standards.coil_cooling.create_coil_cooling_water"><code class="docutils literal notranslate"><span class="pre">create_coil_cooling_water()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.coil_cooling.html#honeybee_openstudio.hvac.standards.coil_cooling.create_coil_cooling_water_to_air_heat_pump_equation_fit"><code class="docutils literal notranslate"><span class="pre">create_coil_cooling_water_to_air_heat_pump_equation_fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.coil_heating.html">honeybee_openstudio.hvac.standards.coil_heating module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_dx_single_speed"><code class="docutils literal notranslate"><span class="pre">create_coil_heating_dx_single_speed()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_electric"><code class="docutils literal notranslate"><span class="pre">create_coil_heating_electric()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_gas"><code class="docutils literal notranslate"><span class="pre">create_coil_heating_gas()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_water"><code class="docutils literal notranslate"><span class="pre">create_coil_heating_water()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_water_to_air_heat_pump_equation_fit"><code class="docutils literal notranslate"><span class="pre">create_coil_heating_water_to_air_heat_pump_equation_fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.cooling_tower.html">honeybee_openstudio.hvac.standards.cooling_tower module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.cooling_tower.html#honeybee_openstudio.hvac.standards.cooling_tower.prototype_apply_condenser_water_temperatures"><code class="docutils literal notranslate"><span class="pre">prototype_apply_condenser_water_temperatures()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.cooling_tower.html#honeybee_openstudio.hvac.standards.cooling_tower.prototype_condenser_water_temperatures"><code class="docutils literal notranslate"><span class="pre">prototype_condenser_water_temperatures()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.fan.html">honeybee_openstudio.hvac.standards.fan module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.create_fan_by_name"><code class="docutils literal notranslate"><span class="pre">create_fan_by_name()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.create_fan_constant_volume_from_json"><code class="docutils literal notranslate"><span class="pre">create_fan_constant_volume_from_json()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.create_fan_on_off_from_json"><code class="docutils literal notranslate"><span class="pre">create_fan_on_off_from_json()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.create_fan_variable_volume_from_json"><code class="docutils literal notranslate"><span class="pre">create_fan_variable_volume_from_json()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.create_fan_zone_exhaust_from_json"><code class="docutils literal notranslate"><span class="pre">create_fan_zone_exhaust_from_json()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.fan_baseline_impeller_efficiency"><code class="docutils literal notranslate"><span class="pre">fan_baseline_impeller_efficiency()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.fan_change_impeller_efficiency"><code class="docutils literal notranslate"><span class="pre">fan_change_impeller_efficiency()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.is_small_fan"><code class="docutils literal notranslate"><span class="pre">is_small_fan()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.heat_recovery.html">honeybee_openstudio.hvac.standards.heat_recovery module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.heat_recovery.html#honeybee_openstudio.hvac.standards.heat_recovery.create_hx_air_to_air_sensible_and_latent"><code class="docutils literal notranslate"><span class="pre">create_hx_air_to_air_sensible_and_latent()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html">honeybee_openstudio.hvac.standards.hvac_systems module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_baseboard"><code class="docutils literal notranslate"><span class="pre">model_add_baseboard()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_central_air_source_heat_pump"><code class="docutils literal notranslate"><span class="pre">model_add_central_air_source_heat_pump()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_chw_loop"><code class="docutils literal notranslate"><span class="pre">model_add_chw_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_cw_loop"><code class="docutils literal notranslate"><span class="pre">model_add_cw_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_district_ambient_loop"><code class="docutils literal notranslate"><span class="pre">model_add_district_ambient_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_doas"><code class="docutils literal notranslate"><span class="pre">model_add_doas()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_doas_cold_supply"><code class="docutils literal notranslate"><span class="pre">model_add_doas_cold_supply()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_evap_cooler"><code class="docutils literal notranslate"><span class="pre">model_add_evap_cooler()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_four_pipe_fan_coil"><code class="docutils literal notranslate"><span class="pre">model_add_four_pipe_fan_coil()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_furnace_central_ac"><code class="docutils literal notranslate"><span class="pre">model_add_furnace_central_ac()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_ground_hx_loop"><code class="docutils literal notranslate"><span class="pre">model_add_ground_hx_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_high_temp_radiant"><code class="docutils literal notranslate"><span class="pre">model_add_high_temp_radiant()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_hp_loop"><code class="docutils literal notranslate"><span class="pre">model_add_hp_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_hvac_system"><code class="docutils literal notranslate"><span class="pre">model_add_hvac_system()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_hw_loop"><code class="docutils literal notranslate"><span class="pre">model_add_hw_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_low_temp_radiant"><code class="docutils literal notranslate"><span class="pre">model_add_low_temp_radiant()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_minisplit_hp"><code class="docutils literal notranslate"><span class="pre">model_add_minisplit_hp()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_plant_supply_water_temperature_control"><code class="docutils literal notranslate"><span class="pre">model_add_plant_supply_water_temperature_control()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_psz_ac"><code class="docutils literal notranslate"><span class="pre">model_add_psz_ac()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_psz_vav"><code class="docutils literal notranslate"><span class="pre">model_add_psz_vav()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_ptac"><code class="docutils literal notranslate"><span class="pre">model_add_ptac()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_pthp"><code class="docutils literal notranslate"><span class="pre">model_add_pthp()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_pvav"><code class="docutils literal notranslate"><span class="pre">model_add_pvav()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_pvav_pfp_boxes"><code class="docutils literal notranslate"><span class="pre">model_add_pvav_pfp_boxes()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_residential_erv"><code class="docutils literal notranslate"><span class="pre">model_add_residential_erv()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_residential_ventilator"><code class="docutils literal notranslate"><span class="pre">model_add_residential_ventilator()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_unitheater"><code class="docutils literal notranslate"><span class="pre">model_add_unitheater()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_vav_pfp_boxes"><code class="docutils literal notranslate"><span class="pre">model_add_vav_pfp_boxes()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_vav_reheat"><code class="docutils literal notranslate"><span class="pre">model_add_vav_reheat()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_vrf"><code class="docutils literal notranslate"><span class="pre">model_add_vrf()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_vsd_twr_fan_curve"><code class="docutils literal notranslate"><span class="pre">model_add_vsd_twr_fan_curve()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_water_source_hp"><code class="docutils literal notranslate"><span class="pre">model_add_water_source_hp()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_waterside_economizer"><code class="docutils literal notranslate"><span class="pre">model_add_waterside_economizer()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_window_ac"><code class="docutils literal notranslate"><span class="pre">model_add_window_ac()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_zone_erv"><code class="docutils literal notranslate"><span class="pre">model_add_zone_erv()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_zone_heat_cool_request_count_program"><code class="docutils literal notranslate"><span class="pre">model_add_zone_heat_cool_request_count_program()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_get_or_add_ambient_water_loop"><code class="docutils literal notranslate"><span class="pre">model_get_or_add_ambient_water_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_get_or_add_chilled_water_loop"><code class="docutils literal notranslate"><span class="pre">model_get_or_add_chilled_water_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_get_or_add_ground_hx_loop"><code class="docutils literal notranslate"><span class="pre">model_get_or_add_ground_hx_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_get_or_add_heat_pump_loop"><code class="docutils literal notranslate"><span class="pre">model_get_or_add_heat_pump_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_get_or_add_hot_water_loop"><code class="docutils literal notranslate"><span class="pre">model_get_or_add_hot_water_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.standard_design_sizing_temperatures"><code class="docutils literal notranslate"><span class="pre">standard_design_sizing_temperatures()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.plant_loop.html">honeybee_openstudio.hvac.standards.plant_loop module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.plant_loop.html#honeybee_openstudio.hvac.standards.plant_loop.chw_sizing_control"><code class="docutils literal notranslate"><span class="pre">chw_sizing_control()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.plant_loop.html#honeybee_openstudio.hvac.standards.plant_loop.plant_loop_set_chw_pri_sec_configuration"><code class="docutils literal notranslate"><span class="pre">plant_loop_set_chw_pri_sec_configuration()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.pump_variable_speed.html">honeybee_openstudio.hvac.standards.pump_variable_speed module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.pump_variable_speed.html#honeybee_openstudio.hvac.standards.pump_variable_speed.pump_variable_speed_set_control_type"><code class="docutils literal notranslate"><span class="pre">pump_variable_speed_set_control_type()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.radiant_system_controls.html">honeybee_openstudio.hvac.standards.radiant_system_controls module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.radiant_system_controls.html#honeybee_openstudio.hvac.standards.radiant_system_controls.model_add_radiant_basic_controls"><code class="docutils literal notranslate"><span class="pre">model_add_radiant_basic_controls()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.radiant_system_controls.html#honeybee_openstudio.hvac.standards.radiant_system_controls.model_add_radiant_proportional_controls"><code class="docutils literal notranslate"><span class="pre">model_add_radiant_proportional_controls()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.schedule.html">honeybee_openstudio.hvac.standards.schedule module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.schedule.html#honeybee_openstudio.hvac.standards.schedule.create_constant_schedule_ruleset"><code class="docutils literal notranslate"><span class="pre">create_constant_schedule_ruleset()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.schedule.html#honeybee_openstudio.hvac.standards.schedule.create_schedule_type_limits"><code class="docutils literal notranslate"><span class="pre">create_schedule_type_limits()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.schedule.html#honeybee_openstudio.hvac.standards.schedule.model_add_schedule"><code class="docutils literal notranslate"><span class="pre">model_add_schedule()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.sizing_system.html">honeybee_openstudio.hvac.standards.sizing_system module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.sizing_system.html#honeybee_openstudio.hvac.standards.sizing_system.adjust_sizing_system"><code class="docutils literal notranslate"><span class="pre">adjust_sizing_system()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.thermal_zone.html">honeybee_openstudio.hvac.standards.thermal_zone module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_occupancy_schedule"><code class="docutils literal notranslate"><span class="pre">thermal_zone_get_occupancy_schedule()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_outdoor_airflow_rate"><code class="docutils literal notranslate"><span class="pre">thermal_zone_get_outdoor_airflow_rate()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_outdoor_airflow_rate_per_area"><code class="docutils literal notranslate"><span class="pre">thermal_zone_get_outdoor_airflow_rate_per_area()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.utilities.html">honeybee_openstudio.hvac.standards.utilities module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.convert_curve_biquadratic"><code class="docutils literal notranslate"><span class="pre">convert_curve_biquadratic()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.create_curve_biquadratic"><code class="docutils literal notranslate"><span class="pre">create_curve_biquadratic()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.create_curve_quadratic"><code class="docutils literal notranslate"><span class="pre">create_curve_quadratic()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.eer_to_cop_no_fan"><code class="docutils literal notranslate"><span class="pre">eer_to_cop_no_fan()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.ems_friendly_name"><code class="docutils literal notranslate"><span class="pre">ems_friendly_name()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.hspf_to_cop_no_fan"><code class="docutils literal notranslate"><span class="pre">hspf_to_cop_no_fan()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.kw_per_ton_to_cop"><code class="docutils literal notranslate"><span class="pre">kw_per_ton_to_cop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.rename_air_loop_nodes"><code class="docutils literal notranslate"><span class="pre">rename_air_loop_nodes()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.rename_plant_loop_nodes"><code class="docutils literal notranslate"><span class="pre">rename_plant_loop_nodes()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.html#module-honeybee_openstudio.hvac.standards">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.html#submodules">Submodules</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.idealair.html">honeybee_openstudio.hvac.idealair module</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.idealair.html#honeybee_openstudio.hvac.idealair.ideal_air_system_from_openstudio"><code class="docutils literal notranslate"><span class="pre">ideal_air_system_from_openstudio()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.idealair.html#honeybee_openstudio.hvac.idealair.ideal_air_system_to_openstudio"><code class="docutils literal notranslate"><span class="pre">ideal_air_system_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.template.html">honeybee_openstudio.hvac.template module</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.template.html#honeybee_openstudio.hvac.template.template_hvac_to_openstudio"><code class="docutils literal notranslate"><span class="pre">template_hvac_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.html#module-honeybee_openstudio.hvac">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../honeybee_openstudio.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html">honeybee_openstudio.construction module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.air_construction_from_openstudio"><code class="docutils literal notranslate"><span class="pre">air_construction_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.air_construction_to_openstudio"><code class="docutils literal notranslate"><span class="pre">air_construction_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.air_mixing_to_openstudio"><code class="docutils literal notranslate"><span class="pre">air_mixing_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.construction_to_openstudio"><code class="docutils literal notranslate"><span class="pre">construction_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.extract_all_constructions"><code class="docutils literal notranslate"><span class="pre">extract_all_constructions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.opaque_construction_from_openstudio"><code class="docutils literal notranslate"><span class="pre">opaque_construction_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.shade_construction_from_openstudio"><code class="docutils literal notranslate"><span class="pre">shade_construction_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.shade_construction_to_openstudio"><code class="docutils literal notranslate"><span class="pre">shade_construction_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.standard_construction_to_openstudio"><code class="docutils literal notranslate"><span class="pre">standard_construction_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.window_construction_from_openstudio"><code class="docutils literal notranslate"><span class="pre">window_construction_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.window_dynamic_construction_to_openstudio"><code class="docutils literal notranslate"><span class="pre">window_dynamic_construction_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.window_dynamic_ems_program_to_openstudio"><code class="docutils literal notranslate"><span class="pre">window_dynamic_ems_program_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.window_shade_construction_to_openstudio"><code class="docutils literal notranslate"><span class="pre">window_shade_construction_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html#honeybee_openstudio.construction.window_shading_control_to_openstudio"><code class="docutils literal notranslate"><span class="pre">window_shading_control_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.constructionset.html">honeybee_openstudio.constructionset module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.constructionset.html#honeybee_openstudio.constructionset.construction_set_from_openstudio"><code class="docutils literal notranslate"><span class="pre">construction_set_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.constructionset.html#honeybee_openstudio.constructionset.construction_set_to_openstudio"><code class="docutils literal notranslate"><span class="pre">construction_set_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.generator.html">honeybee_openstudio.generator module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.generator.html#honeybee_openstudio.generator.electric_load_center_to_openstudio"><code class="docutils literal notranslate"><span class="pre">electric_load_center_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.generator.html#honeybee_openstudio.generator.pv_properties_to_openstudio"><code class="docutils literal notranslate"><span class="pre">pv_properties_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.internalmass.html">honeybee_openstudio.internalmass module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.internalmass.html#honeybee_openstudio.internalmass.internal_mass_to_openstudio"><code class="docutils literal notranslate"><span class="pre">internal_mass_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.load.html">honeybee_openstudio.load module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.daylight_from_openstudio"><code class="docutils literal notranslate"><span class="pre">daylight_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.daylight_to_openstudio"><code class="docutils literal notranslate"><span class="pre">daylight_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.electric_equipment_from_openstudio"><code class="docutils literal notranslate"><span class="pre">electric_equipment_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.electric_equipment_to_openstudio"><code class="docutils literal notranslate"><span class="pre">electric_equipment_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.gas_equipment_from_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_equipment_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.gas_equipment_to_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_equipment_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.hot_water_from_openstudio"><code class="docutils literal notranslate"><span class="pre">hot_water_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.hot_water_to_openstudio"><code class="docutils literal notranslate"><span class="pre">hot_water_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.infiltration_from_openstudio"><code class="docutils literal notranslate"><span class="pre">infiltration_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.infiltration_to_openstudio"><code class="docutils literal notranslate"><span class="pre">infiltration_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.lighting_from_openstudio"><code class="docutils literal notranslate"><span class="pre">lighting_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.lighting_to_openstudio"><code class="docutils literal notranslate"><span class="pre">lighting_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.people_from_openstudio"><code class="docutils literal notranslate"><span class="pre">people_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.people_to_openstudio"><code class="docutils literal notranslate"><span class="pre">people_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.process_from_openstudio"><code class="docutils literal notranslate"><span class="pre">process_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.process_to_openstudio"><code class="docutils literal notranslate"><span class="pre">process_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.setpoint_from_openstudio_humidistat"><code class="docutils literal notranslate"><span class="pre">setpoint_from_openstudio_humidistat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.setpoint_from_openstudio_thermostat"><code class="docutils literal notranslate"><span class="pre">setpoint_from_openstudio_thermostat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.setpoint_to_openstudio_humidistat"><code class="docutils literal notranslate"><span class="pre">setpoint_to_openstudio_humidistat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.setpoint_to_openstudio_thermostat"><code class="docutils literal notranslate"><span class="pre">setpoint_to_openstudio_thermostat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.ventilation_from_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.load.html#honeybee_openstudio.load.ventilation_to_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.material.html">honeybee_openstudio.material module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.blind_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">blind_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.blind_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">blind_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.extract_all_materials"><code class="docutils literal notranslate"><span class="pre">extract_all_materials()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.frame_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">frame_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.gas_custom_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_custom_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.gas_custom_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_custom_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.gas_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.gas_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.gas_mixture_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_mixture_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.gas_mixture_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_mixture_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.glazing_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">glazing_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.glazing_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">glazing_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.opaque_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">opaque_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.opaque_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">opaque_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.opaque_no_mass_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">opaque_no_mass_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.opaque_no_mass_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">opaque_no_mass_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.shade_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">shade_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.shade_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">shade_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.simple_glazing_sys_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">simple_glazing_sys_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.simple_glazing_sys_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">simple_glazing_sys_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.vegetation_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">vegetation_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.material.html#honeybee_openstudio.material.vegetation_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">vegetation_material_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.openstudio.html">honeybee_openstudio.openstudio module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.openstudio.html#honeybee_openstudio.openstudio.os_create_vector"><code class="docutils literal notranslate"><span class="pre">os_create_vector()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.openstudio.html#honeybee_openstudio.openstudio.os_path"><code class="docutils literal notranslate"><span class="pre">os_path()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.openstudio.html#honeybee_openstudio.openstudio.os_vector_len"><code class="docutils literal notranslate"><span class="pre">os_vector_len()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.programtype.html">honeybee_openstudio.programtype module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.programtype.html#honeybee_openstudio.programtype.program_type_from_openstudio"><code class="docutils literal notranslate"><span class="pre">program_type_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.programtype.html#honeybee_openstudio.programtype.program_type_to_openstudio"><code class="docutils literal notranslate"><span class="pre">program_type_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.reader.html">honeybee_openstudio.reader module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.reader.html#honeybee_openstudio.reader.aperture_from_openstudio"><code class="docutils literal notranslate"><span class="pre">aperture_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.reader.html#honeybee_openstudio.reader.door_from_openstudio"><code class="docutils literal notranslate"><span class="pre">door_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.reader.html#honeybee_openstudio.reader.face_3d_from_openstudio"><code class="docutils literal notranslate"><span class="pre">face_3d_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.reader.html#honeybee_openstudio.reader.face_from_openstudio"><code class="docutils literal notranslate"><span class="pre">face_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.reader.html#honeybee_openstudio.reader.model_from_gbxml_file"><code class="docutils literal notranslate"><span class="pre">model_from_gbxml_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.reader.html#honeybee_openstudio.reader.model_from_idf_file"><code class="docutils literal notranslate"><span class="pre">model_from_idf_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.reader.html#honeybee_openstudio.reader.model_from_openstudio"><code class="docutils literal notranslate"><span class="pre">model_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.reader.html#honeybee_openstudio.reader.model_from_osm"><code class="docutils literal notranslate"><span class="pre">model_from_osm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.reader.html#honeybee_openstudio.reader.model_from_osm_file"><code class="docutils literal notranslate"><span class="pre">model_from_osm_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.reader.html#honeybee_openstudio.reader.room_from_openstudio"><code class="docutils literal notranslate"><span class="pre">room_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.reader.html#honeybee_openstudio.reader.shades_from_openstudio"><code class="docutils literal notranslate"><span class="pre">shades_from_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.schedule.html">honeybee_openstudio.schedule module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.extract_all_schedules"><code class="docutils literal notranslate"><span class="pre">extract_all_schedules()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_day_from_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_day_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_day_to_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_day_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_fixed_interval_from_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_fixed_interval_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_fixed_interval_to_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_fixed_interval_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_fixed_interval_to_openstudio_file"><code class="docutils literal notranslate"><span class="pre">schedule_fixed_interval_to_openstudio_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_ruleset_from_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_ruleset_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_ruleset_to_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_ruleset_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_to_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_type_limits_from_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_type_limits_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_type_limits_to_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_type_limits_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.shw.html">honeybee_openstudio.shw module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.shw.html#honeybee_openstudio.shw.shw_system_to_openstudio"><code class="docutils literal notranslate"><span class="pre">shw_system_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.simulation.html">honeybee_openstudio.simulation module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.assign_epw_to_model"><code class="docutils literal notranslate"><span class="pre">assign_epw_to_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.design_day_to_openstudio"><code class="docutils literal notranslate"><span class="pre">design_day_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.run_period_to_openstudio"><code class="docutils literal notranslate"><span class="pre">run_period_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.shadow_calculation_to_openstudio"><code class="docutils literal notranslate"><span class="pre">shadow_calculation_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.simulation_control_to_openstudio"><code class="docutils literal notranslate"><span class="pre">simulation_control_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.simulation_output_to_openstudio"><code class="docutils literal notranslate"><span class="pre">simulation_output_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.simulation_parameter_to_openstudio"><code class="docutils literal notranslate"><span class="pre">simulation_parameter_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.sizing_to_openstudio"><code class="docutils literal notranslate"><span class="pre">sizing_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.ventcool.html">honeybee_openstudio.ventcool module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.afn_crack_to_openstudio"><code class="docutils literal notranslate"><span class="pre">afn_crack_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.outdoor_temperature_sensor"><code class="docutils literal notranslate"><span class="pre">outdoor_temperature_sensor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.ventilation_control_program_manager"><code class="docutils literal notranslate"><span class="pre">ventilation_control_program_manager()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.ventilation_control_to_openstudio_afn"><code class="docutils literal notranslate"><span class="pre">ventilation_control_to_openstudio_afn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.ventilation_fan_to_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_fan_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.ventilation_opening_to_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_opening_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.ventilation_opening_to_openstudio_afn"><code class="docutils literal notranslate"><span class="pre">ventilation_opening_to_openstudio_afn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.ventilation_sim_control_to_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_sim_control_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.zone_temperature_sensor"><code class="docutils literal notranslate"><span class="pre">zone_temperature_sensor()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.writer.html">honeybee_openstudio.writer module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.writer.html#honeybee_openstudio.writer.aperture_to_openstudio"><code class="docutils literal notranslate"><span class="pre">aperture_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.writer.html#honeybee_openstudio.writer.door_to_openstudio"><code class="docutils literal notranslate"><span class="pre">door_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.writer.html#honeybee_openstudio.writer.face_3d_to_openstudio"><code class="docutils literal notranslate"><span class="pre">face_3d_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.writer.html#honeybee_openstudio.writer.face_to_openstudio"><code class="docutils literal notranslate"><span class="pre">face_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.writer.html#honeybee_openstudio.writer.model_to_gbxml"><code class="docutils literal notranslate"><span class="pre">model_to_gbxml()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.writer.html#honeybee_openstudio.writer.model_to_idf"><code class="docutils literal notranslate"><span class="pre">model_to_idf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.writer.html#honeybee_openstudio.writer.model_to_openstudio"><code class="docutils literal notranslate"><span class="pre">model_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.writer.html#honeybee_openstudio.writer.model_to_osm"><code class="docutils literal notranslate"><span class="pre">model_to_osm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.writer.html#honeybee_openstudio.writer.room_to_openstudio"><code class="docutils literal notranslate"><span class="pre">room_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.writer.html#honeybee_openstudio.writer.shade_mesh_to_openstudio"><code class="docutils literal notranslate"><span class="pre">shade_mesh_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.writer.html#honeybee_openstudio.writer.shade_to_openstudio"><code class="docutils literal notranslate"><span class="pre">shade_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../honeybee_openstudio.html#module-honeybee_openstudio">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../cli/index.html">CLI Docs</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../honeybee_openstudio.html">honeybee_openstudio package</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+            
+              <li class="hidden-sm"></li>
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-4">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../cli/index.html">CLI Docs</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../honeybee_openstudio.html">honeybee_openstudio package</a></li>
+</ul>
+
+        </div>
+      </div>
+    <div class="body col-md-8 content" role="main">
+      
+  <h1>Source code for honeybee_openstudio.hvac.standards.coil_heating</h1><div class="highlight"><pre>
+<span></span><span class="c1"># coding=utf-8</span>
+<span class="sd">&quot;&quot;&quot;Modules taken from OpenStudio-standards.</span>
+
+<span class="sd">https://github.com/NREL/openstudio-standards/blob/master/</span>
+<span class="sd">lib/openstudio-standards/prototypes/common/objects/Prototype.CoilHeatingElectric.rb</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">division</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">honeybee_openstudio.openstudio</span><span class="w"> </span><span class="kn">import</span> <span class="n">openstudio</span><span class="p">,</span> <span class="n">openstudio_model</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert_curve_biquadratic</span><span class="p">,</span> <span class="n">create_curve_biquadratic</span><span class="p">,</span> \
+    <span class="n">create_curve_quadratic</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.schedule</span><span class="w"> </span><span class="kn">import</span> <span class="n">model_add_schedule</span>
+
+
+<div class="viewcode-block" id="create_coil_heating_electric">
+<a class="viewcode-back" href="../../../../honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_electric">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_coil_heating_electric</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span> <span class="n">air_loop_node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Electric Htg Coil&#39;</span><span class="p">,</span>
+        <span class="n">schedule</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nominal_capacity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">efficiency</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prototype CoilHeatingElectric object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: [OpenStudio::Model::Model] OpenStudio model object.</span>
+<span class="sd">        air_loop_node: [&lt;OpenStudio::Model::Node&gt;] the coil will be placed on</span>
+<span class="sd">            this node of the air loop.</span>
+<span class="sd">        name: [String] the name of the system, or None in which case it will be defaulted.</span>
+<span class="sd">        schedule: [String] name of the availability schedule, or</span>
+<span class="sd">            [&lt;OpenStudio::Model::Schedule&gt;] Schedule object, or None in which</span>
+<span class="sd">            case default to always on.</span>
+<span class="sd">        nominal_capacity: [Double] rated nominal capacity.</span>
+<span class="sd">        efficiency: [Double] rated heating efficiency.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">htg_coil</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CoilHeatingElectric</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="c1"># add to air loop if specified</span>
+    <span class="k">if</span> <span class="n">air_loop_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">addToNode</span><span class="p">(</span><span class="n">air_loop_node</span><span class="p">)</span>
+
+    <span class="c1"># set coil name</span>
+    <span class="n">htg_coil</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="c1"># set coil availability schedule</span>
+    <span class="k">if</span> <span class="n">schedule</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># default always on</span>
+        <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">alwaysOnDiscreteSchedule</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">schedule</span> <span class="o">==</span> <span class="s1">&#39;alwaysOffDiscreteSchedule&#39;</span><span class="p">:</span>
+            <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">alwaysOffDiscreteSchedule</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">schedule</span> <span class="o">==</span> <span class="s1">&#39;alwaysOnDiscreteSchedule&#39;</span><span class="p">:</span>
+            <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">alwaysOnDiscreteSchedule</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model_add_schedule</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">schedule</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># assume that it is an actual schedule object</span>
+        <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">schedule</span>
+    <span class="n">htg_coil</span><span class="o">.</span><span class="n">setAvailabilitySchedule</span><span class="p">(</span><span class="n">coil_availability_schedule</span><span class="p">)</span>
+
+    <span class="c1"># set capacity</span>
+    <span class="k">if</span> <span class="n">nominal_capacity</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setNominalCapacity</span><span class="p">(</span><span class="n">nominal_capacity</span><span class="p">)</span>
+
+    <span class="c1"># set efficiency</span>
+    <span class="k">if</span> <span class="n">efficiency</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setEfficiency</span><span class="p">(</span><span class="n">efficiency</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">htg_coil</span></div>
+
+
+
+<div class="viewcode-block" id="create_coil_heating_gas">
+<a class="viewcode-back" href="../../../../honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_gas">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_coil_heating_gas</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span> <span class="n">air_loop_node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Gas Htg Coil&#39;</span><span class="p">,</span> <span class="n">schedule</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">nominal_capacity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">efficiency</span><span class="o">=</span><span class="mf">0.80</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prototype CoilHeatingGas object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: [OpenStudio::Model::Model] OpenStudio model object.</span>
+<span class="sd">        air_loop_node: [&lt;OpenStudio::Model::Node&gt;] the coil will be placed on</span>
+<span class="sd">            this node of the air loop.</span>
+<span class="sd">        name: [String] the name of the system, or None in which case it will be defaulted.</span>
+<span class="sd">        schedule: [String] name of the availability schedule, or</span>
+<span class="sd">            [&lt;OpenStudio::Model::Schedule&gt;] Schedule object, or None in which</span>
+<span class="sd">            case default to always on.</span>
+<span class="sd">        nominal_capacity: [Double] rated nominal capacity.</span>
+<span class="sd">        efficiency: [Double] rated heating efficiency.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">htg_coil</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CoilHeatingGas</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="c1"># add to air loop if specified</span>
+    <span class="k">if</span> <span class="n">air_loop_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">addToNode</span><span class="p">(</span><span class="n">air_loop_node</span><span class="p">)</span>
+
+    <span class="c1"># set coil name</span>
+    <span class="n">htg_coil</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="c1"># set coil availability schedule</span>
+    <span class="k">if</span> <span class="n">schedule</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># default always on</span>
+        <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">alwaysOnDiscreteSchedule</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">schedule</span> <span class="o">==</span> <span class="s1">&#39;alwaysOffDiscreteSchedule&#39;</span><span class="p">:</span>
+            <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">alwaysOffDiscreteSchedule</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">schedule</span> <span class="o">==</span> <span class="s1">&#39;alwaysOnDiscreteSchedule&#39;</span><span class="p">:</span>
+            <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">alwaysOnDiscreteSchedule</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model_add_schedule</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">schedule</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># assume that it is an actual schedule object</span>
+        <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">schedule</span>
+    <span class="n">htg_coil</span><span class="o">.</span><span class="n">setAvailabilitySchedule</span><span class="p">(</span><span class="n">coil_availability_schedule</span><span class="p">)</span>
+
+    <span class="c1"># set capacity</span>
+    <span class="k">if</span> <span class="n">nominal_capacity</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setNominalCapacity</span><span class="p">(</span><span class="n">nominal_capacity</span><span class="p">)</span>
+
+    <span class="c1"># set efficiency</span>
+    <span class="k">if</span> <span class="n">efficiency</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setGasBurnerEfficiency</span><span class="p">(</span><span class="n">efficiency</span><span class="p">)</span>
+
+    <span class="c1"># defaults</span>
+    <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">version</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">openstudio</span><span class="o">.</span><span class="n">VersionString</span><span class="p">(</span><span class="s1">&#39;3.7.0&#39;</span><span class="p">):</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setParasiticElectricLoad</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setParasiticGasLoad</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setOnCycleParasiticElectricLoad</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setOffCycleParasiticGasLoad</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">htg_coil</span></div>
+
+
+
+<div class="viewcode-block" id="create_coil_heating_water">
+<a class="viewcode-back" href="../../../../honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_water">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_coil_heating_water</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span> <span class="n">hot_water_loop</span><span class="p">,</span> <span class="n">air_loop_node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Htg Coil&#39;</span><span class="p">,</span> <span class="n">schedule</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">rated_inlet_water_temperature</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rated_outlet_water_temperature</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">rated_inlet_air_temperature</span><span class="o">=</span><span class="mf">16.6</span><span class="p">,</span> <span class="n">rated_outlet_air_temperature</span><span class="o">=</span><span class="mf">32.2</span><span class="p">,</span>
+        <span class="n">controller_convergence_tolerance</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prototype CoilHeatingWater object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: [OpenStudio::Model::Model] OpenStudio model object.</span>
+<span class="sd">        hot_water_loop: [&lt;OpenStudio::Model::PlantLoop&gt;] the coil will be placed</span>
+<span class="sd">            on the demand side of this plant loop.</span>
+<span class="sd">        air_loop_node: [&lt;OpenStudio::Model::Node&gt;] the coil will be placed on</span>
+<span class="sd">            this node of the air loop.</span>
+<span class="sd">        name: [String] the name of the coil, or nil in which case it will be defaulted.</span>
+<span class="sd">        schedule: [String] name of the availability schedule, or</span>
+<span class="sd">            [&lt;OpenStudio::Model::Schedule&gt;] Schedule object, or nil in which case</span>
+<span class="sd">            default to always on.</span>
+<span class="sd">        rated_inlet_water_temperature: [Double] rated inlet water temperature in</span>
+<span class="sd">            degrees Celsius, default is hot water loop design exit temperature.</span>
+<span class="sd">        rated_outlet_water_temperature: [Double] rated outlet water temperature</span>
+<span class="sd">            in degrees Celsius, default is hot water loop design return temperature.</span>
+<span class="sd">        rated_inlet_air_temperature: [Double] rated inlet air temperature in</span>
+<span class="sd">            degrees Celsius, default is 16.6 (62F).</span>
+<span class="sd">        rated_outlet_air_temperature: [Double] rated outlet air temperature in</span>
+<span class="sd">            degrees Celsius, default is 32.2 (90F).</span>
+<span class="sd">        controller_convergence_tolerance: [Double] controller convergence tolerance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">htg_coil</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CoilHeatingWater</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="c1"># add to hot water loop</span>
+    <span class="n">hot_water_loop</span><span class="o">.</span><span class="n">addDemandBranchForComponent</span><span class="p">(</span><span class="n">htg_coil</span><span class="p">)</span>
+
+    <span class="c1"># add to air loop if specified</span>
+    <span class="k">if</span> <span class="n">air_loop_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">addToNode</span><span class="p">(</span><span class="n">air_loop_node</span><span class="p">)</span>
+
+    <span class="c1"># set coil name</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Htg Coil&#39;</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">name</span>
+    <span class="n">htg_coil</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="c1"># set coil availability schedule</span>
+    <span class="k">if</span> <span class="n">schedule</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># default always on</span>
+        <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">alwaysOnDiscreteSchedule</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">schedule</span> <span class="o">==</span> <span class="s1">&#39;alwaysOffDiscreteSchedule&#39;</span><span class="p">:</span>
+            <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">alwaysOffDiscreteSchedule</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">schedule</span> <span class="o">==</span> <span class="s1">&#39;alwaysOnDiscreteSchedule&#39;</span><span class="p">:</span>
+            <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">alwaysOnDiscreteSchedule</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model_add_schedule</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">schedule</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># assume that it is an actual schedule object</span>
+        <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">schedule</span>
+    <span class="n">htg_coil</span><span class="o">.</span><span class="n">setAvailabilitySchedule</span><span class="p">(</span><span class="n">coil_availability_schedule</span><span class="p">)</span>
+
+    <span class="c1"># rated water temperatures, use hot water loop temperatures if defined</span>
+    <span class="k">if</span> <span class="n">rated_inlet_water_temperature</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">rated_inlet_water_temperature</span> <span class="o">=</span> \
+            <span class="n">hot_water_loop</span><span class="o">.</span><span class="n">sizingPlant</span><span class="p">()</span><span class="o">.</span><span class="n">designLoopExitTemperature</span><span class="p">()</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setRatedInletWaterTemperature</span><span class="p">(</span><span class="n">rated_inlet_water_temperature</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setRatedInletWaterTemperature</span><span class="p">(</span><span class="n">rated_inlet_water_temperature</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rated_outlet_water_temperature</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">rated_outlet_water_temperature</span> <span class="o">=</span> \
+            <span class="n">rated_inlet_water_temperature</span> <span class="o">-</span> \
+            <span class="n">hot_water_loop</span><span class="o">.</span><span class="n">sizingPlant</span><span class="p">()</span><span class="o">.</span><span class="n">loopDesignTemperatureDifference</span><span class="p">()</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setRatedOutletWaterTemperature</span><span class="p">(</span><span class="n">rated_outlet_water_temperature</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setRatedOutletWaterTemperature</span><span class="p">(</span><span class="n">rated_outlet_water_temperature</span><span class="p">)</span>
+
+    <span class="c1"># rated air temperatures</span>
+    <span class="k">if</span> <span class="n">rated_inlet_air_temperature</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setRatedInletAirTemperature</span><span class="p">(</span><span class="mf">16.6</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setRatedInletAirTemperature</span><span class="p">(</span><span class="n">rated_inlet_air_temperature</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rated_outlet_air_temperature</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setRatedOutletAirTemperature</span><span class="p">(</span><span class="mf">32.2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setRatedOutletAirTemperature</span><span class="p">(</span><span class="n">rated_outlet_air_temperature</span><span class="p">)</span>
+
+    <span class="c1"># coil controller properties</span>
+    <span class="c1"># note These inputs will get overwritten if addToNode or addDemandBranchForComponent</span>
+    <span class="c1"># is called on the htg_coil object after this</span>
+    <span class="n">htg_coil_controller</span> <span class="o">=</span> <span class="n">htg_coil</span><span class="o">.</span><span class="n">controllerWaterCoil</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">htg_coil_controller</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> Controller&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">htg_coil</span><span class="o">.</span><span class="n">nameString</span><span class="p">()))</span>
+    <span class="n">htg_coil_controller</span><span class="o">.</span><span class="n">setMinimumActuatedFlow</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">controller_convergence_tolerance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil_controller</span><span class="o">.</span><span class="n">setControllerConvergenceTolerance</span><span class="p">(</span>
+            <span class="n">controller_convergence_tolerance</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">htg_coil</span></div>
+
+
+
+<div class="viewcode-block" id="create_coil_heating_dx_single_speed">
+<a class="viewcode-back" href="../../../../honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_dx_single_speed">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_coil_heating_dx_single_speed</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span> <span class="n">air_loop_node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;1spd DX Htg Coil&#39;</span><span class="p">,</span> <span class="n">schedule</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">cop</span><span class="o">=</span><span class="mf">3.3</span><span class="p">,</span> <span class="n">defrost_strategy</span><span class="o">=</span><span class="s1">&#39;ReverseCycle&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prototype CoilHeatingDXSingleSpeed object.</span>
+
+<span class="sd">    Enters in default curves for coil by type of coil</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: [OpenStudio::Model::Model] OpenStudio model object.</span>
+<span class="sd">        air_loop_node: [&lt;OpenStudio::Model::Node&gt;] the coil will be placed on</span>
+<span class="sd">            this node of the air loop.</span>
+<span class="sd">        name: [String] the name of the system, or nil in which case it will be defaulted.</span>
+<span class="sd">        schedule: [String] name of the availability schedule, or</span>
+<span class="sd">            [&lt;OpenStudio::Model::Schedule&gt;] Schedule object, or nil in which case</span>
+<span class="sd">            default to always on.</span>
+<span class="sd">        type: [String] the type of single speed DX coil to reference the correct curve set.</span>
+<span class="sd">        cop: [Double] rated heating coefficient of performance.</span>
+<span class="sd">        defrost_strategy: [String] type of defrost strategy. Options are</span>
+<span class="sd">            reverse-cycle or resistive.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">htg_coil</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CoilHeatingDXSingleSpeed</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="c1"># add to air loop if specified</span>
+    <span class="k">if</span> <span class="n">air_loop_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">addToNode</span><span class="p">(</span><span class="n">air_loop_node</span><span class="p">)</span>
+
+    <span class="c1"># set coil name</span>
+    <span class="n">htg_coil</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="c1"># set coil availability schedule</span>
+    <span class="k">if</span> <span class="n">schedule</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># default always on</span>
+        <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">alwaysOnDiscreteSchedule</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">schedule</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">schedule</span> <span class="o">==</span> <span class="s1">&#39;alwaysOffDiscreteSchedule&#39;</span><span class="p">:</span>
+            <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">alwaysOffDiscreteSchedule</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">schedule</span> <span class="o">==</span> <span class="s1">&#39;alwaysOnDiscreteSchedule&#39;</span><span class="p">:</span>
+            <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">alwaysOnDiscreteSchedule</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">model_add_schedule</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">schedule</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># assume that it is an actual schedule object</span>
+        <span class="n">coil_availability_schedule</span> <span class="o">=</span> <span class="n">schedule</span>
+    <span class="n">htg_coil</span><span class="o">.</span><span class="n">setAvailabilitySchedule</span><span class="p">(</span><span class="n">coil_availability_schedule</span><span class="p">)</span>
+
+    <span class="c1"># set coil cop</span>
+    <span class="n">cop</span> <span class="o">=</span> <span class="mf">3.3</span> <span class="k">if</span> <span class="n">cop</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">cop</span>
+    <span class="n">htg_coil</span><span class="o">.</span><span class="n">setRatedCOP</span><span class="p">(</span><span class="n">cop</span><span class="p">)</span>
+
+    <span class="n">htg_cap_f_of_temp</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">htg_cap_f_of_flow</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">htg_energy_input_ratio_f_of_temp</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">htg_energy_input_ratio_f_of_flow</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">htg_part_load_fraction</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">def_eir_f_of_temp</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># curve sets</span>
+    <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;OS default&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>  <span class="c1"># use OS defaults</span>
+    <span class="k">elif</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;Residential Central Air Source HP&#39;</span><span class="p">:</span>
+        <span class="c1"># Performance curves</span>
+        <span class="c1"># These coefficients are in IP UNITS</span>
+        <span class="n">heat_cap_ft_coeffs_ip</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.566333415</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000744164</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000103</span><span class="p">,</span>
+                                 <span class="mf">0.009414634</span><span class="p">,</span> <span class="mf">0.0000506</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000675</span><span class="p">]</span>
+        <span class="n">heat_eir_ft_coeffs_ip</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.718398423</span><span class="p">,</span> <span class="mf">0.003498178</span><span class="p">,</span> <span class="mf">0.000142202</span><span class="p">,</span>
+                                 <span class="o">-</span><span class="mf">0.005724331</span><span class="p">,</span> <span class="mf">0.00014085</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000215321</span><span class="p">]</span>
+        <span class="n">heat_cap_fflow_coeffs</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.694045465</span><span class="p">,</span> <span class="mf">0.474207981</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.168253446</span><span class="p">]</span>
+        <span class="n">heat_eir_fflow_coeffs</span> <span class="o">=</span> <span class="p">[</span><span class="mf">2.185418751</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.942827919</span><span class="p">,</span> <span class="mf">0.757409168</span><span class="p">]</span>
+        <span class="n">heat_plf_fplr_coeffs</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">defrost_eir_coeffs</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.1528</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Convert coefficients from IP to SI</span>
+        <span class="n">heat_cap_ft_coeffs_si</span> <span class="o">=</span> <span class="n">convert_curve_biquadratic</span><span class="p">(</span><span class="n">heat_cap_ft_coeffs_ip</span><span class="p">)</span>
+        <span class="n">heat_eir_ft_coeffs_si</span> <span class="o">=</span> <span class="n">convert_curve_biquadratic</span><span class="p">(</span><span class="n">heat_eir_ft_coeffs_ip</span><span class="p">)</span>
+
+        <span class="n">htg_cap_f_of_temp</span> <span class="o">=</span> <span class="n">create_curve_biquadratic</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">heat_cap_ft_coeffs_si</span><span class="p">,</span> <span class="s1">&#39;Heat-Cap-fT&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_flow</span> <span class="o">=</span> <span class="n">create_curve_quadratic</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">heat_cap_fflow_coeffs</span><span class="p">,</span> <span class="s1">&#39;Heat-Cap-fFF&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">is_dimensionless</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_temp</span> <span class="o">=</span> <span class="n">create_curve_biquadratic</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">heat_eir_ft_coeffs_si</span><span class="p">,</span> <span class="s1">&#39;Heat-EIR-fT&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_flow</span> <span class="o">=</span> <span class="n">create_curve_quadratic</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">heat_eir_fflow_coeffs</span><span class="p">,</span> <span class="s1">&#39;Heat-EIR-fFF&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">is_dimensionless</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">htg_part_load_fraction</span> <span class="o">=</span> <span class="n">create_curve_quadratic</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">heat_plf_fplr_coeffs</span><span class="p">,</span> <span class="s1">&#39;Heat-PLF-fPLR&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">is_dimensionless</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Heating defrost curve for reverse cycle</span>
+        <span class="n">def_eir_f_of_temp</span> <span class="o">=</span> <span class="n">create_curve_biquadratic</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">defrost_eir_coeffs</span><span class="p">,</span> <span class="s1">&#39;DefrostEIR&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;Residential Minisplit HP&#39;</span><span class="p">:</span>
+        <span class="c1"># Performance curves</span>
+        <span class="c1"># These coefficients are in SI UNITS</span>
+        <span class="n">heat_cap_ft_coeffs_si</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.14715889038462</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.010386676170938</span><span class="p">,</span>
+                                 <span class="mi">0</span><span class="p">,</span> <span class="mf">0.00865384615384615</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">heat_eir_ft_coeffs_si</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.9999941697687026</span><span class="p">,</span> <span class="mf">0.004684593830254383</span><span class="p">,</span>
+                                 <span class="mf">5.901286675833333e-05</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0028624467783091973</span><span class="p">,</span>
+                                 <span class="mf">1.3041120194135802e-05</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00016172918478765433</span><span class="p">]</span>
+        <span class="n">heat_cap_fflow_coeffs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">heat_eir_fflow_coeffs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">heat_plf_fplr_coeffs</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.89</span><span class="p">,</span> <span class="mf">0.11</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">defrost_eir_coeffs</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.1528</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">htg_cap_f_of_temp</span> <span class="o">=</span> <span class="n">create_curve_biquadratic</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">heat_cap_ft_coeffs_si</span><span class="p">,</span> <span class="s1">&#39;Heat-Cap-fT&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_flow</span> <span class="o">=</span> <span class="n">create_curve_quadratic</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">heat_cap_fflow_coeffs</span><span class="p">,</span> <span class="s1">&#39;Heat-Cap-fFF&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">is_dimensionless</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_temp</span> <span class="o">=</span> <span class="n">create_curve_biquadratic</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">heat_eir_ft_coeffs_si</span><span class="p">,</span> <span class="s1">&#39;Heat-EIR-fT&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_flow</span> <span class="o">=</span> <span class="n">create_curve_quadratic</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">heat_eir_fflow_coeffs</span><span class="p">,</span> <span class="s1">&#39;Heat-EIR-fFF&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">is_dimensionless</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">htg_part_load_fraction</span> <span class="o">=</span> <span class="n">create_curve_quadratic</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">heat_plf_fplr_coeffs</span><span class="p">,</span> <span class="s1">&#39;Heat-PLF-fPLR&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">is_dimensionless</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Heating defrost curve for reverse cycle</span>
+        <span class="n">def_eir_f_of_temp</span> <span class="o">=</span> <span class="n">create_curve_biquadratic</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">defrost_eir_coeffs</span><span class="p">,</span> <span class="s1">&#39;Defrost EIR&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># default curve set</span>
+        <span class="n">coil_name</span> <span class="o">=</span> <span class="n">htg_coil</span><span class="o">.</span><span class="n">nameString</span><span class="p">()</span>
+        <span class="n">htg_cap_f_of_temp</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CurveCubic</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_temp</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> Htg Cap Func of Temp Curve&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">coil_name</span><span class="p">))</span>
+        <span class="n">htg_cap_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient1Constant</span><span class="p">(</span><span class="mf">0.758746</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient2x</span><span class="p">(</span><span class="mf">0.027626</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient3xPOW2</span><span class="p">(</span><span class="mf">0.000148716</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient4xPOW3</span><span class="p">(</span><span class="mf">0.0000034992</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_temp</span><span class="o">.</span><span class="n">setMinimumValueofx</span><span class="p">(</span><span class="o">-</span><span class="mf">20.0</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_temp</span><span class="o">.</span><span class="n">setMaximumValueofx</span><span class="p">(</span><span class="mf">20.0</span><span class="p">)</span>
+
+        <span class="n">htg_cap_f_of_flow</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CurveCubic</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_flow</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> Htg Cap Func of Flow Frac Curve&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">coil_name</span><span class="p">))</span>
+        <span class="n">htg_cap_f_of_flow</span><span class="o">.</span><span class="n">setCoefficient1Constant</span><span class="p">(</span><span class="mf">0.84</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_flow</span><span class="o">.</span><span class="n">setCoefficient2x</span><span class="p">(</span><span class="mf">0.16</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_flow</span><span class="o">.</span><span class="n">setCoefficient3xPOW2</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_flow</span><span class="o">.</span><span class="n">setCoefficient4xPOW3</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_flow</span><span class="o">.</span><span class="n">setMinimumValueofx</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">htg_cap_f_of_flow</span><span class="o">.</span><span class="n">setMaximumValueofx</span><span class="p">(</span><span class="mf">1.5</span><span class="p">)</span>
+
+        <span class="n">htg_energy_input_ratio_f_of_temp</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CurveCubic</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_temp</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span>
+            <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> EIR Func of Temp Curve&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">coil_name</span><span class="p">))</span>
+        <span class="n">htg_energy_input_ratio_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient1Constant</span><span class="p">(</span><span class="mf">1.19248</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient2x</span><span class="p">(</span><span class="o">-</span><span class="mf">0.0300438</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient3xPOW2</span><span class="p">(</span><span class="mf">0.00103745</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient4xPOW3</span><span class="p">(</span><span class="o">-</span><span class="mf">0.000023328</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_temp</span><span class="o">.</span><span class="n">setMinimumValueofx</span><span class="p">(</span><span class="o">-</span><span class="mf">20.0</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_temp</span><span class="o">.</span><span class="n">setMaximumValueofx</span><span class="p">(</span><span class="mf">20.0</span><span class="p">)</span>
+
+        <span class="n">htg_energy_input_ratio_f_of_flow</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CurveQuadratic</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_flow</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span>
+            <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> EIR Func of Flow Frac Curve&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">coil_name</span><span class="p">))</span>
+        <span class="n">htg_energy_input_ratio_f_of_flow</span><span class="o">.</span><span class="n">setCoefficient1Constant</span><span class="p">(</span><span class="mf">1.3824</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_flow</span><span class="o">.</span><span class="n">setCoefficient2x</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4336</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_flow</span><span class="o">.</span><span class="n">setCoefficient3xPOW2</span><span class="p">(</span><span class="mf">0.0512</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_flow</span><span class="o">.</span><span class="n">setMinimumValueofx</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">htg_energy_input_ratio_f_of_flow</span><span class="o">.</span><span class="n">setMaximumValueofx</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="n">htg_part_load_fraction</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CurveQuadratic</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">htg_part_load_fraction</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> PLR Correlation Curve&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">coil_name</span><span class="p">))</span>
+        <span class="n">htg_part_load_fraction</span><span class="o">.</span><span class="n">setCoefficient1Constant</span><span class="p">(</span><span class="mf">0.85</span><span class="p">)</span>
+        <span class="n">htg_part_load_fraction</span><span class="o">.</span><span class="n">setCoefficient2x</span><span class="p">(</span><span class="mf">0.15</span><span class="p">)</span>
+        <span class="n">htg_part_load_fraction</span><span class="o">.</span><span class="n">setCoefficient3xPOW2</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">htg_part_load_fraction</span><span class="o">.</span><span class="n">setMinimumValueofx</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">htg_part_load_fraction</span><span class="o">.</span><span class="n">setMaximumValueofx</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">defrost_strategy</span> <span class="o">!=</span> <span class="s1">&#39;Resistive&#39;</span><span class="p">:</span>
+            <span class="n">def_eir_f_of_temp</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CurveBiquadratic</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+            <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span>
+                <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> Defrost EIR Func of Temp Curve&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">coil_name</span><span class="p">))</span>
+            <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient1Constant</span><span class="p">(</span><span class="mf">0.297145</span><span class="p">)</span>
+            <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient2x</span><span class="p">(</span><span class="mf">0.0430933</span><span class="p">)</span>
+            <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient3xPOW2</span><span class="p">(</span><span class="o">-</span><span class="mf">0.000748766</span><span class="p">)</span>
+            <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient4y</span><span class="p">(</span><span class="mf">0.00597727</span><span class="p">)</span>
+            <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient5yPOW2</span><span class="p">(</span><span class="mf">0.000482112</span><span class="p">)</span>
+            <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient6xTIMESY</span><span class="p">(</span><span class="o">-</span><span class="mf">0.000956448</span><span class="p">)</span>
+            <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setMinimumValueofx</span><span class="p">(</span><span class="o">-</span><span class="mf">23.33333</span><span class="p">)</span>
+            <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setMaximumValueofx</span><span class="p">(</span><span class="mf">29.44444</span><span class="p">)</span>
+            <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setMinimumValueofy</span><span class="p">(</span><span class="o">-</span><span class="mf">23.33333</span><span class="p">)</span>
+            <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setMaximumValueofy</span><span class="p">(</span><span class="mf">29.44444</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;PSZ-AC&#39;</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setMinimumOutdoorDryBulbTemperatureforCompressorOperation</span><span class="p">(</span><span class="o">-</span><span class="mf">12.2</span><span class="p">)</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setMaximumOutdoorDryBulbTemperatureforDefrostOperation</span><span class="p">(</span><span class="mf">1.67</span><span class="p">)</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setCrankcaseHeaterCapacity</span><span class="p">(</span><span class="mf">50.0</span><span class="p">)</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setMaximumOutdoorDryBulbTemperatureforCrankcaseHeaterOperation</span><span class="p">(</span><span class="mf">4.4</span><span class="p">)</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setDefrostControl</span><span class="p">(</span><span class="s1">&#39;OnDemand&#39;</span><span class="p">)</span>
+
+        <span class="n">def_eir_f_of_temp</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CurveBiquadratic</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> Defrost EIR Func of Temp Curve&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">coil_name</span><span class="p">))</span>
+        <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient1Constant</span><span class="p">(</span><span class="mf">0.297145</span><span class="p">)</span>
+        <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient2x</span><span class="p">(</span><span class="mf">0.0430933</span><span class="p">)</span>
+        <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient3xPOW2</span><span class="p">(</span><span class="o">-</span><span class="mf">0.000748766</span><span class="p">)</span>
+        <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient4y</span><span class="p">(</span><span class="mf">0.00597727</span><span class="p">)</span>
+        <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient5yPOW2</span><span class="p">(</span><span class="mf">0.000482112</span><span class="p">)</span>
+        <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setCoefficient6xTIMESY</span><span class="p">(</span><span class="o">-</span><span class="mf">0.000956448</span><span class="p">)</span>
+        <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setMinimumValueofx</span><span class="p">(</span><span class="o">-</span><span class="mf">23.33333</span><span class="p">)</span>
+        <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setMaximumValueofx</span><span class="p">(</span><span class="mf">29.44444</span><span class="p">)</span>
+        <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setMinimumValueofy</span><span class="p">(</span><span class="o">-</span><span class="mf">23.33333</span><span class="p">)</span>
+        <span class="n">def_eir_f_of_temp</span><span class="o">.</span><span class="n">setMaximumValueofy</span><span class="p">(</span><span class="mf">29.44444</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">htg_cap_f_of_temp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setTotalHeatingCapacityFunctionofTemperatureCurve</span><span class="p">(</span><span class="n">htg_cap_f_of_temp</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">htg_cap_f_of_flow</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setTotalHeatingCapacityFunctionofFlowFractionCurve</span><span class="p">(</span><span class="n">htg_cap_f_of_flow</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">htg_energy_input_ratio_f_of_temp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setEnergyInputRatioFunctionofTemperatureCurve</span><span class="p">(</span>
+            <span class="n">htg_energy_input_ratio_f_of_temp</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">htg_energy_input_ratio_f_of_flow</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setEnergyInputRatioFunctionofFlowFractionCurve</span><span class="p">(</span>
+            <span class="n">htg_energy_input_ratio_f_of_flow</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">htg_part_load_fraction</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setPartLoadFractionCorrelationCurve</span><span class="p">(</span><span class="n">htg_part_load_fraction</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">def_eir_f_of_temp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">setDefrostEnergyInputRatioFunctionofTemperatureCurve</span><span class="p">(</span><span class="n">def_eir_f_of_temp</span><span class="p">)</span>
+    <span class="n">htg_coil</span><span class="o">.</span><span class="n">setDefrostStrategy</span><span class="p">(</span><span class="n">defrost_strategy</span><span class="p">)</span>
+    <span class="n">htg_coil</span><span class="o">.</span><span class="n">setDefrostControl</span><span class="p">(</span><span class="s1">&#39;OnDemand&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">htg_coil</span></div>
+
+
+
+<div class="viewcode-block" id="create_coil_heating_water_to_air_heat_pump_equation_fit">
+<a class="viewcode-back" href="../../../../honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_water_to_air_heat_pump_equation_fit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_coil_heating_water_to_air_heat_pump_equation_fit</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span> <span class="n">plant_loop</span><span class="p">,</span> <span class="n">air_loop_node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Water-to-Air HP Htg Coil&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cop</span><span class="o">=</span><span class="mf">4.2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prototype CoilHeatingWaterToAirHeatPumpEquationFit object.</span>
+
+<span class="sd">    Enters in default curves for coil by type of coil.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: [OpenStudio::Model::Model] OpenStudio model object.</span>
+<span class="sd">        plant_loop: [&lt;OpenStudio::Model::PlantLoop&gt;] the coil will be placed on</span>
+<span class="sd">            the demand side of this plant loop.</span>
+<span class="sd">        air_loop_node: [&lt;OpenStudio::Model::Node&gt;] the coil will be placed on</span>
+<span class="sd">            this node of the air loop.</span>
+<span class="sd">        name: [String] the name of the system, or None in which case it will</span>
+<span class="sd">            be defaulted.</span>
+<span class="sd">        type: [String] the type of coil to reference the correct curve set.</span>
+<span class="sd">        cop: [Double] rated heating coefficient of performance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">htg_coil</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CoilHeatingWaterToAirHeatPumpEquationFit</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="c1"># add to air loop if specified</span>
+    <span class="k">if</span> <span class="n">air_loop_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">htg_coil</span><span class="o">.</span><span class="n">addToNode</span><span class="p">(</span><span class="n">air_loop_node</span><span class="p">)</span>
+
+    <span class="c1"># set coil name</span>
+    <span class="n">htg_coil</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="c1"># add to plant loop</span>
+    <span class="k">if</span> <span class="n">plant_loop</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No plant loop supplied for heating coil&#39;</span><span class="p">)</span>
+    <span class="n">plant_loop</span><span class="o">.</span><span class="n">addDemandBranchForComponent</span><span class="p">(</span><span class="n">htg_coil</span><span class="p">)</span>
+
+    <span class="c1"># set coil cop</span>
+    <span class="n">cop</span> <span class="o">=</span> <span class="mf">4.2</span> <span class="k">if</span> <span class="n">cop</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">cop</span>
+    <span class="n">htg_coil</span><span class="o">.</span><span class="n">setRatedHeatingCoefficientofPerformance</span><span class="p">(</span><span class="n">cop</span><span class="p">)</span>
+
+    <span class="c1"># curve sets</span>
+    <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;OS default&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>  <span class="c1"># use OS default curves</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># default curve set</span>
+        <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">version</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">openstudio</span><span class="o">.</span><span class="n">VersionString</span><span class="p">(</span><span class="s1">&#39;3.2.0&#39;</span><span class="p">):</span>
+            <span class="n">htg_coil</span><span class="o">.</span><span class="n">setHeatingCapacityCoefficient1</span><span class="p">(</span><span class="mf">0.237847462869254</span><span class="p">)</span>
+            <span class="n">htg_coil</span><span class="o">.</span><span class="n">setHeatingCapacityCoefficient2</span><span class="p">(</span><span class="o">-</span><span class="mf">3.35823796081626</span><span class="p">)</span>
+            <span class="n">htg_coil</span><span class="o">.</span><span class="n">setHeatingCapacityCoefficient3</span><span class="p">(</span><span class="mf">3.80640467406376</span><span class="p">)</span>
+            <span class="n">htg_coil</span><span class="o">.</span><span class="n">setHeatingCapacityCoefficient4</span><span class="p">(</span><span class="mf">0.179200417311554</span><span class="p">)</span>
+            <span class="n">htg_coil</span><span class="o">.</span><span class="n">setHeatingCapacityCoefficient5</span><span class="p">(</span><span class="mf">0.12860719846082</span><span class="p">)</span>
+            <span class="n">htg_coil</span><span class="o">.</span><span class="n">setHeatingPowerConsumptionCoefficient1</span><span class="p">(</span><span class="o">-</span><span class="mf">3.79175529243238</span><span class="p">)</span>
+            <span class="n">htg_coil</span><span class="o">.</span><span class="n">setHeatingPowerConsumptionCoefficient2</span><span class="p">(</span><span class="mf">3.38799239505527</span><span class="p">)</span>
+            <span class="n">htg_coil</span><span class="o">.</span><span class="n">setHeatingPowerConsumptionCoefficient3</span><span class="p">(</span><span class="mf">1.5022612076303</span><span class="p">)</span>
+            <span class="n">htg_coil</span><span class="o">.</span><span class="n">setHeatingPowerConsumptionCoefficient4</span><span class="p">(</span><span class="o">-</span><span class="mf">0.177653510577989</span><span class="p">)</span>
+            <span class="n">htg_coil</span><span class="o">.</span><span class="n">setHeatingPowerConsumptionCoefficient5</span><span class="p">(</span><span class="o">-</span><span class="mf">0.103079864171839</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hcc_name</span> <span class="o">=</span> <span class="s1">&#39;Water to Air Heat Pump Heating Capacity Curve&#39;</span>
+            <span class="n">hcc</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">getCurveByName</span><span class="p">(</span><span class="n">hcc_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">hcc</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+                <span class="n">heating_capacity_curve</span> <span class="o">=</span> <span class="n">hcc</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+                <span class="n">heating_capacity_curve</span> <span class="o">=</span> <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">to_CurveQuadLinear</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">heating_capacity_curve</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CurveQuadLinear</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="n">hcc_name</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setCoefficient1Constant</span><span class="p">(</span><span class="mf">0.237847462869254</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setCoefficient2w</span><span class="p">(</span><span class="o">-</span><span class="mf">3.35823796081626</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setCoefficient3x</span><span class="p">(</span><span class="mf">3.80640467406376</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setCoefficient4y</span><span class="p">(</span><span class="mf">0.179200417311554</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setCoefficient5z</span><span class="p">(</span><span class="mf">0.12860719846082</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setMinimumValueofw</span><span class="p">(</span><span class="o">-</span><span class="mi">100</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setMaximumValueofw</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setMinimumValueofx</span><span class="p">(</span><span class="o">-</span><span class="mi">100</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setMaximumValueofx</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setMinimumValueofy</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setMaximumValueofy</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setMinimumValueofz</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">heating_capacity_curve</span><span class="o">.</span><span class="n">setMaximumValueofz</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+            <span class="n">htg_coil</span><span class="o">.</span><span class="n">setHeatingCapacityCurve</span><span class="p">(</span><span class="n">heating_capacity_curve</span><span class="p">)</span>
+
+            <span class="n">pcc_name</span> <span class="o">=</span> <span class="s1">&#39;Water to Air Heat Pump Heating Power Consumption Curve&#39;</span>
+            <span class="n">pcc</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">getCurveByName</span><span class="p">(</span><span class="n">pcc_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pcc</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+                <span class="n">heating_power_consumption_curve</span> <span class="o">=</span> <span class="n">pcc</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+                <span class="n">heating_power_consumption_curve</span> <span class="o">=</span> \
+                    <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">to_CurveQuadLinear</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">heating_power_consumption_curve</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CurveQuadLinear</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="n">pcc_name</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setCoefficient1Constant</span><span class="p">(</span><span class="o">-</span><span class="mf">3.79175529243238</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setCoefficient2w</span><span class="p">(</span><span class="mf">3.38799239505527</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setCoefficient3x</span><span class="p">(</span><span class="mf">1.5022612076303</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setCoefficient4y</span><span class="p">(</span><span class="o">-</span><span class="mf">0.177653510577989</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setCoefficient5z</span><span class="p">(</span><span class="o">-</span><span class="mf">0.103079864171839</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setMinimumValueofw</span><span class="p">(</span><span class="o">-</span><span class="mi">100</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setMaximumValueofw</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setMinimumValueofx</span><span class="p">(</span><span class="o">-</span><span class="mi">100</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setMaximumValueofx</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setMinimumValueofy</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setMaximumValueofy</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setMinimumValueofz</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">heating_power_consumption_curve</span><span class="o">.</span><span class="n">setMaximumValueofz</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+            <span class="n">htg_coil</span><span class="o">.</span><span class="n">setHeatingPowerConsumptionCurve</span><span class="p">(</span><span class="n">heating_power_consumption_curve</span><span class="p">)</span>
+
+        <span class="c1"># part load fraction correlation curve added as a required curve in OS v3.7.0</span>
+        <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">version</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">openstudio</span><span class="o">.</span><span class="n">VersionString</span><span class="p">(</span><span class="s1">&#39;3.6.1&#39;</span><span class="p">):</span>
+            <span class="n">plfcc_name</span> <span class="o">=</span> <span class="s1">&#39;Water to Air Heat Pump Part Load Fraction Correlation Curve&#39;</span>
+            <span class="n">plfcc</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">getCurveByName</span><span class="p">(</span><span class="n">plfcc_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">plfcc</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+                <span class="n">part_load_correlation_curve</span> <span class="o">=</span> <span class="n">plfcc</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+                <span class="n">part_load_correlation_curve</span> <span class="o">=</span> \
+                    <span class="n">part_load_correlation_curve</span><span class="o">.</span><span class="n">to_CurveLinear</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">part_load_correlation_curve</span> <span class="o">=</span> <span class="n">openstudio_model</span><span class="o">.</span><span class="n">CurveLinear</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+                <span class="n">part_load_correlation_curve</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="n">plfcc_name</span><span class="p">)</span>
+                <span class="n">part_load_correlation_curve</span><span class="o">.</span><span class="n">setCoefficient1Constant</span><span class="p">(</span><span class="mf">0.833746458696111</span><span class="p">)</span>
+                <span class="n">part_load_correlation_curve</span><span class="o">.</span><span class="n">setCoefficient2x</span><span class="p">(</span><span class="mf">0.166253541303889</span><span class="p">)</span>
+                <span class="n">part_load_correlation_curve</span><span class="o">.</span><span class="n">setMinimumValueofx</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">part_load_correlation_curve</span><span class="o">.</span><span class="n">setMaximumValueofx</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">part_load_correlation_curve</span><span class="o">.</span><span class="n">setMinimumCurveOutput</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">part_load_correlation_curve</span><span class="o">.</span><span class="n">setMaximumCurveOutput</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">htg_coil</span><span class="o">.</span><span class="n">setPartLoadFractionCorrelationCurve</span><span class="p">(</span><span class="n">part_load_correlation_curve</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">htg_coil</span></div>
+
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2025, Ladybug Tools.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.0.2.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
