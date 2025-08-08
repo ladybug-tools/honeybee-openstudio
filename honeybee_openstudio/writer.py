@@ -352,7 +352,7 @@ def face_to_openstudio(face, os_model, adj_map=None, ignore_complex_sub_faces=Tr
             srf_prop = OSSurfacePropertyOtherSideCoefficients(os_model)
             srf_prop.setName('{}_OtherTemp'.format(face.identifier))
             htc = fbc.heat_transfer_coefficient
-            os_face.setCombinedConvectiveRadiativeFilmCoefficient(htc)
+            srf_prop.setCombinedConvectiveRadiativeFilmCoefficient(htc)
             if fbc.temperature == autocalculate:
                 srf_prop.setConstantTemperatureCoefficient(0)
                 srf_prop.setExternalDryBulbTemperatureCoefficient(1)
