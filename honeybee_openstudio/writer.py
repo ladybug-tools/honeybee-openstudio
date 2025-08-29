@@ -6,10 +6,11 @@ import os
 import tempfile
 import json
 import subprocess
+import platform
 import xml.etree.ElementTree as ET
 
 from ladybug_geometry.geometry3d import Face3D
-from honeybee.typing import clean_ep_string
+from honeybee.typing import clean_ep_string, clean_string
 from honeybee.altnumber import autocalculate
 from honeybee.facetype import RoofCeiling, Floor, AirBoundary
 from honeybee.boundarycondition import Outdoors, Surface
@@ -1282,7 +1283,7 @@ def model_to_idf(
 def model_to_gbxml(
     model, triangulate_non_planar_orphaned=True, triangulate_subfaces=False,
     full_geometry=False, interior_face_type=None, ground_face_type=None,
-    print_progress=False
+    program_name=None, program_version=None, print_progress=False
 ):
     """Translate a Honeybee Model to gbXML string using OpenStudio SDK translators.
 
@@ -1307,6 +1308,16 @@ def model_to_gbxml(
         ground_face_type: Text string for the type to be used for all ground-contact
             floor faces. If unspecified, the ground types will be left as they are.
             Choose from the following. UndergroundSlab, SlabOnGrade, RaisedFloor.
+        program_name: Optional text to set the name of the software that will
+            appear under the programId and ProductName tags of the DocumentHistory
+            section. This can be set things like "Ladybug Tools" or "Pollination"
+            or some other software in which this gbXML export capability is being
+            run. If None, the "OpenStudio" will be used. (Default: None).
+        program_version: Optional text to set the version of the software that
+            will appear under the DocumentHistory section. If None, and the
+            program_name is also unspecified, only the version of OpenStudio will
+            appear. Otherwise, this will default to "0.0.0" given that the version
+            field is required. (Default: None).
         print_progress: Set to True to have the progress of the translation
             printed as it is completed. (Default: False).
     """
@@ -1350,6 +1361,30 @@ def model_to_gbxml(
     else:
         gbxml_translator = openstudio.gbxml.GbXMLForwardTranslator()
     gbxml_str = gbxml_translator.modelToGbXMLString(os_model)
+
+    # set the program_name in the DocumentHistory if specified
+    if program_name is not None:
+        split_lines = gbxml_str.split('\n')
+        hist_start_i, hist_end_i = None, None
+        for i, line in enumerate(split_lines):
+            if '<DocumentHistory>' in line:
+                hist_start_i = i
+            elif '</DocumentHistory>' in line:
+                hist_end_i = i
+        d_hst = split_lines[hist_start_i:hist_end_i + 1]
+        for j, line in enumerate(d_hst):
+            if '<CreatedBy programId="openstudio"' in line:
+                prog_id = clean_string(program_name).lower()
+                d_hst[j] = line.replace('openstudio', prog_id)
+                k = j + 1
+                d_hst.insert(k, '    </ProgramInfo>')
+                d_hst.insert(k, '      <Platform>{}</Platform>'.format(platform.system()))
+                version = '0.0.0' if program_version is None else program_version
+                d_hst.insert(k, '      <Version>{}</Version>'.format(version))
+                d_hst.insert(k, '      <ProductName>{}</ProductName>'.format(program_name))
+                d_hst.insert(k, '    <ProgramInfo id="{}">'.format(prog_id))
+        split_lines[hist_start_i:hist_end_i + 1] = d_hst
+        gbxml_str = '\n'.join(split_lines)
 
     # replace all interior floors with the specified type
     if interior_face_type == 'InteriorFloor':

@@ -382,5 +382,7 @@ def test_model_to_gbxml():
 
     gbxml_str = model_to_gbxml(
         model, full_geometry=True, interior_face_type='InteriorFloor',
-        ground_face_type='SlabOnGrade')
+        ground_face_type='SlabOnGrade', program_name='Ladybug Tools')
     assert isinstance(gbxml_str, str)
+    split_str = gbxml_str.split('\n')
+    assert '<CreatedBy programId="ladybug_tools"' in split_str[-17]
