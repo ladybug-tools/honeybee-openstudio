@@ -907,11 +907,11 @@ def model_to_openstudio(
                     try:
                         base_os_face = adj_map['faces'][face.identifier]
                         adj_os_face = adj_map['faces'][adj_id]
+                        base_os_face.setAdjacentSurface(adj_os_face)
                     except KeyError:
                         msg = 'Missing adjacency exists between Face "{}" ' \
                             'and Face "{}."'.format(face.identifier, adj_id)
                         print(msg)
-                    base_os_face.setAdjacentSurface(adj_os_face)
                     # set the adjacency of all sub-faces
                     for sub_face in face.sub_faces:
                         if len(sub_face.geometry) <= 4 or not triangulate_subfaces:
@@ -919,23 +919,23 @@ def model_to_openstudio(
                             try:
                                 os_sub_face = adj_map['sub_faces'][sub_face.identifier]
                                 adj_os_sub_face = adj_map['sub_faces'][adj_id]
+                                os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
                             except KeyError:
                                 msg = 'Missing adjacency exists between subface "{}" ' \
                                     'and subface "{}."'.format(
                                         sub_face.identifier, adj_id)
                                 print(msg)
-                            os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
     for sub_face in tri_sub_faces:
         if isinstance(sub_face.boundary_condition, Surface):
             adj_id = sub_face.boundary_condition.boundary_condition_object
             try:
                 os_sub_face = adj_map['sub_faces'][sub_face.identifier]
                 adj_os_sub_face = adj_map['sub_faces'][adj_id]
+                os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
             except KeyError:
                 msg = 'Missing adjacency exists between subface "{}" ' \
                     'and subface "{}."'.format(sub_face.identifier, adj_id)
                 print(msg)
-            os_sub_face.setAdjacentSubSurface(adj_os_sub_face)
 
     # if simple ventilation is being used, write the relevant objects
     if use_simple_vent:
