@@ -1,11 +1,9 @@
 # honeybee-openstudio
-
-![Honeybee](https://www.ladybug.tools/assets/img/honeybee.png)
-
 [![Build Status](https://github.com/ladybug-tools/honeybee-openstudio/workflows/CI/badge.svg)](https://github.com/ladybug-tools/honeybee-openstudio/actions)
-
 [![Python 3.10](https://img.shields.io/badge/python-3.10-orange.svg)](https://www.python.org/downloads/release/python-3100/)
 [![IronPython](https://img.shields.io/badge/ironpython-2.7-red.svg)](https://github.com/IronLanguages/ironpython2/releases/tag/ipy-2.7.8/)
+
+![Honeybee](https://www.ladybug.tools/assets/img/honeybee.png) ![OpenStudio](https://nrel.github.io/OpenStudio-user-documentation/img/os_thumb.png)
 
 Honeybee extension for translation to/from OpenStudio.
 
