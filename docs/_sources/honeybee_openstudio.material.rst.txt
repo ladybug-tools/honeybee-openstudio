@@ -1,0 +1,7 @@
+honeybee\_openstudio.material module
+====================================
+
+.. automodule:: honeybee_openstudio.material
+   :members:
+   :undoc-members:
+   :show-inheritance:
