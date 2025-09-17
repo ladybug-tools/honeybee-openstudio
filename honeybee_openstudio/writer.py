@@ -1084,11 +1084,14 @@ def model_to_openstudio(
                 cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             result = process.communicate()  # pause script until command is done
             exist_os_model = OSModel.load(os_path(osm_file))
-            if exist_os_model.is_initialized():
+            success_msg = 'Done! HVAC is added to osm file'
+            if exist_os_model.is_initialized() and success_msg in result[0]:
                 os_model = exist_os_model.get()
             else:
+                print(result[1])
+                exception = result[1].split('\n')[-1]
                 msg = 'Failed to apply Detailed HVAC "{}"\n{}\n{}'.format(
-                    hvac_id, result[0], result[1])
+                    hvac_id, result[0], exception)
                 raise ValueError(msg)
             if print_progress:
                 print('  Assigned detailed HVAC: {}'.format(hvac.display_name))
