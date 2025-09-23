@@ -1080,8 +1080,14 @@ def model_to_openstudio(
             osm_file = os.path.join(hvac_trans_dir, '{}.osm'.format(hvac.identifier))
             os_model.save(os_path(osm_file), overwrite=True)
             cmds = [hbe_folders.ironbug_exe, osm_file, spec_file]
-            process = subprocess.Popen(
-                cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            if (sys.version_info < (3, 0)):
+                process = subprocess.Popen(
+                    cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            else:
+                process = subprocess.Popen(
+                    cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    shell=True, text=True
+                )
             result = process.communicate()  # pause script until command is done
             exist_os_model = OSModel.load(os_path(osm_file))
             success_msg = 'Done! HVAC is added to osm file'
