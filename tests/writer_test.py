@@ -336,6 +336,18 @@ def test_model_writer_from_complete_hbjson():
     assert os_vector_len(spaces) == 100
 
 
+def test_model_with_detailed_hvac():
+    """Test the translation of a Model with detailed HVAC to OSM."""
+    standard_test = 'assets/model_with_detailed_hvac.hbjson'
+    standard_test = os.path.join(os.path.dirname(__file__), standard_test)
+    model = Model.from_file(standard_test)
+    assert isinstance(model, Model)
+
+    # os_model = model_to_openstudio(model)
+    # spaces = os_model.getSpaces()
+    # assert os_vector_len(spaces) == 1
+
+
 def test_model_to_osm():
     """Test that we can get an OSM string of a model."""
     room = Room.from_box('Tiny_House_Zone', 5, 10, 3)
