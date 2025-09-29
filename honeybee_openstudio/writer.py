@@ -1096,8 +1096,8 @@ def model_to_openstudio(
             else:
                 print(result[1])
                 exception = result[1].split('\n')[-1]
-                msg = 'Failed to apply Detailed HVAC "{}"\n{}\n{}'.format(
-                    hvac_id, result[0], exception)
+                msg = 'Failed to apply Detailed HVAC "{}[{}]"\n{}\n{}'.format(
+                    hvac.display_name, hvac_id, result[0], exception)
                 raise ValueError(msg)
             if print_progress:
                 print('  Assigned detailed HVAC: {}'.format(hvac.display_name))

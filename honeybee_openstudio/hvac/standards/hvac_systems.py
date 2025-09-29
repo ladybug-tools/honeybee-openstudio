@@ -3759,7 +3759,7 @@ def model_add_low_temp_radiant(
         mat_refl_roof_membrane.setName('Roof Membrane - Highly Reflective')
 
     if include_carpet:
-        carpet_thickness_m = TEMPERATURE.to_unit([carpet_thickness_in / 12.0], 'm', 'ft')[0]
+        carpet_thickness_m = DISTANCE.to_unit([carpet_thickness_in / 12.0], 'm', 'ft')[0]
         conductivity_si = 0.06
         mat_thin_carpet_tile = openstudio_model.StandardOpaqueMaterial(
             model, 'MediumRough', carpet_thickness_m, conductivity_si, 288, 1380)
