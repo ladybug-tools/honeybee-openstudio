@@ -1074,12 +1074,15 @@ def model_to_openstudio(
             'assigned but no Ironbug installation was found.'
         for hvac_id, hvac in detailed_hvac_dict.items():
             hvac_trans_dir = tempfile.gettempdir()
-            spec_file = os.path.join(hvac_trans_dir, '{}.json'.format(hvac.identifier))
+            spec_file_name = '_'.join(hvac.identifier.split())
+            spec_file = os.path.join(hvac_trans_dir, '{}.json'.format(spec_file_name))
             with open(spec_file, 'w') as sf:
                 json.dump(hvac.specification, sf)
-            osm_file = os.path.join(hvac_trans_dir, '{}.osm'.format(hvac.identifier))
+            osm_file = os.path.join(hvac_trans_dir, '{}.osm'.format(spec_file_name))
             os_model.save(os_path(osm_file), overwrite=True)
             cmds = [hbe_folders.ironbug_exe, osm_file, spec_file]
+            if os.name != 'nt':
+                cmds = ' '.join(cmds)
             if (sys.version_info < (3, 0)):
                 process = subprocess.Popen(
                     cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
