@@ -369,6 +369,8 @@ def face_to_openstudio(face, os_model, adj_map=None, ignore_complex_sub_faces=Tr
                 isinstance(face.boundary_condition, (Adiabatic, OtherSideTemperature)):
             construction_id = face.properties.energy.construction.identifier
             os_construction = os_model.getConstructionByName(construction_id)
+            if not os_construction.is_initialized():
+                os_construction = os_model.getConstructionAirBoundaryByName(construction_id)
             if os_construction.is_initialized():
                 os_construction = os_construction.get()
                 os_face.setConstruction(os_construction)
