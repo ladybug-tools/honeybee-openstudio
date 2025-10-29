@@ -1,0 +1,40 @@
+honeybee\_openstudio package
+============================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   honeybee_openstudio.cli
+   honeybee_openstudio.hvac
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   honeybee_openstudio.construction
+   honeybee_openstudio.constructionset
+   honeybee_openstudio.generator
+   honeybee_openstudio.internalmass
+   honeybee_openstudio.load
+   honeybee_openstudio.material
+   honeybee_openstudio.openstudio
+   honeybee_openstudio.programtype
+   honeybee_openstudio.reader
+   honeybee_openstudio.schedule
+   honeybee_openstudio.shw
+   honeybee_openstudio.simulation
+   honeybee_openstudio.ventcool
+   honeybee_openstudio.writer
+
+Module contents
+---------------
+
+.. automodule:: honeybee_openstudio
+   :members:
+   :undoc-members:
+   :show-inheritance:
