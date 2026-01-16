@@ -1011,13 +1011,38 @@ def model_to_openstudio(
                     vent_control, opening_factors, operable_sub_fs,
                     zone_node, os_model, room.identifier)
                 prog_manager.addProgram(os_ems_program)
-
     if print_progress:
         print('Assigned adjacencies to all Rooms')
-    if print_progress:
-        print('Translating Systems')
+
+    # add the orphaned objects
+    shade_count, shades_to_group = 0, []
+    for face in model.orphaned_faces:
+        shades_to_group.append(face_to_openstudio(face, os_model))
+        shade_count += 1
+    for aperture in model.orphaned_apertures:
+        shades_to_group.append(aperture_to_openstudio(aperture, os_model))
+        shade_count += 1
+    for door in model.orphaned_doors:
+        shades_to_group.append(door_to_openstudio(door, os_model))
+        shade_count += 1
+    for shade in model.orphaned_shades:
+        shades_to_group.append(shade_to_openstudio(shade, os_model))
+        shade_count += 1
+    for shade_mesh in model.shade_meshes:
+        shade_mesh_to_openstudio(shade_mesh, os_model)
+        shade_count += 1
+    if len(shades_to_group) != 0:
+        shd_group = OSShadingSurfaceGroup(os_model)
+        shd_group.setName('Orphaned Shades')
+        shd_group.setShadingSurfaceType('Building')
+        for os_shade in shades_to_group:
+            os_shade.setShadingSurfaceGroup(shd_group)
+    if print_progress and shade_count != 0:
+        print('Translated {} Shades'.format(shade_count))
 
     # write any ventilation fan definitions
+    if print_progress:
+        print('Translating Systems')
     for room in model.rooms:
         for fan in room.properties.energy.fans:
             os_fan = ventilation_fan_to_openstudio(fan, os_model)
@@ -1159,32 +1184,6 @@ def model_to_openstudio(
             ems_program = window_dynamic_ems_program_to_openstudio(
                 con, dyn_dict[con.identifier], os_model)
             os_prog_manager.addProgram(ems_program)
-
-    # add the orphaned objects
-    shade_count, shades_to_group = 0, []
-    for face in model.orphaned_faces:
-        shades_to_group.append(face_to_openstudio(face, os_model))
-        shade_count += 1
-    for aperture in model.orphaned_apertures:
-        shades_to_group.append(aperture_to_openstudio(aperture, os_model))
-        shade_count += 1
-    for door in model.orphaned_doors:
-        shades_to_group.append(door_to_openstudio(door, os_model))
-        shade_count += 1
-    for shade in model.orphaned_shades:
-        shades_to_group.append(shade_to_openstudio(shade, os_model))
-        shade_count += 1
-    for shade_mesh in model.shade_meshes:
-        shade_mesh_to_openstudio(shade_mesh, os_model)
-        shade_count += 1
-    if len(shades_to_group) != 0:
-        shd_group = OSShadingSurfaceGroup(os_model)
-        shd_group.setName('Orphaned Shades')
-        shd_group.setShadingSurfaceType('Building')
-        for os_shade in shades_to_group:
-            os_shade.setShadingSurfaceGroup(shd_group)
-    if print_progress and shade_count != 0:
-        print('Translated {} Shades'.format(shade_count))
 
     # write the electric load center is any generator objects are in the model
     os_pv_gens = os_model.getGeneratorPVWattss()
