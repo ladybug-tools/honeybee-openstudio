@@ -1,2 +1,2 @@
-honeybee-energy>=1.112.4
+honeybee-energy>=1.116.106
 openstudio==3.10.0

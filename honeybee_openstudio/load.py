@@ -245,6 +245,10 @@ def ventilation_to_openstudio(ventilation, os_model):
     os_vent.setOutdoorAirFlowRate(ventilation.flow_per_zone)
     os_vent.setOutdoorAirFlowperPerson(ventilation.flow_per_person)
     os_vent.setOutdoorAirFlowperFloorArea(ventilation.flow_per_area)
+    if ventilation.method == 'Max':
+        os_vent.setOutdoorAirMethod('Maximum')
+    else:
+        os_vent.setOutdoorAirMethod('Sum')
     # set the schedule if it exists
     if ventilation.schedule is not None:
         vent_sch = os_model.getScheduleByName(ventilation.schedule.identifier)
@@ -517,6 +521,9 @@ def ventilation_from_openstudio(os_ventilation, schedules=None):
     ventilation.flow_per_zone = os_ventilation.outdoorAirFlowRate()
     ventilation.flow_per_person = os_ventilation.outdoorAirFlowperPerson()
     ventilation.flow_per_area = os_ventilation.outdoorAirFlowperFloorArea()
+    method = os_ventilation.outdoorAirMethod()
+    if method.lower() == 'maximum':
+        ventilation.method = 'Max'
     if schedules is not None and \
             os_ventilation.outdoorAirFlowRateFractionSchedule().is_initialized():
         schedule = os_ventilation.outdoorAirFlowRateFractionSchedule().get()
