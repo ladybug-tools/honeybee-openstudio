@@ -26,9 +26,9 @@ from honeybee_openstudio.openstudio import OSConstruction, OSMaterialVector, \
 """____________TRANSLATORS TO OPENSTUDIO____________"""
 
 
-def standard_construction_to_openstudio(construction, os_model):
+def standard_construction_to_openstudio(construction, os_model, base_os_con=None):
     """Convert Honeybee OpaqueConstruction or WindowConstruction to OpenStudio."""
-    os_construction = OSConstruction(os_model)
+    os_construction = OSConstruction(os_model) if base_os_con is None else base_os_con
     os_construction.setName(construction.identifier)
     if construction._display_name is not None:
         os_construction.setDisplayName(construction.display_name)
@@ -107,11 +107,13 @@ def window_dynamic_construction_to_openstudio(construction, os_model):
     for i, con in enumerate(construction.constructions):
         con_dup = con.duplicate()
         con_dup.identifier = '{}State{}'.format(con.identifier, i)
-        os_con = standard_construction_to_openstudio(con, os_model)
-        os_constructions.append(os_con)
-        os_con_i = OSEnergyManagementSystemConstructionIndexVariable(os_model, os_con)
+        os_con_i = OSEnergyManagementSystemConstructionIndexVariable(os_model)
+        os_con = os_con_i.constructionObject().to_Construction().get()
+        os_con = standard_construction_to_openstudio(con_dup, os_model, os_con)
+        os_con_i.setConstructionObject(os_con)
         state_id = 'State{}{}'.format(i, re.sub('[^A-Za-z0-9]', '', con.identifier))
         os_con_i.setName(state_id)
+        os_constructions.append(os_con)
     # set up the EMS sensor for the schedule value
     sensor_id = 'Sensor{}'.format(re.sub('[^A-Za-z0-9]', '', construction.identifier))
     schedule_id = construction.schedule.identifier
