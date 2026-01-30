@@ -10,6 +10,7 @@ from honeybee.aperture import Aperture
 from honeybee.door import Door
 from honeybee.shade import Shade
 from honeybee.shademesh import ShadeMesh
+from honeybee_energy.config import folders
 
 from honeybee_openstudio.openstudio import OSModel, os_vector_len
 from honeybee_openstudio.writer import shade_mesh_to_openstudio, shade_to_openstudio, \
@@ -300,6 +301,15 @@ def test_model_writer_dynamic_constructions():
     assert os_vector_len(ems_progs) == 1
 
 
+def test_model_writer_dynamic_constructions_2():
+    """Test translating a HBJSON to an OpenStudio string."""
+    standard_test = 'assets/dynamic_con_shoe_box.hbjson'
+    standard_test = os.path.join(os.path.dirname(__file__), standard_test)
+    model = Model.from_file(standard_test)
+
+    model_to_osm(model)
+
+
 def test_model_writer_from_hbjson_with_zones():
     """Test translating a HBJSON to an OpenStudio string."""
     standard_test = 'assets/single_family_with_zones.hbjson'
@@ -343,9 +353,8 @@ def test_model_with_detailed_hvac():
     model = Model.from_file(standard_test)
     assert isinstance(model, Model)
 
-    # os_model = model_to_openstudio(model)
-    # spaces = os_model.getSpaces()
-    # assert os_vector_len(spaces) == 1
+    if folders.ironbug_exe is not None:
+        model_to_openstudio(model)
 
 
 def test_model_to_osm():

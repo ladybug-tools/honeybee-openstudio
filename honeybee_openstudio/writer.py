@@ -1190,7 +1190,6 @@ def model_to_openstudio(
     if os_vector_len(os_pv_gens) != 0:
         load_center = model.properties.energy.electric_load_center
         electric_load_center_to_openstudio(load_center, os_pv_gens, os_model)
-
     # return the Model object
     return os_model
 
