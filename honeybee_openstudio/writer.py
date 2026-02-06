@@ -1295,7 +1295,9 @@ def model_to_idf(
 def model_to_gbxml(
     model, triangulate_non_planar_orphaned=True, triangulate_subfaces=False,
     full_geometry=False, interior_face_type=None, ground_face_type=None,
-    program_name=None, program_version=None, print_progress=False
+    reset_geometry_ids=False, reset_resource_ids=False,
+    program_name=None, program_version=None, gbxml_schema_version=None,
+    print_progress=False
 ):
     """Translate a Honeybee Model to gbXML string using OpenStudio SDK translators.
 
@@ -1320,6 +1322,22 @@ def model_to_gbxml(
         ground_face_type: Text string for the type to be used for all ground-contact
             floor faces. If unspecified, the ground types will be left as they are.
             Choose from the following. UndergroundSlab, SlabOnGrade, RaisedFloor.
+        reset_geometry_ids: Boolean to note whether a cleaned version of geometry
+            display names should be used for the IDs that appear within
+            the gbXML file. Using this flag will affect all Rooms, Faces,
+            Apertures, Doors, and Shades. It will generally result in more
+            read-able IDs in the gbXML file but this means that it will not be
+            easy to map results back to the input Model. Cases of duplicate IDs
+            resulting from non-unique names will be resolved by adding integers
+            to the ends of the new IDs that are derived from the name. (Default: False).
+        reset_resource_ids: Boolean to note whether a cleaned version of all
+            resource display names should be used for the IDs that appear within
+            the gbXML file. Using this flag will affect all Materials,
+            Constructions, ConstructionSets, Schedules, Loads, and ProgramTypes.
+            It will generally result in more read-able names for the resources
+            in the gbXML file. Cases of duplicate IDs resulting from non-unique
+            names will be resolved by adding integers to the ends of the new
+            IDs that are derived from the name. (Default: False).
         program_name: Optional text to set the name of the software that will
             appear under the programId and ProductName tags of the DocumentHistory
             section. This can be set things like "Ladybug Tools" or "Pollination"
@@ -1330,6 +1348,9 @@ def model_to_gbxml(
             program_name is also unspecified, only the version of OpenStudio will
             appear. Otherwise, this will default to "0.0.0" given that the version
             field is required. (Default: None).
+        gbxml_schema_version: Optional text to set the version of the gbXML schema
+            that is specified in the XML header (eg. "5.00"). If None, this
+            will default to the latest version.
         print_progress: Set to True to have the progress of the translation
             printed as it is completed. (Default: False).
     """
@@ -1360,6 +1381,12 @@ def model_to_gbxml(
             room.properties.energy.assign_ideal_air_equivalent()
         v_control.vent_control_type = 'SingleZone'
 
+    # reset the IDs to be derived from the display_names if requested
+    if reset_geometry_ids:
+        model.reset_ids()
+    if reset_resource_ids:
+        model.properties.energy.reset_resource_ids()
+
     # translate the Honeybee Model to an OpenStudio Model
     os_model = model_to_openstudio(
         model, triangulate_non_planar_orphaned=triangulate_non_planar_orphaned,
@@ -1375,6 +1402,7 @@ def model_to_gbxml(
     gbxml_str = gbxml_translator.modelToGbXMLString(os_model)
 
     # set the program_name in the DocumentHistory if specified
+    split_lines = None
     if program_name is not None:
         split_lines = gbxml_str.split('\n')
         hist_start_i, hist_end_i = None, None
@@ -1397,6 +1425,27 @@ def model_to_gbxml(
                 d_hst.insert(k, '    <ProgramInfo id="{}">'.format(prog_id))
         split_lines[hist_start_i:hist_end_i + 1] = d_hst
         gbxml_str = '\n'.join(split_lines)
+
+    # set the gbXML schema version in the header if specified
+    SCHEMA_VERSIONS = ('0.35', '0.36', '0.37', '5.00', '5.01',
+                       '5.10', '5.11', '5.12', '6.00', '6.01', '7.03')
+    now_ver = SCHEMA_VERSIONS[-1]
+    if gbxml_schema_version is not None and gbxml_schema_version != now_ver:
+        if gbxml_schema_version not in SCHEMA_VERSIONS:
+            if print_progress:
+                print(
+                    'The specified gbXML schema version is not recognized. '
+                    'Defaulting to {}. Please choose '
+                    'from the following: {}'.format(now_ver, ', '.join(SCHEMA_VERSIONS))
+                )
+        else:
+            split_lines = gbxml_str.split('\n') if split_lines is None else split_lines
+            template = 'http://gbxml.org/schema/{}/GreenBuildingXML_Ver{}.xsd'
+            base_ver = template.format(now_ver.replace('.', '-'), now_ver)
+            new_ver = template.format(gbxml_schema_version.replace('.', '-'),
+                                      gbxml_schema_version)
+            split_lines[1] = split_lines[1].replace(base_ver, new_ver)
+            gbxml_str = '\n'.join(split_lines)
 
     # replace all interior floors with the specified type
     if interior_face_type == 'InteriorFloor':
@@ -1444,7 +1493,10 @@ def model_to_gbxml(
                 shell_element = ET.Element('ShellGeometry')
                 shell_element.set('id', '{}Shell'.format(room_id))
                 shell_geo_element = ET.SubElement(shell_element, 'ClosedShell')
-                hb_room = room_dict[room_id[:-6]]  # remove '_Space' from the end
+                original_id = room_id[:-6]  # remove '_Space' from the end
+                if original_id.startswith('id_'):
+                    original_id = original_id[3:]  # remove 'id_' from the beginning
+                hb_room = room_dict[original_id]  
                 for face in hb_room:
                     face_xml, face_geo_xml = _face_to_gbxml_geo(face, surface_set)
                     if face_xml is not None:
