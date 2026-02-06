@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>honeybee_openstudio.load module &#8212; honeybee-openstudio  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=0bf093e7" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=e6365d57" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="honeybee_openstudio.material module" href="honeybee_openstudio.material.html" />
+    <link rel="prev" title="honeybee_openstudio.internalmass module" href="honeybee_openstudio.internalmass.html" />
+<link rel="icon" type="image/x-icon" href="https://github.com/ladybug-tools/artwork/raw/refs/heads/master/icons_bugs/ico/honeybee.ico">
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-inverse navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          honeybee-openstudio</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="cli/index.html">CLI Docs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cli/index.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli/index.html#commands">Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cli/translate.html">translate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="cli/translate.html#honeybee-openstudio-translate">honeybee-openstudio translate</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="cli/translate.html#honeybee-openstudio-translate-append-to-osm">append-to-osm</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cli/translate.html#honeybee-openstudio-translate-model-to-osm">model-to-osm</a></li>
+<li class="toctree-l5"><a class="reference internal" href="cli/translate.html#honeybee-openstudio-translate-osm-to-idf">osm-to-idf</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="honeybee_openstudio.html">honeybee_openstudio package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="honeybee_openstudio.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.cli.html">honeybee_openstudio.cli package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.cli.html#submodules">Submodules</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="honeybee_openstudio.cli.translate.html">honeybee_openstudio.cli.translate module</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="honeybee_openstudio.cli.translate.html#honeybee_openstudio.cli.translate.append_to_osm"><code class="docutils literal notranslate"><span class="pre">append_to_osm()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="honeybee_openstudio.cli.translate.html#honeybee_openstudio.cli.translate.model_to_osm"><code class="docutils literal notranslate"><span class="pre">model_to_osm()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="honeybee_openstudio.cli.translate.html#honeybee_openstudio.cli.translate.osm_to_idf"><code class="docutils literal notranslate"><span class="pre">osm_to_idf()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.cli.html#module-honeybee_openstudio.cli">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.hvac.html">honeybee_openstudio.hvac package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.hvac.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="honeybee_openstudio.hvac.standards.html">honeybee_openstudio.hvac.standards package</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="honeybee_openstudio.hvac.standards.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.data.html">honeybee_openstudio.hvac.standards.data package</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.data.html#module-honeybee_openstudio.hvac.standards.data">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="honeybee_openstudio.hvac.standards.html#submodules">Submodules</a><ul>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.air_conditioner_variable_refrigerant_flow.html">honeybee_openstudio.hvac.standards.air_conditioner_variable_refrigerant_flow module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.air_conditioner_variable_refrigerant_flow.html#honeybee_openstudio.hvac.standards.air_conditioner_variable_refrigerant_flow.create_air_conditioner_variable_refrigerant_flow"><code class="docutils literal notranslate"><span class="pre">create_air_conditioner_variable_refrigerant_flow()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.boiler_hot_water.html">honeybee_openstudio.hvac.standards.boiler_hot_water module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.boiler_hot_water.html#honeybee_openstudio.hvac.standards.boiler_hot_water.create_boiler_hot_water"><code class="docutils literal notranslate"><span class="pre">create_boiler_hot_water()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.central_air_source_heat_pump.html">honeybee_openstudio.hvac.standards.central_air_source_heat_pump module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.central_air_source_heat_pump.html#honeybee_openstudio.hvac.standards.central_air_source_heat_pump.create_central_air_source_heat_pump"><code class="docutils literal notranslate"><span class="pre">create_central_air_source_heat_pump()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.coil_cooling.html">honeybee_openstudio.hvac.standards.coil_cooling module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.coil_cooling.html#honeybee_openstudio.hvac.standards.coil_cooling.create_coil_cooling_dx_single_speed"><code class="docutils literal notranslate"><span class="pre">create_coil_cooling_dx_single_speed()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.coil_cooling.html#honeybee_openstudio.hvac.standards.coil_cooling.create_coil_cooling_dx_two_speed"><code class="docutils literal notranslate"><span class="pre">create_coil_cooling_dx_two_speed()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.coil_cooling.html#honeybee_openstudio.hvac.standards.coil_cooling.create_coil_cooling_water"><code class="docutils literal notranslate"><span class="pre">create_coil_cooling_water()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.coil_cooling.html#honeybee_openstudio.hvac.standards.coil_cooling.create_coil_cooling_water_to_air_heat_pump_equation_fit"><code class="docutils literal notranslate"><span class="pre">create_coil_cooling_water_to_air_heat_pump_equation_fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.coil_heating.html">honeybee_openstudio.hvac.standards.coil_heating module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_dx_single_speed"><code class="docutils literal notranslate"><span class="pre">create_coil_heating_dx_single_speed()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_electric"><code class="docutils literal notranslate"><span class="pre">create_coil_heating_electric()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_gas"><code class="docutils literal notranslate"><span class="pre">create_coil_heating_gas()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_water"><code class="docutils literal notranslate"><span class="pre">create_coil_heating_water()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.coil_heating.html#honeybee_openstudio.hvac.standards.coil_heating.create_coil_heating_water_to_air_heat_pump_equation_fit"><code class="docutils literal notranslate"><span class="pre">create_coil_heating_water_to_air_heat_pump_equation_fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.cooling_tower.html">honeybee_openstudio.hvac.standards.cooling_tower module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.cooling_tower.html#honeybee_openstudio.hvac.standards.cooling_tower.prototype_apply_condenser_water_temperatures"><code class="docutils literal notranslate"><span class="pre">prototype_apply_condenser_water_temperatures()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.cooling_tower.html#honeybee_openstudio.hvac.standards.cooling_tower.prototype_condenser_water_temperatures"><code class="docutils literal notranslate"><span class="pre">prototype_condenser_water_temperatures()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.fan.html">honeybee_openstudio.hvac.standards.fan module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.create_fan_by_name"><code class="docutils literal notranslate"><span class="pre">create_fan_by_name()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.create_fan_constant_volume_from_json"><code class="docutils literal notranslate"><span class="pre">create_fan_constant_volume_from_json()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.create_fan_on_off_from_json"><code class="docutils literal notranslate"><span class="pre">create_fan_on_off_from_json()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.create_fan_variable_volume_from_json"><code class="docutils literal notranslate"><span class="pre">create_fan_variable_volume_from_json()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.create_fan_zone_exhaust_from_json"><code class="docutils literal notranslate"><span class="pre">create_fan_zone_exhaust_from_json()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.fan_baseline_impeller_efficiency"><code class="docutils literal notranslate"><span class="pre">fan_baseline_impeller_efficiency()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.fan_change_impeller_efficiency"><code class="docutils literal notranslate"><span class="pre">fan_change_impeller_efficiency()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.fan.html#honeybee_openstudio.hvac.standards.fan.is_small_fan"><code class="docutils literal notranslate"><span class="pre">is_small_fan()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.heat_recovery.html">honeybee_openstudio.hvac.standards.heat_recovery module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.heat_recovery.html#honeybee_openstudio.hvac.standards.heat_recovery.create_hx_air_to_air_sensible_and_latent"><code class="docutils literal notranslate"><span class="pre">create_hx_air_to_air_sensible_and_latent()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html">honeybee_openstudio.hvac.standards.hvac_systems module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_baseboard"><code class="docutils literal notranslate"><span class="pre">model_add_baseboard()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_central_air_source_heat_pump"><code class="docutils literal notranslate"><span class="pre">model_add_central_air_source_heat_pump()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_chw_loop"><code class="docutils literal notranslate"><span class="pre">model_add_chw_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_cw_loop"><code class="docutils literal notranslate"><span class="pre">model_add_cw_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_district_ambient_loop"><code class="docutils literal notranslate"><span class="pre">model_add_district_ambient_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_doas"><code class="docutils literal notranslate"><span class="pre">model_add_doas()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_doas_cold_supply"><code class="docutils literal notranslate"><span class="pre">model_add_doas_cold_supply()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_evap_cooler"><code class="docutils literal notranslate"><span class="pre">model_add_evap_cooler()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_four_pipe_fan_coil"><code class="docutils literal notranslate"><span class="pre">model_add_four_pipe_fan_coil()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_furnace_central_ac"><code class="docutils literal notranslate"><span class="pre">model_add_furnace_central_ac()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_ground_hx_loop"><code class="docutils literal notranslate"><span class="pre">model_add_ground_hx_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_high_temp_radiant"><code class="docutils literal notranslate"><span class="pre">model_add_high_temp_radiant()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_hp_loop"><code class="docutils literal notranslate"><span class="pre">model_add_hp_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_hvac_system"><code class="docutils literal notranslate"><span class="pre">model_add_hvac_system()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_hw_loop"><code class="docutils literal notranslate"><span class="pre">model_add_hw_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_low_temp_radiant"><code class="docutils literal notranslate"><span class="pre">model_add_low_temp_radiant()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_minisplit_hp"><code class="docutils literal notranslate"><span class="pre">model_add_minisplit_hp()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_plant_supply_water_temperature_control"><code class="docutils literal notranslate"><span class="pre">model_add_plant_supply_water_temperature_control()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_psz_ac"><code class="docutils literal notranslate"><span class="pre">model_add_psz_ac()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_psz_vav"><code class="docutils literal notranslate"><span class="pre">model_add_psz_vav()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_ptac"><code class="docutils literal notranslate"><span class="pre">model_add_ptac()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_pthp"><code class="docutils literal notranslate"><span class="pre">model_add_pthp()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_pvav"><code class="docutils literal notranslate"><span class="pre">model_add_pvav()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_pvav_pfp_boxes"><code class="docutils literal notranslate"><span class="pre">model_add_pvav_pfp_boxes()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_residential_erv"><code class="docutils literal notranslate"><span class="pre">model_add_residential_erv()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_residential_ventilator"><code class="docutils literal notranslate"><span class="pre">model_add_residential_ventilator()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_unitheater"><code class="docutils literal notranslate"><span class="pre">model_add_unitheater()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_vav_pfp_boxes"><code class="docutils literal notranslate"><span class="pre">model_add_vav_pfp_boxes()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_vav_reheat"><code class="docutils literal notranslate"><span class="pre">model_add_vav_reheat()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_vrf"><code class="docutils literal notranslate"><span class="pre">model_add_vrf()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_vsd_twr_fan_curve"><code class="docutils literal notranslate"><span class="pre">model_add_vsd_twr_fan_curve()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_water_source_hp"><code class="docutils literal notranslate"><span class="pre">model_add_water_source_hp()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_waterside_economizer"><code class="docutils literal notranslate"><span class="pre">model_add_waterside_economizer()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_window_ac"><code class="docutils literal notranslate"><span class="pre">model_add_window_ac()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_zone_erv"><code class="docutils literal notranslate"><span class="pre">model_add_zone_erv()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_add_zone_heat_cool_request_count_program"><code class="docutils literal notranslate"><span class="pre">model_add_zone_heat_cool_request_count_program()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_get_or_add_ambient_water_loop"><code class="docutils literal notranslate"><span class="pre">model_get_or_add_ambient_water_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_get_or_add_chilled_water_loop"><code class="docutils literal notranslate"><span class="pre">model_get_or_add_chilled_water_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_get_or_add_ground_hx_loop"><code class="docutils literal notranslate"><span class="pre">model_get_or_add_ground_hx_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_get_or_add_heat_pump_loop"><code class="docutils literal notranslate"><span class="pre">model_get_or_add_heat_pump_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.model_get_or_add_hot_water_loop"><code class="docutils literal notranslate"><span class="pre">model_get_or_add_hot_water_loop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html#honeybee_openstudio.hvac.standards.hvac_systems.standard_design_sizing_temperatures"><code class="docutils literal notranslate"><span class="pre">standard_design_sizing_temperatures()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.plant_loop.html">honeybee_openstudio.hvac.standards.plant_loop module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.plant_loop.html#honeybee_openstudio.hvac.standards.plant_loop.chw_sizing_control"><code class="docutils literal notranslate"><span class="pre">chw_sizing_control()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.plant_loop.html#honeybee_openstudio.hvac.standards.plant_loop.plant_loop_set_chw_pri_sec_configuration"><code class="docutils literal notranslate"><span class="pre">plant_loop_set_chw_pri_sec_configuration()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.pump_variable_speed.html">honeybee_openstudio.hvac.standards.pump_variable_speed module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.pump_variable_speed.html#honeybee_openstudio.hvac.standards.pump_variable_speed.pump_variable_speed_set_control_type"><code class="docutils literal notranslate"><span class="pre">pump_variable_speed_set_control_type()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.radiant_system_controls.html">honeybee_openstudio.hvac.standards.radiant_system_controls module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.radiant_system_controls.html#honeybee_openstudio.hvac.standards.radiant_system_controls.model_add_radiant_basic_controls"><code class="docutils literal notranslate"><span class="pre">model_add_radiant_basic_controls()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.radiant_system_controls.html#honeybee_openstudio.hvac.standards.radiant_system_controls.model_add_radiant_proportional_controls"><code class="docutils literal notranslate"><span class="pre">model_add_radiant_proportional_controls()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.schedule.html">honeybee_openstudio.hvac.standards.schedule module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.schedule.html#honeybee_openstudio.hvac.standards.schedule.create_constant_schedule_ruleset"><code class="docutils literal notranslate"><span class="pre">create_constant_schedule_ruleset()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.schedule.html#honeybee_openstudio.hvac.standards.schedule.create_schedule_type_limits"><code class="docutils literal notranslate"><span class="pre">create_schedule_type_limits()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.schedule.html#honeybee_openstudio.hvac.standards.schedule.model_add_schedule"><code class="docutils literal notranslate"><span class="pre">model_add_schedule()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.sizing_system.html">honeybee_openstudio.hvac.standards.sizing_system module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.sizing_system.html#honeybee_openstudio.hvac.standards.sizing_system.adjust_sizing_system"><code class="docutils literal notranslate"><span class="pre">adjust_sizing_system()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.thermal_zone.html">honeybee_openstudio.hvac.standards.thermal_zone module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_occupancy_schedule"><code class="docutils literal notranslate"><span class="pre">thermal_zone_get_occupancy_schedule()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_outdoor_airflow_rate"><code class="docutils literal notranslate"><span class="pre">thermal_zone_get_outdoor_airflow_rate()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_outdoor_airflow_rate_per_area"><code class="docutils literal notranslate"><span class="pre">thermal_zone_get_outdoor_airflow_rate_per_area()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.utilities.html">honeybee_openstudio.hvac.standards.utilities module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.convert_curve_biquadratic"><code class="docutils literal notranslate"><span class="pre">convert_curve_biquadratic()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.create_curve_biquadratic"><code class="docutils literal notranslate"><span class="pre">create_curve_biquadratic()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.create_curve_quadratic"><code class="docutils literal notranslate"><span class="pre">create_curve_quadratic()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.eer_to_cop_no_fan"><code class="docutils literal notranslate"><span class="pre">eer_to_cop_no_fan()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.ems_friendly_name"><code class="docutils literal notranslate"><span class="pre">ems_friendly_name()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.hspf_to_cop_no_fan"><code class="docutils literal notranslate"><span class="pre">hspf_to_cop_no_fan()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.kw_per_ton_to_cop"><code class="docutils literal notranslate"><span class="pre">kw_per_ton_to_cop()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.rename_air_loop_nodes"><code class="docutils literal notranslate"><span class="pre">rename_air_loop_nodes()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.utilities.html#honeybee_openstudio.hvac.standards.utilities.rename_plant_loop_nodes"><code class="docutils literal notranslate"><span class="pre">rename_plant_loop_nodes()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="honeybee_openstudio.hvac.standards.html#module-honeybee_openstudio.hvac.standards">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.hvac.html#submodules">Submodules</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="honeybee_openstudio.hvac.idealair.html">honeybee_openstudio.hvac.idealair module</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="honeybee_openstudio.hvac.idealair.html#honeybee_openstudio.hvac.idealair.ideal_air_system_from_openstudio"><code class="docutils literal notranslate"><span class="pre">ideal_air_system_from_openstudio()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="honeybee_openstudio.hvac.idealair.html#honeybee_openstudio.hvac.idealair.ideal_air_system_to_openstudio"><code class="docutils literal notranslate"><span class="pre">ideal_air_system_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="honeybee_openstudio.hvac.template.html">honeybee_openstudio.hvac.template module</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="honeybee_openstudio.hvac.template.html#honeybee_openstudio.hvac.template.template_hvac_to_openstudio"><code class="docutils literal notranslate"><span class="pre">template_hvac_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.hvac.html#module-honeybee_openstudio.hvac">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="honeybee_openstudio.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.construction.html">honeybee_openstudio.construction module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.air_construction_from_openstudio"><code class="docutils literal notranslate"><span class="pre">air_construction_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.air_construction_to_openstudio"><code class="docutils literal notranslate"><span class="pre">air_construction_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.air_mixing_to_openstudio"><code class="docutils literal notranslate"><span class="pre">air_mixing_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.construction_to_openstudio"><code class="docutils literal notranslate"><span class="pre">construction_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.extract_all_constructions"><code class="docutils literal notranslate"><span class="pre">extract_all_constructions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.opaque_construction_from_openstudio"><code class="docutils literal notranslate"><span class="pre">opaque_construction_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.shade_construction_from_openstudio"><code class="docutils literal notranslate"><span class="pre">shade_construction_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.shade_construction_to_openstudio"><code class="docutils literal notranslate"><span class="pre">shade_construction_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.standard_construction_to_openstudio"><code class="docutils literal notranslate"><span class="pre">standard_construction_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.window_construction_from_openstudio"><code class="docutils literal notranslate"><span class="pre">window_construction_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.window_dynamic_construction_to_openstudio"><code class="docutils literal notranslate"><span class="pre">window_dynamic_construction_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.window_dynamic_ems_program_to_openstudio"><code class="docutils literal notranslate"><span class="pre">window_dynamic_ems_program_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.window_shade_construction_to_openstudio"><code class="docutils literal notranslate"><span class="pre">window_shade_construction_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.construction.html#honeybee_openstudio.construction.window_shading_control_to_openstudio"><code class="docutils literal notranslate"><span class="pre">window_shading_control_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.constructionset.html">honeybee_openstudio.constructionset module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.constructionset.html#honeybee_openstudio.constructionset.construction_set_from_openstudio"><code class="docutils literal notranslate"><span class="pre">construction_set_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.constructionset.html#honeybee_openstudio.constructionset.construction_set_to_openstudio"><code class="docutils literal notranslate"><span class="pre">construction_set_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.generator.html">honeybee_openstudio.generator module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.generator.html#honeybee_openstudio.generator.electric_load_center_to_openstudio"><code class="docutils literal notranslate"><span class="pre">electric_load_center_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.generator.html#honeybee_openstudio.generator.pv_properties_to_openstudio"><code class="docutils literal notranslate"><span class="pre">pv_properties_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.internalmass.html">honeybee_openstudio.internalmass module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.internalmass.html#honeybee_openstudio.internalmass.internal_mass_to_openstudio"><code class="docutils literal notranslate"><span class="pre">internal_mass_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">honeybee_openstudio.load module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.daylight_from_openstudio"><code class="docutils literal notranslate"><span class="pre">daylight_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.daylight_to_openstudio"><code class="docutils literal notranslate"><span class="pre">daylight_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.electric_equipment_from_openstudio"><code class="docutils literal notranslate"><span class="pre">electric_equipment_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.electric_equipment_to_openstudio"><code class="docutils literal notranslate"><span class="pre">electric_equipment_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.gas_equipment_from_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_equipment_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.gas_equipment_to_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_equipment_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.hot_water_from_openstudio"><code class="docutils literal notranslate"><span class="pre">hot_water_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.hot_water_to_openstudio"><code class="docutils literal notranslate"><span class="pre">hot_water_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.infiltration_from_openstudio"><code class="docutils literal notranslate"><span class="pre">infiltration_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.infiltration_to_openstudio"><code class="docutils literal notranslate"><span class="pre">infiltration_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.lighting_from_openstudio"><code class="docutils literal notranslate"><span class="pre">lighting_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.lighting_to_openstudio"><code class="docutils literal notranslate"><span class="pre">lighting_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.people_from_openstudio"><code class="docutils literal notranslate"><span class="pre">people_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.people_to_openstudio"><code class="docutils literal notranslate"><span class="pre">people_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.process_from_openstudio"><code class="docutils literal notranslate"><span class="pre">process_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.process_to_openstudio"><code class="docutils literal notranslate"><span class="pre">process_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.setpoint_from_openstudio_humidistat"><code class="docutils literal notranslate"><span class="pre">setpoint_from_openstudio_humidistat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.setpoint_from_openstudio_thermostat"><code class="docutils literal notranslate"><span class="pre">setpoint_from_openstudio_thermostat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.setpoint_to_openstudio_humidistat"><code class="docutils literal notranslate"><span class="pre">setpoint_to_openstudio_humidistat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.setpoint_to_openstudio_thermostat"><code class="docutils literal notranslate"><span class="pre">setpoint_to_openstudio_thermostat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.ventilation_from_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.ventilation_to_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.material.html">honeybee_openstudio.material module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.blind_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">blind_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.blind_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">blind_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.extract_all_materials"><code class="docutils literal notranslate"><span class="pre">extract_all_materials()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.frame_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">frame_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.gas_custom_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_custom_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.gas_custom_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_custom_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.gas_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.gas_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.gas_mixture_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_mixture_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.gas_mixture_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_mixture_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.glazing_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">glazing_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.glazing_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">glazing_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.opaque_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">opaque_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.opaque_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">opaque_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.opaque_no_mass_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">opaque_no_mass_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.opaque_no_mass_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">opaque_no_mass_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.shade_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">shade_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.shade_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">shade_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.simple_glazing_sys_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">simple_glazing_sys_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.simple_glazing_sys_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">simple_glazing_sys_material_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.vegetation_material_from_openstudio"><code class="docutils literal notranslate"><span class="pre">vegetation_material_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.material.html#honeybee_openstudio.material.vegetation_material_to_openstudio"><code class="docutils literal notranslate"><span class="pre">vegetation_material_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.openstudio.html">honeybee_openstudio.openstudio module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.openstudio.html#honeybee_openstudio.openstudio.os_create_vector"><code class="docutils literal notranslate"><span class="pre">os_create_vector()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.openstudio.html#honeybee_openstudio.openstudio.os_path"><code class="docutils literal notranslate"><span class="pre">os_path()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.openstudio.html#honeybee_openstudio.openstudio.os_vector_len"><code class="docutils literal notranslate"><span class="pre">os_vector_len()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.programtype.html">honeybee_openstudio.programtype module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.programtype.html#honeybee_openstudio.programtype.program_type_from_openstudio"><code class="docutils literal notranslate"><span class="pre">program_type_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.programtype.html#honeybee_openstudio.programtype.program_type_to_openstudio"><code class="docutils literal notranslate"><span class="pre">program_type_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.reader.html">honeybee_openstudio.reader module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.reader.html#honeybee_openstudio.reader.aperture_from_openstudio"><code class="docutils literal notranslate"><span class="pre">aperture_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.reader.html#honeybee_openstudio.reader.door_from_openstudio"><code class="docutils literal notranslate"><span class="pre">door_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.reader.html#honeybee_openstudio.reader.face_3d_from_openstudio"><code class="docutils literal notranslate"><span class="pre">face_3d_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.reader.html#honeybee_openstudio.reader.face_from_openstudio"><code class="docutils literal notranslate"><span class="pre">face_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.reader.html#honeybee_openstudio.reader.model_from_gbxml_file"><code class="docutils literal notranslate"><span class="pre">model_from_gbxml_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.reader.html#honeybee_openstudio.reader.model_from_idf_file"><code class="docutils literal notranslate"><span class="pre">model_from_idf_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.reader.html#honeybee_openstudio.reader.model_from_openstudio"><code class="docutils literal notranslate"><span class="pre">model_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.reader.html#honeybee_openstudio.reader.model_from_osm"><code class="docutils literal notranslate"><span class="pre">model_from_osm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.reader.html#honeybee_openstudio.reader.model_from_osm_file"><code class="docutils literal notranslate"><span class="pre">model_from_osm_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.reader.html#honeybee_openstudio.reader.room_from_openstudio"><code class="docutils literal notranslate"><span class="pre">room_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.reader.html#honeybee_openstudio.reader.shades_from_openstudio"><code class="docutils literal notranslate"><span class="pre">shades_from_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.schedule.html">honeybee_openstudio.schedule module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.extract_all_schedules"><code class="docutils literal notranslate"><span class="pre">extract_all_schedules()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_day_from_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_day_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_day_to_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_day_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_fixed_interval_from_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_fixed_interval_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_fixed_interval_to_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_fixed_interval_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_fixed_interval_to_openstudio_file"><code class="docutils literal notranslate"><span class="pre">schedule_fixed_interval_to_openstudio_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_ruleset_from_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_ruleset_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_ruleset_to_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_ruleset_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_to_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_type_limits_from_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_type_limits_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.schedule.html#honeybee_openstudio.schedule.schedule_type_limits_to_openstudio"><code class="docutils literal notranslate"><span class="pre">schedule_type_limits_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.shw.html">honeybee_openstudio.shw module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.shw.html#honeybee_openstudio.shw.shw_system_to_openstudio"><code class="docutils literal notranslate"><span class="pre">shw_system_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.simulation.html">honeybee_openstudio.simulation module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.assign_epw_to_model"><code class="docutils literal notranslate"><span class="pre">assign_epw_to_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.design_day_to_openstudio"><code class="docutils literal notranslate"><span class="pre">design_day_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.run_period_to_openstudio"><code class="docutils literal notranslate"><span class="pre">run_period_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.shadow_calculation_to_openstudio"><code class="docutils literal notranslate"><span class="pre">shadow_calculation_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.simulation_control_to_openstudio"><code class="docutils literal notranslate"><span class="pre">simulation_control_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.simulation_output_to_openstudio"><code class="docutils literal notranslate"><span class="pre">simulation_output_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.simulation_parameter_to_openstudio"><code class="docutils literal notranslate"><span class="pre">simulation_parameter_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.simulation.html#honeybee_openstudio.simulation.sizing_to_openstudio"><code class="docutils literal notranslate"><span class="pre">sizing_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.ventcool.html">honeybee_openstudio.ventcool module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.afn_crack_to_openstudio"><code class="docutils literal notranslate"><span class="pre">afn_crack_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.outdoor_temperature_sensor"><code class="docutils literal notranslate"><span class="pre">outdoor_temperature_sensor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.ventilation_control_program_manager"><code class="docutils literal notranslate"><span class="pre">ventilation_control_program_manager()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.ventilation_control_to_openstudio_afn"><code class="docutils literal notranslate"><span class="pre">ventilation_control_to_openstudio_afn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.ventilation_fan_to_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_fan_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.ventilation_opening_to_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_opening_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.ventilation_opening_to_openstudio_afn"><code class="docutils literal notranslate"><span class="pre">ventilation_opening_to_openstudio_afn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.ventilation_sim_control_to_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_sim_control_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.ventcool.html#honeybee_openstudio.ventcool.zone_temperature_sensor"><code class="docutils literal notranslate"><span class="pre">zone_temperature_sensor()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.writer.html">honeybee_openstudio.writer module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.writer.html#honeybee_openstudio.writer.aperture_to_openstudio"><code class="docutils literal notranslate"><span class="pre">aperture_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.writer.html#honeybee_openstudio.writer.door_to_openstudio"><code class="docutils literal notranslate"><span class="pre">door_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.writer.html#honeybee_openstudio.writer.face_3d_to_openstudio"><code class="docutils literal notranslate"><span class="pre">face_3d_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.writer.html#honeybee_openstudio.writer.face_to_openstudio"><code class="docutils literal notranslate"><span class="pre">face_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.writer.html#honeybee_openstudio.writer.model_to_gbxml"><code class="docutils literal notranslate"><span class="pre">model_to_gbxml()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.writer.html#honeybee_openstudio.writer.model_to_idf"><code class="docutils literal notranslate"><span class="pre">model_to_idf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.writer.html#honeybee_openstudio.writer.model_to_openstudio"><code class="docutils literal notranslate"><span class="pre">model_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.writer.html#honeybee_openstudio.writer.model_to_osm"><code class="docutils literal notranslate"><span class="pre">model_to_osm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.writer.html#honeybee_openstudio.writer.room_to_openstudio"><code class="docutils literal notranslate"><span class="pre">room_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.writer.html#honeybee_openstudio.writer.shade_mesh_to_openstudio"><code class="docutils literal notranslate"><span class="pre">shade_mesh_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.writer.html#honeybee_openstudio.writer.shade_to_openstudio"><code class="docutils literal notranslate"><span class="pre">shade_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="honeybee_openstudio.html#module-honeybee_openstudio">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="cli/index.html">CLI Docs</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="honeybee_openstudio.html">honeybee_openstudio package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="honeybee_openstudio.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="honeybee_openstudio.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.construction.html">honeybee_openstudio.construction module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.constructionset.html">honeybee_openstudio.constructionset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.generator.html">honeybee_openstudio.generator module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.internalmass.html">honeybee_openstudio.internalmass module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">honeybee_openstudio.load module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.daylight_from_openstudio"><code class="docutils literal notranslate"><span class="pre">daylight_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.daylight_to_openstudio"><code class="docutils literal notranslate"><span class="pre">daylight_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.electric_equipment_from_openstudio"><code class="docutils literal notranslate"><span class="pre">electric_equipment_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.electric_equipment_to_openstudio"><code class="docutils literal notranslate"><span class="pre">electric_equipment_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.gas_equipment_from_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_equipment_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.gas_equipment_to_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_equipment_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.hot_water_from_openstudio"><code class="docutils literal notranslate"><span class="pre">hot_water_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.hot_water_to_openstudio"><code class="docutils literal notranslate"><span class="pre">hot_water_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.infiltration_from_openstudio"><code class="docutils literal notranslate"><span class="pre">infiltration_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.infiltration_to_openstudio"><code class="docutils literal notranslate"><span class="pre">infiltration_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.lighting_from_openstudio"><code class="docutils literal notranslate"><span class="pre">lighting_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.lighting_to_openstudio"><code class="docutils literal notranslate"><span class="pre">lighting_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.people_from_openstudio"><code class="docutils literal notranslate"><span class="pre">people_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.people_to_openstudio"><code class="docutils literal notranslate"><span class="pre">people_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.process_from_openstudio"><code class="docutils literal notranslate"><span class="pre">process_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.process_to_openstudio"><code class="docutils literal notranslate"><span class="pre">process_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.setpoint_from_openstudio_humidistat"><code class="docutils literal notranslate"><span class="pre">setpoint_from_openstudio_humidistat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.setpoint_from_openstudio_thermostat"><code class="docutils literal notranslate"><span class="pre">setpoint_from_openstudio_thermostat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.setpoint_to_openstudio_humidistat"><code class="docutils literal notranslate"><span class="pre">setpoint_to_openstudio_humidistat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.setpoint_to_openstudio_thermostat"><code class="docutils literal notranslate"><span class="pre">setpoint_to_openstudio_thermostat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.ventilation_from_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.ventilation_to_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.material.html">honeybee_openstudio.material module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.openstudio.html">honeybee_openstudio.openstudio module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.programtype.html">honeybee_openstudio.programtype module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.reader.html">honeybee_openstudio.reader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.schedule.html">honeybee_openstudio.schedule module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.shw.html">honeybee_openstudio.shw module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.simulation.html">honeybee_openstudio.simulation module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.ventcool.html">honeybee_openstudio.ventcool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.writer.html">honeybee_openstudio.writer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="honeybee_openstudio.html#module-honeybee_openstudio">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="honeybee_openstudio.internalmass.html" title="Previous Chapter: honeybee_openstudio.internalmass module"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; honeybee_open...</span>
+    </a>
+  </li>
+  <li>
+    <a href="honeybee_openstudio.material.html" title="Next Chapter: honeybee_openstudio.material module"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">honeybee_open... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+            
+              <li class="hidden-sm">
+<div id="sourcelink">
+  <a href="_sources/honeybee_openstudio.load.rst.txt"
+     rel="nofollow">Source</a>
+</div></li>
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-4">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
+<li class="toctree-l1"><a class="reference internal" href="cli/index.html">CLI Docs</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="honeybee_openstudio.html">honeybee_openstudio package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="honeybee_openstudio.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="honeybee_openstudio.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.construction.html">honeybee_openstudio.construction module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.constructionset.html">honeybee_openstudio.constructionset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.generator.html">honeybee_openstudio.generator module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.internalmass.html">honeybee_openstudio.internalmass module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">honeybee_openstudio.load module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.daylight_from_openstudio"><code class="docutils literal notranslate"><span class="pre">daylight_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.daylight_to_openstudio"><code class="docutils literal notranslate"><span class="pre">daylight_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.electric_equipment_from_openstudio"><code class="docutils literal notranslate"><span class="pre">electric_equipment_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.electric_equipment_to_openstudio"><code class="docutils literal notranslate"><span class="pre">electric_equipment_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.gas_equipment_from_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_equipment_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.gas_equipment_to_openstudio"><code class="docutils literal notranslate"><span class="pre">gas_equipment_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.hot_water_from_openstudio"><code class="docutils literal notranslate"><span class="pre">hot_water_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.hot_water_to_openstudio"><code class="docutils literal notranslate"><span class="pre">hot_water_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.infiltration_from_openstudio"><code class="docutils literal notranslate"><span class="pre">infiltration_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.infiltration_to_openstudio"><code class="docutils literal notranslate"><span class="pre">infiltration_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.lighting_from_openstudio"><code class="docutils literal notranslate"><span class="pre">lighting_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.lighting_to_openstudio"><code class="docutils literal notranslate"><span class="pre">lighting_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.people_from_openstudio"><code class="docutils literal notranslate"><span class="pre">people_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.people_to_openstudio"><code class="docutils literal notranslate"><span class="pre">people_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.process_from_openstudio"><code class="docutils literal notranslate"><span class="pre">process_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.process_to_openstudio"><code class="docutils literal notranslate"><span class="pre">process_to_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.setpoint_from_openstudio_humidistat"><code class="docutils literal notranslate"><span class="pre">setpoint_from_openstudio_humidistat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.setpoint_from_openstudio_thermostat"><code class="docutils literal notranslate"><span class="pre">setpoint_from_openstudio_thermostat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.setpoint_to_openstudio_humidistat"><code class="docutils literal notranslate"><span class="pre">setpoint_to_openstudio_humidistat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.setpoint_to_openstudio_thermostat"><code class="docutils literal notranslate"><span class="pre">setpoint_to_openstudio_thermostat()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.ventilation_from_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_from_openstudio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#honeybee_openstudio.load.ventilation_to_openstudio"><code class="docutils literal notranslate"><span class="pre">ventilation_to_openstudio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.material.html">honeybee_openstudio.material module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.openstudio.html">honeybee_openstudio.openstudio module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.programtype.html">honeybee_openstudio.programtype module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.reader.html">honeybee_openstudio.reader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.schedule.html">honeybee_openstudio.schedule module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.shw.html">honeybee_openstudio.shw module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.simulation.html">honeybee_openstudio.simulation module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.ventcool.html">honeybee_openstudio.ventcool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.writer.html">honeybee_openstudio.writer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="honeybee_openstudio.html#module-honeybee_openstudio">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    <div class="body col-md-8 content" role="main">
+      
+  <section id="module-honeybee_openstudio.load">
+<span id="honeybee-openstudio-load-module"></span><h1>honeybee_openstudio.load module<a class="headerlink" href="#module-honeybee_openstudio.load" title="Link to this heading">¶</a></h1>
+<p>OpenStudio load translators.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.daylight_from_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">daylight_from_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">os_daylight</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#daylight_from_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.daylight_from_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert OpenStudio DaylightingControl to Honeybee DaylightingControl.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.daylight_to_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">daylight_to_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">daylight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">os_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#daylight_to_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.daylight_to_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert Honeybee DaylightingControl to OpenStudio DaylightingControl.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.electric_equipment_from_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">electric_equipment_from_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">os_equipment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedules</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#electric_equipment_from_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.electric_equipment_from_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert OpenStudio ElectricEquipment object to Honeybee ElectricEquipment.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.electric_equipment_to_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">electric_equipment_to_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">equipment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">os_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#electric_equipment_to_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.electric_equipment_to_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert Honeybee ElectricEquipment object to OpenStudio ElectricEquipment object.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.gas_equipment_from_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">gas_equipment_from_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">os_equipment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedules</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#gas_equipment_from_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.gas_equipment_from_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert OpenStudio GasEquipment object to Honeybee GasEquipment.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.gas_equipment_to_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">gas_equipment_to_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">equipment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">os_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#gas_equipment_to_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.gas_equipment_to_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert Honeybee GasEquipment object to OpenStudio GasEquipment object.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.hot_water_from_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">hot_water_from_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">os_hot_water</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">floor_area</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedules</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#hot_water_from_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.hot_water_from_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert list of OpenStudio WaterUseEquipment to Honeybee ServiceHotWater.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.hot_water_to_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">hot_water_to_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hot_water</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">room</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">os_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#hot_water_to_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.hot_water_to_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert Honeybee ServiceHotWater to OpenStudio WaterUseConnections.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hot_water</strong> – The Honeybee-energy ServiceHotWater object to be translated
+to OpenStudio.</p></li>
+<li><p><strong>room</strong> – The Honeybee Room object to which the ServiceHotWater is assigned.
+This is required in order to compute the total flow rate from the
+floor area.</p></li>
+<li><p><strong>os_model</strong> – The OpenStudio Model to which the WaterUseEquipment and
+WaterUseConnections objects will be added.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.infiltration_from_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">infiltration_from_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">os_infiltration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedules</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#infiltration_from_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.infiltration_from_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert OpenStudio SpaceInfiltrationDesignFlowRate to Honeybee Infiltration.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.infiltration_to_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">infiltration_to_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infiltration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">os_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#infiltration_to_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.infiltration_to_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert Honeybee Infiltration to OpenStudio SpaceInfiltrationDesignFlowRate.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.lighting_from_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">lighting_from_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">os_lighting</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedules</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#lighting_from_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.lighting_from_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert OpenStudio Lights object to Honeybee Lighting.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.lighting_to_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">lighting_to_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lighting</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">os_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#lighting_to_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.lighting_to_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert Honeybee Lighting object to OpenStudio Lights object.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.people_from_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">people_from_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">os_people</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedules</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#people_from_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.people_from_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert OpenStudio People object to Honeybee People.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.people_to_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">people_to_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">people</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">os_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#people_to_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.people_to_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert Honeybee People object to OpenStudio People object.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.process_from_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">process_from_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">os_process</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedules</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#process_from_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.process_from_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert OpenStudio OtherEquipment object to Honeybee Process.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.process_to_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">process_to_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">process</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">os_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#process_to_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.process_to_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert Honeybee Process object to OpenStudio OtherEquipment object.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.setpoint_from_openstudio_humidistat">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">setpoint_from_openstudio_humidistat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">os_humidistat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">setpoint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedules</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#setpoint_from_openstudio_humidistat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.setpoint_from_openstudio_humidistat" title="Link to this definition">¶</a></dt>
+<dd><p>Convert OpenStudio ZoneControlHumidistat to Honeybee Setpoint.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.setpoint_from_openstudio_thermostat">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">setpoint_from_openstudio_thermostat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">os_thermostat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedules</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#setpoint_from_openstudio_thermostat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.setpoint_from_openstudio_thermostat" title="Link to this definition">¶</a></dt>
+<dd><p>Convert OpenStudio ThermostatSetpointDualSetpoint to Honeybee Setpoint.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.setpoint_to_openstudio_humidistat">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">setpoint_to_openstudio_humidistat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">setpoint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">os_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zone_identifier</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#setpoint_to_openstudio_humidistat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.setpoint_to_openstudio_humidistat" title="Link to this definition">¶</a></dt>
+<dd><p>Convert Honeybee Setpoint to OpenStudio ZoneControlHumidistat.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.setpoint_to_openstudio_thermostat">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">setpoint_to_openstudio_thermostat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">setpoint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">os_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zone_identifier</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#setpoint_to_openstudio_thermostat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.setpoint_to_openstudio_thermostat" title="Link to this definition">¶</a></dt>
+<dd><p>Convert Honeybee Setpoint to OpenStudio ThermostatSetpointDualSetpoint.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.ventilation_from_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">ventilation_from_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">os_ventilation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedules</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#ventilation_from_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.ventilation_from_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert OpenStudio DesignSpecificationOutdoorAir to Honeybee Ventilation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="honeybee_openstudio.load.ventilation_to_openstudio">
+<span class="sig-prename descclassname"><span class="pre">honeybee_openstudio.load.</span></span><span class="sig-name descname"><span class="pre">ventilation_to_openstudio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ventilation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">os_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/honeybee_openstudio/load.html#ventilation_to_openstudio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#honeybee_openstudio.load.ventilation_to_openstudio" title="Link to this definition">¶</a></dt>
+<dd><p>Convert Honeybee Ventilation to OpenStudio DesignSpecificationOutdoorAir.</p>
+</dd></dl>
+
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, Ladybug Tools.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.0.2.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
