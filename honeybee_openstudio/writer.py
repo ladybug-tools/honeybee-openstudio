@@ -1445,6 +1445,10 @@ def model_to_gbxml(
             new_ver = template.format(gbxml_schema_version.replace('.', '-'),
                                       gbxml_schema_version)
             split_lines[1] = split_lines[1].replace(base_ver, new_ver)
+            split_lines[1] = split_lines[1].replace(
+                'version="{}"'.format(now_ver),
+                'version="{}"'.format(gbxml_schema_version)
+            )
             gbxml_str = '\n'.join(split_lines)
 
     # replace all interior floors with the specified type
