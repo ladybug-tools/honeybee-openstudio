@@ -310,6 +310,15 @@ def test_model_writer_dynamic_constructions_2():
     model_to_osm(model)
 
 
+def test_model_writer_dynamic_constructions_3():
+    """Test translating a HBJSON to an OpenStudio string."""
+    standard_test = 'assets/window_shade_error.hbjson'
+    standard_test = os.path.join(os.path.dirname(__file__), standard_test)
+    model = Model.from_file(standard_test)
+
+    model_to_osm(model)
+
+
 def test_model_writer_from_hbjson_with_zones():
     """Test translating a HBJSON to an OpenStudio string."""
     standard_test = 'assets/single_family_with_zones.hbjson'
