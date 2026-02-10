@@ -204,7 +204,7 @@ def door_to_openstudio(door, os_model):
         # create the WindowShadingControl object if it is needed
         if construction.has_shade:
             shd_prop_str = window_shading_control_to_openstudio(construction, os_model)
-            os_door.setShadingControl(shd_prop_str)
+            os_door.addShadingControl(shd_prop_str)
     else:  # translate the geometry as ShadingSurface
         os_door = OSShadingSurface(os_vertices, os_model)
         cns = door.properties.energy.construction
@@ -275,7 +275,7 @@ def aperture_to_openstudio(aperture, os_model):
         # create the WindowShadingControl object if it is needed
         if construction.has_shade:
             shd_prop_str = window_shading_control_to_openstudio(construction, os_model)
-            os_aperture.setShadingControl(shd_prop_str)
+            os_aperture.addShadingControl(shd_prop_str)
     else:  # translate the geometry as ShadingSurface
         os_aperture = OSShadingSurface(os_vertices, os_model)
         cns = aperture.properties.energy.construction
@@ -753,6 +753,9 @@ def model_to_openstudio(
                         constructions.pop(-1)  # avoid duplicate specification
                     if constr.is_switchable_glazing:
                         materials.append(constr.switched_glass_material)
+                    if constr.shade_location == 'Between':  # write the un-split gap
+                        gap_layer = constr.window_construction.materials[1]
+                        materials.append(gap_layer)
                 elif constr.is_dynamic:
                     dynamic_cons.append(constr)
         except AttributeError:
