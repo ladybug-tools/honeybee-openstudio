@@ -6,6 +6,9 @@ with open("README.md", "r") as fh:
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 
+with open('base-requirements.txt') as f:
+    base_requirements = f.read().splitlines()
+
 with open('standards-requirements.txt') as f:
     standards_requirements = f.read().splitlines()
 
@@ -22,6 +25,7 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=["tests*", "equest_docs*"]),
     install_requires=requirements,
     extras_require={
+        'base': base_requirements,
         'standards': standards_requirements
     },
     include_package_data=True,
