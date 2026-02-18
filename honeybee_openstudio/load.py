@@ -250,7 +250,7 @@ def ventilation_to_openstudio(ventilation, os_model):
     else:
         os_vent.setOutdoorAirMethod('Sum')
     # set the schedule if it exists
-    if ventilation.schedule is not None:
+    if ventilation._schedule is not None:
         vent_sch = os_model.getScheduleByName(ventilation.schedule.identifier)
         if vent_sch.is_initialized():
             vent_sch = vent_sch.get()
