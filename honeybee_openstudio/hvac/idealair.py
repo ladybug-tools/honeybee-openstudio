@@ -61,21 +61,21 @@ def ideal_air_system_to_openstudio(hvac, os_model, room=None):
         os_ideal_air.setHeatingLimit('NoLimit')
     else:
         os_ideal_air.setHeatingLimit('LimitCapacity')
-    if hvac.heating_limit == autosize:
-        os_ideal_air.autosizeMaximumSensibleHeatingCapacity()
-    else:
-        os_ideal_air.setMaximumSensibleHeatingCapacity(hvac.heating_limit)
+        if hvac.heating_limit == autosize:
+            os_ideal_air.autosizeMaximumSensibleHeatingCapacity()
+        else:
+            os_ideal_air.setMaximumSensibleHeatingCapacity(hvac.heating_limit)
     # assign limits to the system's cooling capacity
     if hvac.cooling_limit == no_limit:
         os_ideal_air.setCoolingLimit('NoLimit')
     else:
         os_ideal_air.setCoolingLimit('LimitFlowRateAndCapacity')
-    if hvac.cooling_limit == autosize:
-        os_ideal_air.autosizeMaximumTotalCoolingCapacity()
-        os_ideal_air.autosizeMaximumCoolingAirFlowRate()
-    else:
-        os_ideal_air.setMaximumTotalCoolingCapacity(hvac.cooling_limit)
-        os_ideal_air.autosizeMaximumCoolingAirFlowRate()
+        if hvac.cooling_limit == autosize:
+            os_ideal_air.autosizeMaximumTotalCoolingCapacity()
+            os_ideal_air.autosizeMaximumCoolingAirFlowRate()
+        else:
+            os_ideal_air.setMaximumTotalCoolingCapacity(hvac.cooling_limit)
+            os_ideal_air.autosizeMaximumCoolingAirFlowRate()
     # assign heating availability schedule
     if hvac.heating_availability is not None:
         os_schedule = os_model.getScheduleByName(hvac.heating_availability.identifier)
