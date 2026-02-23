@@ -322,11 +322,17 @@ def face_from_openstudio(os_surface, os_site_transform=None, constructions=None)
         if 'Door' in sub_surface_type:
             door = door_from_openstudio(
                 os_sub_surface, os_site_transform, constructions)
-            face.add_door(door)
+            try:
+                face.add_door(door)
+            except AssertionError:  # invalid case of door assigned to ground
+                pass
         else:
             ap = aperture_from_openstudio(
                 os_sub_surface, os_site_transform, constructions)
-            face.add_aperture(ap)
+            try:
+                face.add_aperture(ap)
+            except AssertionError:  # invalid case of aperture assigned to ground
+                pass
     return face
 
 
@@ -409,7 +415,7 @@ def room_from_openstudio(os_space, constructions=None, schedules=None):
         process_loads = []
         for os_other_eq in os_space.otherEquipment():
             other_eq_def = os_other_eq.otherEquipmentDefinition()
-            if other_eq_def.designLevel.empty().is_initialized():
+            if other_eq_def.designLevel().is_initialized():
                 p_load = process_from_openstudio(other_eq_def, schedules)
                 process_loads.append(p_load)
         if len(process_loads) != 0:
