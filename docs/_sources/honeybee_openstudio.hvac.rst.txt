@@ -1,0 +1,27 @@
+honeybee\_openstudio.hvac package
+=================================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   honeybee_openstudio.hvac.standards
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   honeybee_openstudio.hvac.idealair
+   honeybee_openstudio.hvac.template
+
+Module contents
+---------------
+
+.. automodule:: honeybee_openstudio.hvac
+   :members:
+   :undoc-members:
+   :show-inheritance:

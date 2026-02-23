@@ -1,0 +1,7 @@
+honeybee\_openstudio.hvac.standards.central\_air\_source\_heat\_pump module
+===========================================================================
+
+.. automodule:: honeybee_openstudio.hvac.standards.central_air_source_heat_pump
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,7 @@
+honeybee\_openstudio.internalmass module
+========================================
+
+.. automodule:: honeybee_openstudio.internalmass
+   :members:
+   :undoc-members:
+   :show-inheritance:

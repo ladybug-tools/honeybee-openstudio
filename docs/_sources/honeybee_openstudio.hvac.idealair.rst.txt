@@ -1,0 +1,7 @@
+honeybee\_openstudio.hvac.idealair module
+=========================================
+
+.. automodule:: honeybee_openstudio.hvac.idealair
+   :members:
+   :undoc-members:
+   :show-inheritance:

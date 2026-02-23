@@ -1,0 +1,41 @@
+honeybee\_openstudio.hvac.standards package
+===========================================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   honeybee_openstudio.hvac.standards.data
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   honeybee_openstudio.hvac.standards.air_conditioner_variable_refrigerant_flow
+   honeybee_openstudio.hvac.standards.boiler_hot_water
+   honeybee_openstudio.hvac.standards.central_air_source_heat_pump
+   honeybee_openstudio.hvac.standards.coil_cooling
+   honeybee_openstudio.hvac.standards.coil_heating
+   honeybee_openstudio.hvac.standards.cooling_tower
+   honeybee_openstudio.hvac.standards.fan
+   honeybee_openstudio.hvac.standards.heat_recovery
+   honeybee_openstudio.hvac.standards.hvac_systems
+   honeybee_openstudio.hvac.standards.plant_loop
+   honeybee_openstudio.hvac.standards.pump_variable_speed
+   honeybee_openstudio.hvac.standards.radiant_system_controls
+   honeybee_openstudio.hvac.standards.schedule
+   honeybee_openstudio.hvac.standards.sizing_system
+   honeybee_openstudio.hvac.standards.thermal_zone
+   honeybee_openstudio.hvac.standards.utilities
+
+Module contents
+---------------
+
+.. automodule:: honeybee_openstudio.hvac.standards
+   :members:
+   :undoc-members:
+   :show-inheritance:

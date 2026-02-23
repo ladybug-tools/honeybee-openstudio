@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>honeybee_openstudio.hvac.standards.thermal_zone &#8212; honeybee-openstudio  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/bootstrap-sphinx.css?v=0bf093e7" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=e6365d57" />
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<link rel="icon" type="image/x-icon" href="https://github.com/ladybug-tools/artwork/raw/refs/heads/master/icons_bugs/ico/honeybee.ico">
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../../../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../../../../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../../../../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../../../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-inverse navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../../index.html">
+          honeybee-openstudio</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../../../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../cli/index.html">CLI Docs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cli/index.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../cli/index.html#commands">Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../cli/translate.html">translate</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../honeybee_openstudio.html">honeybee_openstudio package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../../honeybee_openstudio.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.cli.html">honeybee_openstudio.cli package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.cli.html#submodules">Submodules</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../../../../honeybee_openstudio.cli.translate.html">honeybee_openstudio.cli.translate module</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.cli.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.html">honeybee_openstudio.hvac package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.html">honeybee_openstudio.hvac.standards package</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.data.html">honeybee_openstudio.hvac.standards.data package</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.data.html#module-honeybee_openstudio.hvac.standards.data">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.html#submodules">Submodules</a><ul>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.air_conditioner_variable_refrigerant_flow.html">honeybee_openstudio.hvac.standards.air_conditioner_variable_refrigerant_flow module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.boiler_hot_water.html">honeybee_openstudio.hvac.standards.boiler_hot_water module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.central_air_source_heat_pump.html">honeybee_openstudio.hvac.standards.central_air_source_heat_pump module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.coil_cooling.html">honeybee_openstudio.hvac.standards.coil_cooling module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.coil_heating.html">honeybee_openstudio.hvac.standards.coil_heating module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.cooling_tower.html">honeybee_openstudio.hvac.standards.cooling_tower module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.fan.html">honeybee_openstudio.hvac.standards.fan module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.heat_recovery.html">honeybee_openstudio.hvac.standards.heat_recovery module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.hvac_systems.html">honeybee_openstudio.hvac.standards.hvac_systems module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.plant_loop.html">honeybee_openstudio.hvac.standards.plant_loop module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.pump_variable_speed.html">honeybee_openstudio.hvac.standards.pump_variable_speed module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.pump_variable_speed.html#honeybee_openstudio.hvac.standards.pump_variable_speed.pump_variable_speed_set_control_type"><code class="docutils literal notranslate"><span class="pre">pump_variable_speed_set_control_type()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.radiant_system_controls.html">honeybee_openstudio.hvac.standards.radiant_system_controls module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.schedule.html">honeybee_openstudio.hvac.standards.schedule module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.sizing_system.html">honeybee_openstudio.hvac.standards.sizing_system module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.thermal_zone.html">honeybee_openstudio.hvac.standards.thermal_zone module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_occupancy_schedule"><code class="docutils literal notranslate"><span class="pre">thermal_zone_get_occupancy_schedule()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_outdoor_airflow_rate"><code class="docutils literal notranslate"><span class="pre">thermal_zone_get_outdoor_airflow_rate()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_outdoor_airflow_rate_per_area"><code class="docutils literal notranslate"><span class="pre">thermal_zone_get_outdoor_airflow_rate_per_area()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.utilities.html">honeybee_openstudio.hvac.standards.utilities module</a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.standards.html#module-honeybee_openstudio.hvac.standards">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.html#submodules">Submodules</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.idealair.html">honeybee_openstudio.hvac.idealair module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.template.html">honeybee_openstudio.hvac.template module</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../honeybee_openstudio.hvac.html#module-honeybee_openstudio.hvac">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../honeybee_openstudio.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.construction.html">honeybee_openstudio.construction module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.constructionset.html">honeybee_openstudio.constructionset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.generator.html">honeybee_openstudio.generator module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.internalmass.html">honeybee_openstudio.internalmass module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.load.html">honeybee_openstudio.load module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.material.html">honeybee_openstudio.material module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.openstudio.html">honeybee_openstudio.openstudio module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.programtype.html">honeybee_openstudio.programtype module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.reader.html">honeybee_openstudio.reader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.schedule.html">honeybee_openstudio.schedule module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.shw.html">honeybee_openstudio.shw module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.simulation.html">honeybee_openstudio.simulation module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.ventcool.html">honeybee_openstudio.ventcool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../honeybee_openstudio.writer.html">honeybee_openstudio.writer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../../honeybee_openstudio.html#module-honeybee_openstudio">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../cli/index.html">CLI Docs</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../honeybee_openstudio.html">honeybee_openstudio package</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+            
+              <li class="hidden-sm"></li>
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-4">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../cli/index.html">CLI Docs</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../honeybee_openstudio.html">honeybee_openstudio package</a></li>
+</ul>
+
+        </div>
+      </div>
+    <div class="body col-md-8 content" role="main">
+      
+  <h1>Source code for honeybee_openstudio.hvac.standards.thermal_zone</h1><div class="highlight"><pre>
+<span></span><span class="c1"># coding=utf-8</span>
+<span class="sd">&quot;&quot;&quot;Module taken from OpenStudio-standards.</span>
+
+<span class="sd">https://github.com/NREL/openstudio-standards/blob/master/</span>
+<span class="sd">lib/openstudio-standards/thermal_zone/thermal_zone.rb</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">division</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+
+<div class="viewcode-block" id="thermal_zone_get_outdoor_airflow_rate">
+<a class="viewcode-back" href="../../../../honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_outdoor_airflow_rate">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">thermal_zone_get_outdoor_airflow_rate</span><span class="p">(</span><span class="n">thermal_zone</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the zone outdoor airflow requirement (Voz).</span>
+
+<span class="sd">    The result will be based on the inputs in the DesignSpecification:OutdoorAir</span>
+<span class="sd">    objects in all spaces in the zone.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        thermal_zone: [OpenStudio::Model::ThermalZone] OpenStudio ThermalZone object.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        [Double] the zone outdoor air flow rate in cubic meters per second (m^3/s).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tot_oa_flow_rate</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">spaces</span> <span class="o">=</span> <span class="n">thermal_zone</span><span class="o">.</span><span class="n">spaces</span><span class="p">()</span>
+
+    <span class="c1"># Variables for merging outdoor air</span>
+    <span class="n">sum_oa_for_people</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">sum_oa_for_floor_area</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">sum_oa_rate</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">sum_oa_for_volume</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># Find common variables for the new space</span>
+    <span class="k">for</span> <span class="n">space</span> <span class="ow">in</span> <span class="n">spaces</span><span class="p">:</span>
+        <span class="n">floor_area</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">floorArea</span><span class="p">()</span> <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="n">space</span><span class="o">.</span><span class="n">floorArea</span>
+        <span class="n">number_of_people</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">numberOfPeople</span><span class="p">()</span>
+        <span class="n">volume</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span>
+
+        <span class="n">dsn_oa</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">designSpecificationOutdoorAir</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dsn_oa</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+            <span class="k">continue</span>
+
+        <span class="n">dsn_oa</span> <span class="o">=</span> <span class="n">dsn_oa</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+        <span class="c1"># compute outdoor air rates in case we need them</span>
+        <span class="n">oa_for_people</span> <span class="o">=</span> <span class="n">number_of_people</span> <span class="o">*</span> <span class="n">dsn_oa</span><span class="o">.</span><span class="n">outdoorAirFlowperPerson</span><span class="p">()</span>
+        <span class="n">oa_for_floor_area</span> <span class="o">=</span> <span class="n">floor_area</span> <span class="o">*</span> <span class="n">dsn_oa</span><span class="o">.</span><span class="n">outdoorAirFlowperFloorArea</span><span class="p">()</span>
+        <span class="n">oa_rate</span> <span class="o">=</span> <span class="n">dsn_oa</span><span class="o">.</span><span class="n">outdoorAirFlowRate</span><span class="p">()</span>
+        <span class="n">oa_for_volume</span> <span class="o">=</span> <span class="n">volume</span> <span class="o">*</span> <span class="n">dsn_oa</span><span class="o">.</span><span class="n">outdoorAirFlowAirChangesperHour</span><span class="p">()</span> <span class="o">/</span> <span class="mi">3600</span>
+
+        <span class="c1"># First check if this space uses the Maximum method and other spaces do not</span>
+        <span class="k">if</span> <span class="n">dsn_oa</span><span class="o">.</span><span class="n">outdoorAirMethod</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;Maximum&#39;</span><span class="p">:</span>
+            <span class="n">sum_oa_rate</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">([</span><span class="n">oa_for_people</span><span class="p">,</span> <span class="n">oa_for_floor_area</span><span class="p">,</span> <span class="n">oa_rate</span><span class="p">,</span> <span class="n">oa_for_volume</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">dsn_oa</span><span class="o">.</span><span class="n">outdoorAirMethod</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;Sum&#39;</span><span class="p">:</span>
+            <span class="n">sum_oa_for_people</span> <span class="o">+=</span> <span class="n">oa_for_people</span>
+            <span class="n">sum_oa_for_floor_area</span> <span class="o">+=</span> <span class="n">oa_for_floor_area</span>
+            <span class="n">sum_oa_rate</span> <span class="o">+=</span> <span class="n">oa_rate</span>
+            <span class="n">sum_oa_for_volume</span> <span class="o">+=</span> <span class="n">oa_for_volume</span>
+
+    <span class="n">tot_oa_flow_rate</span> <span class="o">+=</span> <span class="n">sum_oa_for_people</span>
+    <span class="n">tot_oa_flow_rate</span> <span class="o">+=</span> <span class="n">sum_oa_for_floor_area</span>
+    <span class="n">tot_oa_flow_rate</span> <span class="o">+=</span> <span class="n">sum_oa_rate</span>
+    <span class="n">tot_oa_flow_rate</span> <span class="o">+=</span> <span class="n">sum_oa_for_volume</span>
+
+    <span class="k">return</span> <span class="n">tot_oa_flow_rate</span></div>
+
+
+
+<div class="viewcode-block" id="thermal_zone_get_outdoor_airflow_rate_per_area">
+<a class="viewcode-back" href="../../../../honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_outdoor_airflow_rate_per_area">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">thermal_zone_get_outdoor_airflow_rate_per_area</span><span class="p">(</span><span class="n">thermal_zone</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the zone outdoor airflow requirement and divides by the zone area.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        thermal_zone: [OpenStudio::Model::ThermalZone] OpenStudio ThermalZone object.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        [Double] the zone outdoor air flow rate in cubic meters per second</span>
+<span class="sd">        per floor area(m3/s/m2).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Find total area of the zone</span>
+    <span class="n">sum_floor_area</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">space</span> <span class="ow">in</span> <span class="n">thermal_zone</span><span class="o">.</span><span class="n">spaces</span><span class="p">():</span>
+        <span class="n">floor_area</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">floorArea</span><span class="p">()</span> <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="n">space</span><span class="o">.</span><span class="n">floorArea</span>
+        <span class="n">sum_floor_area</span> <span class="o">+=</span> <span class="n">floor_area</span>
+    <span class="c1"># Get the OA flow rate</span>
+    <span class="n">tot_oa_flow_rate</span> <span class="o">=</span> <span class="n">thermal_zone_get_outdoor_airflow_rate</span><span class="p">(</span><span class="n">thermal_zone</span><span class="p">)</span>
+    <span class="c1"># Calculate the per-area value</span>
+    <span class="n">tot_oa_flow_rate_per_area</span> <span class="o">=</span> <span class="n">tot_oa_flow_rate</span> <span class="o">/</span> <span class="n">sum_floor_area</span>
+    <span class="k">return</span> <span class="n">tot_oa_flow_rate_per_area</span></div>
+
+
+
+<div class="viewcode-block" id="thermal_zone_get_occupancy_schedule">
+<a class="viewcode-back" href="../../../../honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_occupancy_schedule">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">thermal_zone_get_occupancy_schedule</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">thermal_zone</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the occupancy schedule of the zone.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        thermal_zone: [OpenStudio::Model::ThermalZone] OpenStudio ThermalZone object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get all the occupancy schedules in spaces.</span>
+    <span class="c1"># Check people added via the SpaceType and hard-assigned to the Space itself.</span>
+    <span class="n">occupancy_sch</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">num_ppl_sch</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">space</span> <span class="ow">in</span> <span class="n">thermal_zone</span><span class="o">.</span><span class="n">spaces</span><span class="p">():</span>
+        <span class="c1"># From the space type</span>
+        <span class="n">space_type</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">spaceType</span><span class="p">()</span> <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="n">space</span><span class="o">.</span><span class="n">spaceType</span>
+        <span class="k">if</span> <span class="n">space_type</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">people</span> <span class="ow">in</span> <span class="n">space_type</span><span class="o">.</span><span class="n">get</span><span class="p">()</span><span class="o">.</span><span class="n">people</span><span class="p">():</span>
+                <span class="n">num_ppl_sch</span> <span class="o">=</span> <span class="n">people</span><span class="o">.</span><span class="n">numberofPeopleSchedule</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">num_ppl_sch</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+                    <span class="k">continue</span>
+                <span class="n">occupancy_sch</span> <span class="o">=</span> <span class="n">num_ppl_sch</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+                <span class="k">break</span>
+
+    <span class="k">if</span> <span class="n">num_ppl_sch</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># From the space</span>
+        <span class="k">for</span> <span class="n">space</span> <span class="ow">in</span> <span class="n">thermal_zone</span><span class="o">.</span><span class="n">spaces</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">people</span> <span class="ow">in</span> <span class="n">space</span><span class="o">.</span><span class="n">people</span><span class="p">():</span>
+                <span class="n">num_ppl_sch</span> <span class="o">=</span> <span class="n">people</span><span class="o">.</span><span class="n">numberofPeopleSchedule</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">num_ppl_sch</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+                    <span class="k">continue</span>
+                <span class="n">occupancy_sch</span> <span class="o">=</span> <span class="n">num_ppl_sch</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+                <span class="k">break</span>
+
+    <span class="c1"># if there is no occupancy, use always off</span>
+    <span class="k">if</span> <span class="n">occupancy_sch</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">alwaysOffDiscreteSchedule</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">occupancy_sch</span></div>
+
+</pre></div>
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, Ladybug Tools.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.0.2.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

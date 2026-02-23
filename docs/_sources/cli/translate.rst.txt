@@ -1,0 +1,6 @@
+translate
+=========
+
+.. click:: honeybee_openstudio.cli.translate:translate
+   :prog: honeybee-openstudio translate
+   :show-nested:

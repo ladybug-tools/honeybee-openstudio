@@ -1,0 +1,18 @@
+honeybee\_openstudio.cli package
+================================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   honeybee_openstudio.cli.translate
+
+Module contents
+---------------
+
+.. automodule:: honeybee_openstudio.cli
+   :members:
+   :undoc-members:
+   :show-inheritance:

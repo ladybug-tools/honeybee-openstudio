@@ -1,0 +1,7 @@
+honeybee\_openstudio.shw module
+===============================
+
+.. automodule:: honeybee_openstudio.shw
+   :members:
+   :undoc-members:
+   :show-inheritance:
