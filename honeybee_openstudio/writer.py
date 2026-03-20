@@ -1141,7 +1141,7 @@ def model_to_openstudio(
         hot_water = room.properties.energy.service_hot_water
         if hot_water is not None and hot_water.flow_per_area != 0:
             os_shw_conn = hot_water_to_openstudio(hot_water, room, os_model)
-            total_flow = (hot_water.flow_per_area / 3600000.) * room.floor_area
+            total_flow = (hot_water.flow_per_area / 1000.) * room.floor_area
             water_temp = hot_water.target_temperature
             shw_sys = room.properties.energy.shw
             shw_sys_id = shw_sys.identifier \
