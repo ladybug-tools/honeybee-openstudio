@@ -664,6 +664,12 @@ def model_to_openstudio(
     if len(rem_msgs) != 0:
         print('\n'.join(rem_msgs))
 
+    # balance the air boundary flows if there is a timestep in the seed model
+    if seed_model is not None:
+        os_timestep = seed_model.getTimestep()
+        t_step = os_timestep.numberOfTimestepsPerHour()
+        model.properties.energy.balance_air_boundary_flows(t_step)
+
     # auto-assign stories if there are none since most OpenStudio measures need these
     if len(model.stories) == 0 and len(model.rooms) != 0:
         model.assign_stories_by_floor_height()
