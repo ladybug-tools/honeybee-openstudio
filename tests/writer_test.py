@@ -11,6 +11,7 @@ from honeybee.door import Door
 from honeybee.shade import Shade
 from honeybee.shademesh import ShadeMesh
 from honeybee_energy.config import folders
+from honeybee_energy.simulation.parameter import SimulationParameter
 
 from honeybee_openstudio.openstudio import OSModel, os_vector_len
 from honeybee_openstudio.writer import shade_mesh_to_openstudio, shade_to_openstudio, \
@@ -21,6 +22,7 @@ from honeybee_energy.material.gas import EnergyWindowMaterialGas
 from honeybee_energy.construction.window import WindowConstruction
 from honeybee_energy.construction.dynamic import WindowConstructionDynamic
 from honeybee_energy.schedule.ruleset import ScheduleRuleset
+from honeybee_openstudio.simulation import simulation_parameter_to_openstudio
 
 
 def test_shade_writer():
@@ -257,6 +259,28 @@ def test_model_writer():
     assert os_vector_len(faces) == 6
     assert os_vector_len(sub_faces) == 1
     assert os_vector_len(shades) == 3
+
+
+def test_model_to_openstudio_seed_model():
+    """Test that we can get an OSM string of a model."""
+    room = Room.from_box('Tiny_House_Zone', 5, 10, 3)
+    south_face = room[3]
+    south_face.apertures_by_ratio(0.4, 0.01)
+    south_face.apertures[0].overhang(0.5, indoor=False)
+    south_face.apertures[0].overhang(0.5, indoor=True)
+    south_face.apertures[0].move_shades(Vector3D(0, 0, -0.5))
+    pts = (Point3D(0, 0, 4), Point3D(0, 2, 4), Point3D(2, 2, 4),
+           Point3D(2, 0, 4), Point3D(4, 0, 4))
+    mesh = Mesh3D(pts, [(0, 1, 2, 3), (2, 3, 4)])
+    awning_1 = ShadeMesh('Awning_1', mesh)
+    model = Model('Tiny_House', [room], shade_meshes=[awning_1])
+
+    sim_par = SimulationParameter()
+    os_model = simulation_parameter_to_openstudio(sim_par)
+
+    os_model = model_to_openstudio(model, seed_model=os_model)
+    faces = os_model.getSurfaces()
+    assert os_vector_len(faces) == 6
 
 
 def test_model_writer_dynamic_constructions():
