@@ -145,7 +145,10 @@ def shw_system_to_openstudio(shw, os_shw_connections, total_flow, water_temp, os
             heater.setOnCycleLossCoefficienttoAmbientTemperature(0)
         else:
             heater.setName('SHW WaterHeater')
-            heater.setTankVolume(total_flow)
+            if total_flow < 0.1:  # use a tank of at least 100 liters
+                heater.setTankVolume(0.1)
+            else:
+                heater.setTankVolume(total_flow)
 
         # if it's a heat pump system, then add the pump
         if equip_type == 'HeatPump_WaterHeater':
