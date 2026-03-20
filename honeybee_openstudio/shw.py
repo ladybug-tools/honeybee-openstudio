@@ -42,9 +42,9 @@ def shw_system_to_openstudio(shw, os_shw_connections, total_flow, water_temp, os
             all of the connections to be made to the system. These are typically
             obtained by using the hot_water_to_openstudio function in this package
             on the Room.properties.energy.service_hot_water object.
-        total_flow: A number for the total flow rate of water in the system in m3/s.
-            This is typically obtained by summing the individual Room flow rates
-            across the system.
+        total_flow: A number for the maximum total flow rate of water in the
+            system in m3/hr. This is used to set the size of the hot water tank
+            to ensure that it can meet peak demand sustained for a full hour.
         water_temp: A number for the temperature of the water in Celsius. This is
             typically obtained by taking the maximum hot water temperature across
             the individual Room target_temperature.
