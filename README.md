@@ -3,7 +3,7 @@
 [![Python 3.10](https://img.shields.io/badge/python-3.10-orange.svg)](https://www.python.org/downloads/release/python-3100/)
 [![IronPython](https://img.shields.io/badge/ironpython-2.7-red.svg)](https://github.com/IronLanguages/ironpython2/releases/tag/ipy-2.7.8/)
 
-![Honeybee](https://www.ladybug.tools/assets/img/honeybee.png) ![OpenStudio](https://global.discourse-cdn.com/sketchup/optimized/3X/9/9/99fa74426b043e577069fadc8ef493f3a399c1ff_2_500x500.jpeg)
+![Honeybee](https://www.ladybug.tools/assets/img/honeybee.png) <img src="https://global.discourse-cdn.com/sketchup/optimized/3X/9/9/99fa74426b043e577069fadc8ef493f3a399c1ff_2_500x500.jpeg" width="200" height="200">
 
 Honeybee extension for translation to/from OpenStudio.
 

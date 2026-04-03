@@ -1477,22 +1477,102 @@ def model_to_gbxml(
         gbxml_str = gbxml_str.replace('="UndergroundSlab"', '="RaisedFloor"')
         gbxml_str = gbxml_str.replace('="SlabOnGrade"', '="RaisedFloor"')
 
+    # load the gbXML data to an ElementTree so that more attributes can be added
+    # get a dictionary of rooms in the model
+    room_dict = {room.identifier: room for room in model.rooms}
+
+    # register all of the namespaces within the OpenStudio-exported XML
+    ET.register_namespace('', 'http://www.gbxml.org/schema')
+    ET.register_namespace('xhtml', 'http://www.w3.org/1999/xhtml')
+    ET.register_namespace('xsi', 'http://www.w3.org/2001/XMLSchema-instance')
+    ET.register_namespace('xsd', 'http://www.w3.org/2001/XMLSchema')
+
+    # parse the XML and get the building definition
+    root = ET.fromstring(gbxml_str)
+    gbxml_header = r'{http://www.gbxml.org/schema}'
+    building = root[0][1]
+
+    # overwrite the space loads so that they are formatted for engines like TRACE
+    for room_element in building.findall(gbxml_header + 'Space'):
+        room_id = room_element.get('zoneIdRef')
+        if room_id:
+            room_id = room_element.get('id')
+            original_id = room_id[:-6]  # remove '_Space' from the end
+            if original_id.startswith('id_'):
+                original_id = room_id[3:]  # remove 'id_' from the start
+            try:
+                hb_room = room_dict[room_id]
+            except KeyError:  # zone contains multiple spaces
+                continue
+
+            # assign infiltration as the ACH value that gbXML accepts
+            inf_obj = hb_room.properties.energy.infiltration
+            if inf_obj is not None:
+                inf_per_area = inf_obj.flow_per_exterior_area
+                if inf_per_area <= 0.00015:
+                    inf_class = 'Tight'
+                elif inf_per_area <= 0.0003:
+                    inf_class = 'Average'
+                else:
+                    inf_class = 'Loose'
+                inf_element = ET.SubElement(room_element, 'InfiltrationFlow')
+                inf_element.set('type', inf_class)
+                total_inf = inf_per_area * hb_room.exposed_area
+                total_ach = (total_inf * 3600) / hb_room.volume
+                blower_element = ET.SubElement(inf_element, 'BlowerDoorValue')
+                blower_element.set('unit', 'AirChangesPerHour')
+                blower_element.text = str(round(total_ach, 6))
+
+            # convert the people load to an absolute number of people
+            ppl_obj = hb_room.properties.energy.people
+            if ppl_obj is not None and ppl_obj.people_per_area != 0:
+                person_count = round(ppl_obj.people_per_area * hb_room.floor_area, 3)
+                old_element = room_element.find(gbxml_header + 'PeopleNumber')
+                new_element = ET.Element('PeopleNumber')
+                new_element.set('unit', 'NumberOfPeople')
+                new_element.text = str(person_count)
+                index = list(room_element).index(old_element)
+                room_element[index] = new_element
+
+            # account for any gas equipment loads if they exist
+            gas_obj = hb_room.properties.energy.gas_equipment
+            if gas_obj is not None and gas_obj.watts_per_area != 0:
+                old_element = room_element.find(gbxml_header + 'EquipPowerPerArea')
+                if old_element is not None:
+                    total_equip = gas_obj.watts_per_area + float(old_element.text)
+                    old_element.text = str(total_equip)
+                else:
+                    new_element = ET.SubElement(room_element, 'EquipPowerPerArea')
+                    new_element.set('unit', 'WattPerSquareMeter')
+                    new_element.text = str(gas_obj.watts_per_area)
+
+    # assign outdoor ventilation air to all zones in the gbXML
+    for room_element in root.findall(gbxml_header + 'Zone'):
+        room_id = room_element.get('id')
+        try:
+            hb_room = room_dict[room_id]
+        except KeyError:  # zone contains multiple spaces
+            continue
+        vent_obj = hb_room.properties.energy.ventilation
+        if vent_obj is not None:
+            total_flows = [vent_obj.flow_per_zone]
+            if vent_obj.flow_per_person != 0:
+                people = hb_room.properties.energy.people
+                if people is not None:
+                    person_count = people.people_per_area * hb_room.floor_area
+                    total_flows.append(vent_obj.flow_per_person * person_count)
+            if vent_obj.flow_per_area != 0:
+                total_flows.append(vent_obj.flow_per_area * hb_room.floor_area)
+            if vent_obj.air_changes_per_hour != 0:
+                total_flows.append((vent_obj.air_changes_per_hour * hb_room.volume) / 3600)
+            total_flow = sum(total_flows) if vent_obj.method == 'Sum' else max(total_flows)
+            if total_flow != 0:
+                area_element = ET.SubElement(room_element, 'OAFlowPerArea')
+                area_element.set('unit', 'LPerSecPerSquareM')
+                area_element.text = str((total_flow * 1000) / hb_room.floor_area)
+
     # write the SpaceBoundary and ShellGeometry into the XML if requested
     if full_geometry:
-        # get a dictionary of rooms in the model
-        room_dict = {room.identifier: room for room in model.rooms}
-
-        # register all of the namespaces within the OpenStudio-exported XML
-        ET.register_namespace('', 'http://www.gbxml.org/schema')
-        ET.register_namespace('xhtml', 'http://www.w3.org/1999/xhtml')
-        ET.register_namespace('xsi', 'http://www.w3.org/2001/XMLSchema-instance')
-        ET.register_namespace('xsd', 'http://www.w3.org/2001/XMLSchema')
-
-        # parse the XML and get the building definition
-        root = ET.fromstring(gbxml_str)
-        gbxml_header = r'{http://www.gbxml.org/schema}'
-        building = root[0][1]
-
         # loop through surfaces in the gbXML so that we know the name of the interior ones
         surface_set = set()
         for room_element in root[0].findall(gbxml_header + 'Surface'):
@@ -1509,7 +1589,7 @@ def model_to_gbxml(
                 original_id = room_id[:-6]  # remove '_Space' from the end
                 if original_id.startswith('id_'):
                     original_id = original_id[3:]  # remove 'id_' from the beginning
-                hb_room = room_dict[original_id]  
+                hb_room = room_dict[original_id]
                 for face in hb_room:
                     face_xml, face_geo_xml = _face_to_gbxml_geo(face, surface_set)
                     if face_xml is not None:
@@ -1517,11 +1597,12 @@ def model_to_gbxml(
                         shell_geo_element.append(face_geo_xml)
                 room_element.append(shell_element)
 
-        # convert the element tree back into a string
-        if sys.version_info >= (3, 0):
-            gbxml_str = ET.tostring(root, encoding='unicode', xml_declaration=True)
-        else:
-            gbxml_str = ET.tostring(root)
+    # convert the element tree back into a string
+    if sys.version_info >= (3, 0):
+        ET.indent(root)
+        gbxml_str = ET.tostring(root, encoding='unicode', xml_declaration=True)
+    else:
+        gbxml_str = ET.tostring(root)
 
     return gbxml_str
 
