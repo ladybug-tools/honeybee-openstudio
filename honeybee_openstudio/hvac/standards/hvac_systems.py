@@ -4766,7 +4766,7 @@ def model_add_waterside_economizer(
 
     # get the chillers on the chilled water loop
     chillers = chilled_water_loop.supplyComponents(
-        'OS:Chiller:Electric:EIR'.to_IddObjectType())
+        openstudio.IddObjectType('OS:Chiller:Electric:EIR'))
 
     if integrated:
         if os_vector_len(chillers) == 0:
@@ -4786,10 +4786,10 @@ def model_add_waterside_economizer(
         # This is necessary so that the correct type of operation scheme will be created.
         # Without this, OS will create an uncontrolled operation scheme
         # and the chillers will never run.
-        chw_spms = chilled_water_loop.supplyOutletNode.setpointManagers()
+        chw_spms = chilled_water_loop.supplyOutletNode().setpointManagers()
         objs = []
         for obj in chillers:
-            objs.append(obj.to_ChillerElectricEIR.get())
+            objs.append(obj.to_ChillerElectricEIR().get())
         objs.append(heat_exchanger)
         for obj in objs:
             outlet = obj.supplyOutletModelObject().get().to_Node().get()

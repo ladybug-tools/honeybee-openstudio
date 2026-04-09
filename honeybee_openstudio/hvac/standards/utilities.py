@@ -61,8 +61,8 @@ def ems_friendly_name(name):
     # replace white space and special characters with underscore
     # \W is equivalent to [^a-zA-Z0-9_]
     new_name = re.sub('[^A-Za-z0-9]', '_', str(name))
-    # prepend ems_ in case the name starts with a number
-    new_name = 'ems_{}'.format(new_name)
+    if new_name[:1].isdigit():  # prepend ems_ in the case the name starts with a number
+        new_name = 'ems_{}'.format(new_name)
     return new_name
 
 
