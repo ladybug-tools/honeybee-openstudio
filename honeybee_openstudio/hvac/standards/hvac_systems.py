@@ -158,17 +158,20 @@ def model_add_hw_loop(
     # District Heating
     if boiler_fuel_type == 'DistrictHeating':
         district_heat = openstudio_model.DistrictHeating(model)
-        district_heat.setName('{} District Heating'.format(hot_water_loop.nameString()))
+        building = model.getBuilding()
+        district_heat.setName('{} District Heating'.format(building.nameString()))
         district_heat.autosizeNominalCapacity()
         hot_water_loop.addSupplyBranchForComponent(district_heat)
     elif boiler_fuel_type == 'DistrictHeatingWater':
         district_heat = openstudio_model.DistrictHeatingWater(model)
-        district_heat.setName('{} District Heating'.format(hot_water_loop.nameString()))
+        building = model.getBuilding()
+        district_heat.setName('{} District Heating'.format(building.nameString()))
         district_heat.autosizeNominalCapacity()
         hot_water_loop.addSupplyBranchForComponent(district_heat)
     elif boiler_fuel_type == 'DistrictHeatingSteam':
         district_heat = openstudio_model.DistrictHeatingSteam(model)
-        district_heat.setName('{} District Heating'.format(hot_water_loop.nameString()))
+        building = model.getBuilding()
+        district_heat.setName('{} District Heating'.format(building.nameString()))
         district_heat.autosizeNominalCapacity()
         hot_water_loop.addSupplyBranchForComponent(district_heat)
     elif boiler_fuel_type in ('HeatPump', 'AmbientLoop'):
@@ -404,7 +407,8 @@ def model_add_chw_loop(
     if cooling_fuel == 'DistrictCooling':
         # DistrictCooling
         dist_clg = openstudio_model.DistrictCooling(model)
-        dist_clg.setName('Purchased Cooling')
+        building = model.getBuilding()
+        dist_clg.setName('{} District Cooling'.format(building.nameString()))
         dist_clg.autosizeNominalCapacity()
         chilled_water_loop.addSupplyBranchForComponent(dist_clg)
     else:
