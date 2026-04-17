@@ -109,6 +109,10 @@ def shw_system_to_openstudio(shw, os_shw_connections, total_flow, water_temp, os
             heater.setHeaterFuelType('Electricity')
             heater.setOffCycleParasiticFuelType('Electricity')
             heater.setOnCycleParasiticFuelType('Electricity')
+        elif 'District' in equip_type:
+            heater.setHeaterFuelType('DistrictHeating')
+            heater.setOffCycleParasiticFuelType('DistrictHeating')
+            heater.setOnCycleParasiticFuelType('DistrictHeating')
         # set the water heater efficiency
         if equip_type == 'HeatPump_WaterHeater':
             heater.setHeaterThermalEfficiency(1.0)
@@ -137,7 +141,7 @@ def shw_system_to_openstudio(shw, os_shw_connections, total_flow, water_temp, os
                 shw.ambient_loss_coefficient)
         # set the capacity and and controls of the water heater
         heater.setHeaterMaximumCapacity(1000000)
-        if equip_type in ('Gas_TanklessHeater', 'Electric_TanklessHeater'):
+        if 'TanklessHeater' in equip_type:
             heater.setName('SHW Tankless WaterHeater')
             heater.setTankVolume(0)
             heater.setHeaterControlType('Modulate')
