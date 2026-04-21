@@ -2,6 +2,7 @@
 """Methods to write Honeybee-energy SimulationParameters to OpenStudio."""
 from __future__ import division
 import os
+from datetime import datetime
 
 from ladybug.epw import EPW
 from ladybug.stat import STAT
@@ -204,10 +205,27 @@ def run_period_to_openstudio(run_period, os_model):
         run_period: A Honeybee-energy RunPeriod to be translated to OpenStudio.
         os_model: The OpenStudio Model object.
     """
-    # set the characteristics of the year
-    os_model.setDayofWeekforStartDay(run_period.start_day_of_week)
-    if run_period.is_leap_year:
-        os_model.setIsLeapYear(True)
+    # if we are using the more recent E+, find a year that has the correct day of week
+    if os_model.version() > openstudio.VersionString('3.9.0'):
+        cal_yr = 2006
+        st_dt = run_period.start_date
+        if run_period.is_leap_year:
+            for yr in range(2024, 0, -4):
+                yr_date = datetime(yr, st_dt.month, st_dt.day)
+                if yr_date.strftime("%A") == run_period.start_day_of_week:
+                    cal_yr = yr
+                    break
+        else:
+            for yr in range(2026, 0, -1):
+                yr_date = datetime(yr, st_dt.month, st_dt.day)
+                if yr_date.strftime("%A") == run_period.start_day_of_week:
+                    cal_yr = yr
+                    break
+        os_model.setCalendarYear(cal_yr)
+    else:  # the RunPeriod was so much better in the older E+
+        if run_period.is_leap_year:
+            os_model.setIsLeapYear(True)
+        os_model.setDayofWeekforStartDay(run_period.start_day_of_week)
     # set the run period start and end dates
     os_run_period = os_model.getRunPeriod()
     os_run_period.setBeginMonth(run_period.start_date.month)
