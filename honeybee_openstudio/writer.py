@@ -1390,6 +1390,9 @@ def model_to_gbxml(
             room.properties.energy.assign_ideal_air_equivalent()
         v_control.vent_control_type = 'SingleZone'
 
+    # ensure all display_names are unique because some gbXMl interfaces require this
+    model.assign_unique_names()
+
     # reset the IDs to be derived from the display_names if requested
     if reset_geometry_ids:
         model.reset_ids()
@@ -1555,17 +1558,7 @@ def model_to_gbxml(
             continue
         vent_obj = hb_room.properties.energy.ventilation
         if vent_obj is not None:
-            total_flows = [vent_obj.flow_per_zone]
-            if vent_obj.flow_per_person != 0:
-                people = hb_room.properties.energy.people
-                if people is not None:
-                    person_count = people.people_per_area * hb_room.floor_area
-                    total_flows.append(vent_obj.flow_per_person * person_count)
-            if vent_obj.flow_per_area != 0:
-                total_flows.append(vent_obj.flow_per_area * hb_room.floor_area)
-            if vent_obj.air_changes_per_hour != 0:
-                total_flows.append((vent_obj.air_changes_per_hour * hb_room.volume) / 3600)
-            total_flow = sum(total_flows) if vent_obj.method == 'Sum' else max(total_flows)
+            total_flow = vent_obj.room_absolute_flow(hb_room)
             if total_flow != 0:
                 area_element = ET.SubElement(room_element, 'OAFlowPerArea')
                 area_element.set('unit', 'LPerSecPerSquareM')
