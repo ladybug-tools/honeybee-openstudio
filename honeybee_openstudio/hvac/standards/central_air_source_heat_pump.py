@@ -10,7 +10,9 @@ from honeybee_openstudio.openstudio import openstudio_model
 from .utilities import ems_friendly_name
 
 
-def create_central_air_source_heat_pump(model, hot_water_loop, name=None, cop=3.65):
+def create_central_air_source_heat_pump(
+    model, hot_water_loop, name=None, cop=3.65, add_operations=True
+):
     """Prototype CentralAirSourceHeatPump object using PlantComponentUserDefined.
 
     Args:
@@ -20,6 +22,8 @@ def create_central_air_source_heat_pump(model, hot_water_loop, name=None, cop=3.
         name: [String] the name of the central air source heat pump, or nil in
             which case it will be defaulted.
         cop: [Double] air source heat pump rated cop.
+        add_operations: Boolean to note whether equipment operations should be
+            added for the ASHP. (Default: True).
     """
     # create the PlantComponentUserDefined object as a proxy for the Central Air Source Heat Pump
     plant_comp = openstudio_model.PlantComponentUserDefined(model)
@@ -242,8 +246,9 @@ def create_central_air_source_heat_pump(model, hot_water_loop, name=None, cop=3.
         hot_water_loop.addSupplyBranchForComponent(plant_comp)
 
     # add operation scheme
-    htg_op_scheme = openstudio_model.PlantEquipmentOperationHeatingLoad(model)
-    htg_op_scheme.addEquipment(1000000000, plant_comp)
-    hot_water_loop.setPlantEquipmentOperationHeatingLoad(htg_op_scheme)
+    if add_operations:
+        htg_op_scheme = openstudio_model.PlantEquipmentOperationHeatingLoad(model)
+        htg_op_scheme.addEquipment(1000000000, plant_comp)
+        hot_water_loop.setPlantEquipmentOperationHeatingLoad(htg_op_scheme)
 
     return plant_comp
