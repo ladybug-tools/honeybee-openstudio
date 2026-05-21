@@ -8,6 +8,8 @@ from honeybee.model import Model
 
 import openstudio
 from honeybee_openstudio.writer import model_to_openstudio
+from honeybee_openstudio.writer import model_to_idf as hb_model_to_idf
+from honeybee_openstudio.writer import model_to_epjson as hb_model_to_epjson
 
 _logger = logging.getLogger(__name__)
 
@@ -57,6 +59,78 @@ def model_to_osm(model_file, output_file=None):
     else:
         output = process_content_to_output(str(os_model), output_file)
         return output
+
+
+@translate.command('model-to-idf')
+@click.argument('model-file', type=click.Path(
+    exists=True, file_okay=True, dir_okay=False, resolve_path=True))
+@click.option(
+    '--output-file', '-o', help='Optional IDF file path to output the IDF string '
+    'of the translation. By default this will be printed to stdout.',
+    type=click.File('w'), default='-', show_default=True)
+def model_to_idf_cli(model_file, output_file):
+    """Translate a Honeybee Model to an IDF file.
+
+    \b
+    Args:
+        model_file: Full path to a Honeybee Model file (HBJSON or HBpkl).
+    """
+    try:
+        model_to_idf(model_file, output_file)
+    except Exception as e:
+        _logger.exception(f'Model translation failed:\n{e}')
+        sys.exit(1)
+    else:
+        sys.exit(0)
+
+
+def model_to_idf(model_file, output_file=None):
+    """Translate a Honeybee Model to an IDF file.
+
+    Args:
+        model_file: Full path to a Honeybee Model file (HBJSON or HBpkl).
+        output_file: Optional IDF file path to output the IDF string of the
+            translation. If None, the string will be returned from this function.
+    """
+    model = Model.from_file(model_file)
+    idf_str = hb_model_to_idf(model, print_progress=True)
+    return process_content_to_output(idf_str, output_file)
+
+
+@translate.command('model-to-epjson')
+@click.argument('model-file', type=click.Path(
+    exists=True, file_okay=True, dir_okay=False, resolve_path=True))
+@click.option(
+    '--output-file', '-o', help='Optional epJSON file path to output the epJSON string '
+    'of the translation. By default this will be printed to stdout.',
+    type=click.File('w'), default='-', show_default=True)
+def model_to_epjson_cli(model_file, output_file):
+    """Translate a Honeybee Model to an epJSON file.
+
+    \b
+    Args:
+        model_file: Full path to a Honeybee Model file (HBJSON or HBpkl).
+    """
+    try:
+        model_to_epjson(model_file, output_file)
+    except Exception as e:
+        _logger.exception(f'Model translation failed:\n{e}')
+        sys.exit(1)
+    else:
+        sys.exit(0)
+
+
+def model_to_epjson(model_file, output_file=None):
+    """Translate a Honeybee Model to an epJSON file.
+
+    Args:
+        model_file: Full path to a Honeybee Model file (HBJSON or HBpkl).
+        output_file: Optional epJSON file path to output the epJSON string of the
+            translation. If None, the string will be returned from this function.
+    """
+    model = Model.from_file(model_file)
+    epjson_str = hb_model_to_epjson(model, print_progress=True)
+    return process_content_to_output(epjson_str, output_file)
 
 
 @translate.command('osm-to-idf')

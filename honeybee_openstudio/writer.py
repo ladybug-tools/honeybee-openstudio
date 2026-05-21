@@ -568,19 +568,19 @@ def model_to_openstudio(
             IDF string instead of to Schedule:File. (Default: None).
         use_geometry_names: Boolean to note whether a cleaned version of all
             geometry display names should be used instead of identifiers when
-            translating the Model to OSM and IDF. Using this flag will affect
+            translating the Model to OpenStudio. Using this flag will affect
             all Rooms, Faces, Apertures, Doors, and Shades. It will generally
-            result in more read-able names in the OSM and IDF but this means
+            result in more read-able names in the OpenStudio but this means
             that it will not be easy to map the EnergyPlus results back to the
             input Honeybee Model. Cases of duplicate IDs resulting from
             non-unique names will be resolved by adding integers to the ends
             of the new IDs that are derived from the name. (Default: False).
         use_resource_names: Boolean to note whether a cleaned version of all
             resource display names should be used instead of identifiers when
-            translating the Model to OSM and IDF. Using this flag will affect
+            translating the Model to OpenStudio. Using this flag will affect
             all Materials, Constructions, ConstructionSets, Schedules, Loads,
             and ProgramTypes. It will generally result in more read-able names
-            for the resources in the OSM and IDF. Cases of duplicate IDs
+            for the resources in the OpenStudio. Cases of duplicate IDs
             resulting from non-unique names will be resolved by adding integers
             to the ends of the new IDs that are derived from the name. (Default: False).
         triangulate_non_planar_orphaned: Boolean to note whether any non-planar
@@ -1220,19 +1220,19 @@ def model_to_osm(
             IDF string instead of to Schedule:File. (Default: None).
         use_geometry_names: Boolean to note whether a cleaned version of all
             geometry display names should be used instead of identifiers when
-            translating the Model to OSM and IDF. Using this flag will affect
+            translating the Model to OSM. Using this flag will affect
             all Rooms, Faces, Apertures, Doors, and Shades. It will generally
-            result in more read-able names in the OSM and IDF but this means
+            result in more read-able names in the OSM but this means
             that it will not be easy to map the EnergyPlus results back to the
             input Honeybee Model. Cases of duplicate IDs resulting from
             non-unique names will be resolved by adding integers to the ends
             of the new IDs that are derived from the name. (Default: False).
         use_resource_names: Boolean to note whether a cleaned version of all
             resource display names should be used instead of identifiers when
-            translating the Model to OSM and IDF. Using this flag will affect
+            translating the Model to OSM. Using this flag will affect
             all Materials, Constructions, ConstructionSets, Schedules, Loads,
             and ProgramTypes. It will generally result in more read-able names
-            for the resources in the OSM and IDF. Cases of duplicate IDs
+            for the resources in the OSM. Cases of duplicate IDs
             resulting from non-unique names will be resolved by adding integers
             to the ends of the new IDs that are derived from the name. (Default: False).
         print_progress: Set to True to have the progress of the translation
@@ -1256,7 +1256,7 @@ def model_to_idf(
     """Translate a Honeybee Model to an IDF string using OpenStudio SDK translators.
 
     Args:
-        model: The Honeybee Model to be converted into an OpenStudio Model.
+        model: The Honeybee Model to be converted into an IDF.
         seed_model: An optional OpenStudio Model object to which the Honeybee
             Model will be added. If None, a new OpenStudio Model will be
             initialized within this method. (Default: None).
@@ -1266,19 +1266,19 @@ def model_to_idf(
             IDF string instead of to Schedule:File. (Default: None).
         use_geometry_names: Boolean to note whether a cleaned version of all
             geometry display names should be used instead of identifiers when
-            translating the Model to OSM and IDF. Using this flag will affect
+            translating the Model to IDF. Using this flag will affect
             all Rooms, Faces, Apertures, Doors, and Shades. It will generally
-            result in more read-able names in the OSM and IDF but this means
+            result in more read-able names in the IDF but this means
             that it will not be easy to map the EnergyPlus results back to the
             input Honeybee Model. Cases of duplicate IDs resulting from
             non-unique names will be resolved by adding integers to the ends
             of the new IDs that are derived from the name. (Default: False).
         use_resource_names: Boolean to note whether a cleaned version of all
             resource display names should be used instead of identifiers when
-            translating the Model to OSM and IDF. Using this flag will affect
+            translating the Model to IDF. Using this flag will affect
             all Materials, Constructions, ConstructionSets, Schedules, Loads,
             and ProgramTypes. It will generally result in more read-able names
-            for the resources in the OSM and IDF. Cases of duplicate IDs
+            for the resources in the IDF. Cases of duplicate IDs
             resulting from non-unique names will be resolved by adding integers
             to the ends of the new IDs that are derived from the name. (Default: False).
         print_progress: Set to True to have the progress of the translation
@@ -1299,6 +1299,73 @@ def model_to_idf(
         idf_translator = openstudio.energyplus.ForwardTranslator()
     workspace = idf_translator.translateModel(os_model)
     return str(workspace)
+
+
+def model_to_epjson(
+    model, seed_model=None, schedule_directory=None,
+    use_geometry_names=False, use_resource_names=False, print_progress=False
+):
+    """Translate a Honeybee Model to an epJSON string using OpenStudio SDK translators.
+
+    Args:
+        model: The Honeybee Model to be converted into an epJSON.
+        seed_model: An optional OpenStudio Model object to which the Honeybee
+            Model will be added. If None, a new OpenStudio Model will be
+            initialized within this method. (Default: None).
+        schedule_directory: An optional file directory to which all file-based
+            schedules should be written to. If None, all ScheduleFixedIntervals
+            will be translated to Schedule:Compact and written fully into the
+            IDF string instead of to Schedule:File. (Default: None).
+        use_geometry_names: Boolean to note whether a cleaned version of all
+            geometry display names should be used instead of identifiers when
+            translating the Model to epJSON. Using this flag will affect
+            all Rooms, Faces, Apertures, Doors, and Shades. It will generally
+            result in more read-able names in the epJSON but this means
+            that it will not be easy to map the EnergyPlus results back to the
+            input Honeybee Model. Cases of duplicate IDs resulting from
+            non-unique names will be resolved by adding integers to the ends
+            of the new IDs that are derived from the name. (Default: False).
+        use_resource_names: Boolean to note whether a cleaned version of all
+            resource display names should be used instead of identifiers when
+            translating the Model to epJSON. Using this flag will affect
+            all Materials, Constructions, ConstructionSets, Schedules, Loads,
+            and ProgramTypes. It will generally result in more read-able names
+            for the resources in the epJSON. Cases of duplicate IDs
+            resulting from non-unique names will be resolved by adding integers
+            to the ends of the new IDs that are derived from the name. (Default: False).
+        print_progress: Set to True to have the progress of the translation
+            printed as it is completed. (Default: False).
+    """
+    # check that the input is a model and that energyplus is installed
+    assert isinstance(model, Model), \
+        'Expected Honeybee Model for model_to_epjson. Got {}.'.format(type(model))
+    try:
+        from honeybee_energy.config import folders as hbe_folders
+        ep_path = hbe_folders.energyplus_path
+        assert ep_path is not None, 'EnergyPlus must be installed to use ' \
+            'honeybee-openstudio model_to_epjson.'
+        ep_schema = os.path.join(ep_path, 'Energy+.schema.epJSON')
+        assert os.path.isfile(ep_schema), \
+            'No epJSON schema file was found at: {}'.format(ep_schema)
+    except ImportError as e:
+        msg = 'Honeybee-energy must be installed to use honeybee-openstudio ' \
+            'model_to_epjson. {}'.format(e)
+        raise ImportError(msg)
+
+    # translate the Honeybee Model to an OpenStudio Model
+    os_model = model_to_openstudio(
+        model, seed_model, schedule_directory, use_geometry_names, use_resource_names,
+        print_progress=print_progress
+    )
+
+    # translate the model to an EnergyPlus workspace
+    if (sys.version_info < (3, 0)):
+        idf_translator = openstudio.EnergyPlusForwardTranslator()
+    else:
+        idf_translator = openstudio.energyplus.ForwardTranslator()
+    workspace = idf_translator.translateModel(os_model)
+    # use the epjson translator to convert the IDF to JSON
+    return openstudio.epjson.toJSONString(workspace, os_path(ep_schema))
 
 
 def model_to_gbxml(
