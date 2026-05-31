@@ -1108,6 +1108,15 @@ def model_to_openstudio(
     if len(detailed_hvac_dict) != 0:
         assert hbe_folders.ironbug_exe is not None, 'Detailed Ironbug HVAC System was ' \
             'assigned but no Ironbug installation was found.'
+        # set other side coefficient objects to be parse-able by OpenStudio C# bindings
+        os_coeffs = os_model.getSurfacePropertyOtherSideCoefficientss()
+        if os_vector_len(os_coeffs) != 0:
+            for os_coeff in os_coeffs:
+                htc = os_coeff.combinedConvectiveRadiativeFilmCoefficient()
+                if htc.is_initialized():
+                    htc = htc.get()
+                    if htc == 0:
+                        os_coeff.setCombinedConvectiveRadiativeFilmCoefficient(100000)
         for hvac_id, hvac in detailed_hvac_dict.items():
             hvac_trans_dir = tempfile.gettempdir()
             spec_file_name = '_'.join(hvac.identifier.split())
