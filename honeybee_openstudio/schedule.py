@@ -16,7 +16,7 @@ from honeybee_energy.schedule.fixedinterval import ScheduleFixedInterval
 
 from honeybee_openstudio.openstudio import OSScheduleTypeLimits, OSScheduleRuleset, \
     OSScheduleRule, OSScheduleDay, OSScheduleFixedInterval, OSExternalFile, \
-    OSScheduleFile, OSVector, OSTime, OSTimeSeries
+    OSScheduleFile, OSVector, OSTime, OSTimeSeries, openstudio
 
 
 """____________TRANSLATORS TO OPENSTUDIO____________"""
@@ -50,6 +50,8 @@ def schedule_day_to_openstudio(schedule_day, os_model):
     for i, val in enumerate(values_day):
         time_until = OSTime(0, times_day[i][0], times_day[i][1], 0)
         os_day_sch.addValue(time_until, val)
+    if schedule_day.interpolate and os_model.version() > openstudio.VersionString('3.7.0'):
+        os_day_sch.setInterpolatetoTimestep('Linear')
     return os_day_sch
 
 
@@ -284,6 +286,7 @@ def schedule_day_from_openstudio(os_day_schedule):
         times.append(Time(shc_time.hours(), shc_time.minutes()))
     times.pop(-1)
     interpolate = os_day_schedule.interpolatetoTimestep()
+    interpolate = False if interpolate == 'No' else True
     day_schedule = ScheduleDay(clean_ep_string(os_day_schedule.nameString()),
                                values, times, interpolate)
     if os_day_schedule.displayName().is_initialized():
