@@ -1004,17 +1004,48 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
             for os_air_loop in os_air_loops:
                 heat_ex = _get_or_add_heat_recovery(os_model, os_air_loop)
                 # ratio of max to standard efficiency from OpenStudio Standards
-                eff_sens = hvac.sensible_heat_recovery
-                heat_ex.setSensibleEffectivenessat100CoolingAirFlow(eff_sens)
-                heat_ex.setSensibleEffectivenessat100HeatingAirFlow(eff_sens)
-                eff_lat = hvac.latent_heat_recovery
-                heat_ex.setLatentEffectivenessat100CoolingAirFlow(eff_lat)
-                heat_ex.setLatentEffectivenessat100HeatingAirFlow(eff_lat)
+                eff_sens, eff_lat = hvac.sensible_heat_recovery, hvac.latent_heat_recovery
+                fac = 0.94
                 if os_model.version() < openstudio.VersionString('3.8.0'):
+                    heat_ex.setSensibleEffectivenessat100CoolingAirFlow(round(eff_sens * fac, 3))
+                    heat_ex.setSensibleEffectivenessat100HeatingAirFlow(round(eff_sens * fac, 3))
+                    heat_ex.setLatentEffectivenessat100CoolingAirFlow(round(eff_lat * fac, 3))
+                    heat_ex.setLatentEffectivenessat100HeatingAirFlow(round(eff_lat * fac, 3))
                     heat_ex.setSensibleEffectivenessat75CoolingAirFlow(eff_sens)
                     heat_ex.setSensibleEffectivenessat75HeatingAirFlow(eff_sens)
                     heat_ex.setLatentEffectivenessat75CoolingAirFlow(eff_lat)
                     heat_ex.setLatentEffectivenessat75HeatingAirFlow(eff_lat)
+                else:
+                    if eff_sens != 0:
+                        heat_ex.setSensibleEffectivenessat100CoolingAirFlow(round(eff_sens * fac, 3))
+                        heat_ex.setSensibleEffectivenessat100HeatingAirFlow(round(eff_sens * fac, 3))
+                        hx_curve = openstudio_model.CurveQuadratic(os_model)
+                        hx_curve.setName('{} Sensible Performance'.format(heat_ex.nameString()))
+                        hx_curve.setCoefficient1Constant(1.06)
+                        hx_curve.setCoefficient2x(0.191)
+                        hx_curve.setCoefficient3xPOW2(-0.255)
+                        hx_curve.setMinimumValueofx(0)
+                        hx_curve.setMaximumValueofx(1)
+                        heat_ex.setSensibleEffectivenessofHeatingAirFlowCurve(hx_curve)
+                        heat_ex.setSensibleEffectivenessofCoolingAirFlowCurve(hx_curve)
+                    else:
+                        heat_ex.setSensibleEffectivenessat100CoolingAirFlow(0)
+                        heat_ex.setSensibleEffectivenessat100HeatingAirFlow(0)
+                    if eff_lat != 0:
+                        heat_ex.setLatentEffectivenessat100CoolingAirFlow(round(eff_lat * fac, 3))
+                        heat_ex.setLatentEffectivenessat100HeatingAirFlow(round(eff_lat * fac, 3))
+                        hx_curve = openstudio_model.CurveQuadratic(os_model)
+                        hx_curve.setName('{} Latent Performance'.format(heat_ex.nameString()))
+                        hx_curve.setCoefficient1Constant(1.06)
+                        hx_curve.setCoefficient2x(0.191)
+                        hx_curve.setCoefficient3xPOW2(-0.255)
+                        hx_curve.setMinimumValueofx(0)
+                        hx_curve.setMaximumValueofx(1)
+                        heat_ex.setLatentEffectivenessofHeatingAirFlowCurve(hx_curve)
+                        heat_ex.setLatentEffectivenessofCoolingAirFlowCurve(hx_curve)
+                    else:
+                        heat_ex.setLatentEffectivenessat100CoolingAirFlow(0)
+                        heat_ex.setLatentEffectivenessat100HeatingAirFlow(0)
 
         # assign electric humidifier if there's an air loop and zones have humidistat
         humidistat_exists = False
