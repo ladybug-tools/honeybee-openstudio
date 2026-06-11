@@ -834,6 +834,18 @@ def model_to_openstudio(
             humid = setpoint_to_openstudio_humidistat(set_pt, os_model, room.identifier)
             if humid is not None:
                 os_zone.setZoneControlHumidistat(humid)
+        if room.properties.energy.ventilation is not None:
+            vent = room.properties.energy.ventilation
+            if vent.effectiveness_cooling != 1 or vent.effectiveness_heating != 1 or \
+                    vent.secondary_recirculation != 0:
+                eff_cool, eff_heat = vent.effectiveness_cooling, vent.effectiveness_heating
+                z_sizing = os_zone.sizingZone()
+                z_sizing.setDesignZoneAirDistributionEffectivenessinCoolingMode(eff_cool)
+                z_sizing.setDesignZoneAirDistributionEffectivenessinHeatingMode(eff_heat)
+                # set the secondary recirculation factor
+                sec_rec = vent.secondary_recirculation
+                if sec_rec != 0:
+                    z_sizing.setDesignZoneSecondaryRecirculationFraction(sec_rec)
         daylight = room.properties.energy.daylighting_control
         if daylight is not None:
             dl_name = '{}_Daylighting'.format(room.identifier)
@@ -865,6 +877,17 @@ def model_to_openstudio(
             humid = setpoint_to_openstudio_humidistat(set_pt, os_model, zone_id)
             if humid is not None:
                 os_zone.setZoneControlHumidistat(humid)
+        if vent is not None:
+            if vent.effectiveness_cooling != 1 or vent.effectiveness_heating != 1 or \
+                    vent.secondary_recirculation != 0:
+                eff_cool, eff_heat = vent.effectiveness_cooling, vent.effectiveness_heating
+                z_sizing = os_zone.sizingZone()
+                z_sizing.setDesignZoneAirDistributionEffectivenessinCoolingMode(eff_cool)
+                z_sizing.setDesignZoneAirDistributionEffectivenessinHeatingMode(eff_heat)
+                # set the secondary recirculation factor
+                sec_rec = vent.secondary_recirculation
+                if sec_rec != 0:
+                    z_sizing.setDesignZoneSecondaryRecirculationFraction(sec_rec)
         zone_count += 1
         if print_progress and zone_count % 100 == 0:
             print('  Translated {} Zones'.format(zone_count))
