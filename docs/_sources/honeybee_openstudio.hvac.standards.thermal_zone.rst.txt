@@ -1,0 +1,7 @@
+honeybee\_openstudio.hvac.standards.thermal\_zone module
+========================================================
+
+.. automodule:: honeybee_openstudio.hvac.standards.thermal_zone
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,7 @@
+honeybee\_openstudio.hvac.standards.sizing\_system module
+=========================================================
+
+.. automodule:: honeybee_openstudio.hvac.standards.sizing_system
+   :members:
+   :undoc-members:
+   :show-inheritance:

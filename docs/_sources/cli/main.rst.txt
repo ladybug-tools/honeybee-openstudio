@@ -1,0 +1,7 @@
+main
+====
+
+.. click:: honeybee_openstudio.cli.__init__:openstudio
+   :prog: honeybee-openstudio
+   :show-nested:
+   :commands: 
