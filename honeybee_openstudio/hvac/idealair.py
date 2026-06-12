@@ -28,13 +28,29 @@ def ideal_air_system_to_openstudio(hvac, os_model, room=None):
         os_ideal_air.setName('{} Ideal Loads Air System'.format(room.identifier))
     if hvac._display_name is not None:
         os_ideal_air.setDisplayName(hvac.display_name)
-    # assign the dehumidification based on the room
     os_ideal_air.setDehumidificationControlType('None')  # default when no humidistat
     if room is not None:
+        # assign the dehumidification based on the room
         setpoint = room.properties.energy.setpoint
         if setpoint.humidifying_schedule is not None:
             os_ideal_air.setDehumidificationControlType('Humidistat')
             os_ideal_air.setHumidificationControlType('Humidistat')
+        # adjust for ventilation effectiveness if specified
+        vent = room.properties.energy.ventilation
+        if vent is not None:
+            if vent.effectiveness_cooling != 1 or vent.effectiveness_heating != 1:
+                eff = min(vent.effectiveness_cooling, vent.effectiveness_heating)
+                os_zone = os_model.getThermalZoneByName(room.zone)
+                if os_zone.is_initialized():
+                    os_zone = os_zone.get()
+                    for os_space in os_zone.spaces():
+                        os_vent = os_space.designSpecificationOutdoorAir()
+                        if os_vent.is_initialized:
+                            os_vent = os_vent.get()
+                            os_vent.setOutdoorAirFlowperPerson(vent.flow_per_person / eff)
+                            os_vent.setOutdoorAirFlowperFloorArea(vent.flow_per_area / eff)
+                            os_vent.setOutdoorAirFlowRate(vent.flow_per_zone / eff)
+                            os_vent.setOutdoorAirFlowAirChangesperHour(vent.air_changes_per_hour / eff)
     # assign the economizer type
     os_ideal_air.setOutdoorAirEconomizerType(hvac.economizer_type)
     # set the sensible and latent heat recovery
