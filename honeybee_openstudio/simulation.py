@@ -217,6 +217,8 @@ def run_period_to_openstudio(run_period, os_model):
                     break
         else:
             for yr in range(2026, 0, -1):
+                if yr % 4 == 0:
+                    continue  # skip leap years
                 yr_date = datetime(yr, st_dt.month, st_dt.day)
                 if yr_date.strftime("%A") == run_period.start_day_of_week:
                     cal_yr = yr
