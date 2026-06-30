@@ -1047,27 +1047,37 @@ def model_to_openstudio(
         print('Assigned adjacencies to all Rooms')
 
     # add the orphaned objects
-    shade_count, shades_to_group = 0, []
+    shade_count, detached_shades, attached_shades = 0, [], []
     for face in model.orphaned_faces:
-        shades_to_group.append(face_to_openstudio(face, os_model))
+        detached_shades.append(face_to_openstudio(face, os_model))
         shade_count += 1
     for aperture in model.orphaned_apertures:
-        shades_to_group.append(aperture_to_openstudio(aperture, os_model))
+        detached_shades.append(aperture_to_openstudio(aperture, os_model))
         shade_count += 1
     for door in model.orphaned_doors:
-        shades_to_group.append(door_to_openstudio(door, os_model))
+        detached_shades.append(door_to_openstudio(door, os_model))
         shade_count += 1
     for shade in model.orphaned_shades:
-        shades_to_group.append(shade_to_openstudio(shade, os_model))
+        os_shd = shade_to_openstudio(shade, os_model)
+        if shade.is_detached:
+            detached_shades.append(os_shd)
+        else:
+            attached_shades.append(os_shd)
         shade_count += 1
     for shade_mesh in model.shade_meshes:
         shade_mesh_to_openstudio(shade_mesh, os_model)
         shade_count += 1
-    if len(shades_to_group) != 0:
+    if len(detached_shades) != 0:
         shd_group = OSShadingSurfaceGroup(os_model)
-        shd_group.setName('Orphaned Shades')
+        shd_group.setName('Detached Shades')
         shd_group.setShadingSurfaceType('Building')
-        for os_shade in shades_to_group:
+        for os_shade in detached_shades:
+            os_shade.setShadingSurfaceGroup(shd_group)
+    if len(attached_shades) != 0:
+        shd_group = OSShadingSurfaceGroup(os_model)
+        shd_group.setName('Attached Shades')
+        shd_group.setShadingSurfaceType('Building')
+        for os_shade in attached_shades:
             os_shade.setShadingSurfaceGroup(shd_group)
     if print_progress and shade_count != 0:
         print('Translated {} Shades'.format(shade_count))
