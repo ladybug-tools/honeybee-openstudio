@@ -1606,12 +1606,12 @@ def model_to_gbxml(
 
     # overwrite the space loads so that they are formatted for engines like TRACE
     for room_element in building.findall(gbxml_header + 'Space'):
-        room_id = room_element.get('zoneIdRef')
+        room_id = room_element.get('id')
         if room_id:
-            room_id = room_element.get('id')
-            original_id = room_id[:-6]  # remove '_Space' from the end
-            if original_id.startswith('id_'):
-                original_id = room_id[3:]  # remove 'id_' from the start
+            if room_id.endswith('_Space'):
+                room_id = room_id[:-6]  # remove '_Space' from the end
+            if room_id.startswith('id_'):
+                room_id = room_id[3:]  # remove 'id_' from the start
             try:
                 hb_room = room_dict[room_id]
             except KeyError:  # zone contains multiple spaces
