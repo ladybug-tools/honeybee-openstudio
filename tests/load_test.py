@@ -282,6 +282,7 @@ def test_people_from_openstudio():
                                    [weekend_rule], schedule_types.fractional)
     ppld = 0.05
     people = People('Open Office Zone People', ppld, occ_schedule)
+    people.carbon_dioxide_generation_rate = 4e-8
     schedule_type_limits_to_openstudio(schedule_types.fractional, os_model)
     schedule_to_openstudio(occ_schedule, os_model)
     os_people = people_to_openstudio(people, os_model)
@@ -291,6 +292,20 @@ def test_people_from_openstudio():
     assert ppld - 0.001 < rebuilt_people.people_per_area < ppld + 0.001
     assert people.occupancy_schedule.identifier == \
         rebuilt_people.occupancy_schedule.identifier
+    assert rebuilt_people.carbon_dioxide_generation_rate == pytest.approx(4e-8)
+
+
+def test_people_default_co2_generation_rate_from_openstudio():
+    """Test the defaulted OpenStudio People CO2 generation rate."""
+    os_model = OSModel()
+    people = People('Test People', 0.05)
+    os_people = people_to_openstudio(people, os_model)
+    os_people_def = os_people.peopleDefinition()
+    os_people_def.resetCarbonDioxideGenerationRate()
+    assert os_people_def.isCarbonDioxideGenerationRateDefaulted()
+
+    rebuilt_people = people_from_openstudio(os_people)
+    assert rebuilt_people.carbon_dioxide_generation_rate == pytest.approx(3.82e-8)
 
 
 def test_lighting_from_openstudio():
