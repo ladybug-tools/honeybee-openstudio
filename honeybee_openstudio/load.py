@@ -72,6 +72,8 @@ def people_to_openstudio(people, os_model, include_schedule=True):
         os_people_def.autocalculateSensibleHeatFraction()
     else:
         os_people_def.setSensibleHeatFraction(1.0 - float(people.latent_fraction))
+    os_people_def.setCarbonDioxideGenerationRate(getattr(
+        people, 'carbon_dioxide_generation_rate', 3.82e-8))
     return os_people
 
 

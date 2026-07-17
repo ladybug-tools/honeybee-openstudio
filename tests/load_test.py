@@ -1,5 +1,7 @@
 # coding=utf-8
 """Test the translators for loads to OpenStudio."""
+import pytest
+
 from ladybug_geometry.geometry3d import Point3D
 from ladybug.dt import Time
 from honeybee.room import Room
@@ -53,6 +55,19 @@ def test_people_to_openstudio():
     assert str(os_people.name()) == 'Open Office Zone People'
     os_people_str = str(os_people)
     assert os_people_str.startswith('OS:People,')
+
+
+@pytest.mark.parametrize('co2_rate', (3.82e-8, 4e-8))
+def test_people_co2_generation_rate_to_openstudio(co2_rate):
+    """Test the translation of the People CO2 generation rate to OpenStudio."""
+    os_model = OSModel()
+    people = People('Test People', 0.05)
+    people.carbon_dioxide_generation_rate = co2_rate
+
+    os_people = people_to_openstudio(people, os_model)
+    os_people_def = os_people.peopleDefinition()
+    assert os_people_def.carbonDioxideGenerationRate() == pytest.approx(co2_rate)
+    assert not os_people_def.isCarbonDioxideGenerationRateDefaulted()
 
 
 def test_lighting_to_openstudio():
