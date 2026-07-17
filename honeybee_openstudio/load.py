@@ -377,6 +377,9 @@ def people_from_openstudio(os_people, schedules=None):
         sensible_fraction = load_def.sensibleHeatFraction()
         if sensible_fraction.is_initialized():
             people.latent_fraction = 1 - sensible_fraction.get()
+    if hasattr(people, 'carbon_dioxide_generation_rate'):
+        people.carbon_dioxide_generation_rate = \
+            load_def.carbonDioxideGenerationRate()
     if os_people.displayName().is_initialized():
         people.display_name = os_people.displayName().get()
     return people
