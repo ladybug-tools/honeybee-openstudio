@@ -1,1 +1,1 @@
-openstudio==3.10.0
+openstudio==3.11.0
