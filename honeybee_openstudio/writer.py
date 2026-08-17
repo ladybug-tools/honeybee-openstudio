@@ -755,8 +755,6 @@ def model_to_openstudio(
                 if constr.has_frame:
                     materials.append(constr.frame)
                 if constr.has_shade:
-                    if constr.window_construction in all_constrs:
-                        constructions.pop(-1)  # avoid duplicate specification
                     if constr.is_switchable_glazing:
                         materials.append(constr.switched_glass_material)
                     if constr.shade_location == 'Between':  # write the un-split gap
