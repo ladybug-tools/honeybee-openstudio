@@ -549,7 +549,8 @@ def model_to_openstudio(
     model, seed_model=None, schedule_directory=None,
     use_geometry_names=False, use_resource_names=False,
     triangulate_non_planar_orphaned=False, triangulate_subfaces=True,
-    use_simple_window_constructions=False, enforce_rooms=False, print_progress=False
+    use_simple_window_constructions=False, enforce_rooms=False,
+    openstudio_version=None, print_progress=False
 ):
     """Create an OpenStudio Model from a Honeybee Model.
 
@@ -601,6 +602,10 @@ def model_to_openstudio(
         enforce_rooms: Boolean to note whether this method should enforce the
             presence of Rooms in the Model, which is as necessary prerequisite
             for simulation in EnergyPlus. (Default: False).
+        openstudio_version: Optional text to specify the version of OpenStudio
+            with which the OSM will be written (eg. "3.9.0"). Versions going
+            back to 3.7 are supported. If None, the OSM will be for the latest
+            version of OpenStudio used by this package. (Default: None).
         print_progress: Set to True to have the progress of the translation
             printed as it is completed. (Default: False).
 
@@ -1239,13 +1244,26 @@ def model_to_openstudio(
     if os_vector_len(os_pv_gens) != 0:
         load_center = model.properties.energy.electric_load_center
         electric_load_center_to_openstudio(load_center, os_pv_gens, os_model)
+
+    # change the version of the Model if requested
+    if openstudio_version:
+        try:
+            from openstudiobackporter import Backporter
+        except Exception as e:
+            msg = 'Export to older OpenStudio versions is only available in ' \
+                'Python 3.\n{}'.format(e)
+            raise ImportError(msg)
+        backporter = Backporter(to_version=openstudio_version, save_intermediate=False)
+        os_model = backporter.backport(idf_file=os_model)  # or model.toIdfFile()
+
     # return the Model object
     return os_model
 
 
 def model_to_osm(
     model, seed_model=None, schedule_directory=None,
-    use_geometry_names=False, use_resource_names=False, print_progress=False
+    use_geometry_names=False, use_resource_names=False,
+    openstudio_version=None, print_progress=False
 ):
     """Translate a Honeybee Model to an OSM string.
 
@@ -1275,6 +1293,10 @@ def model_to_osm(
             for the resources in the OSM. Cases of duplicate IDs
             resulting from non-unique names will be resolved by adding integers
             to the ends of the new IDs that are derived from the name. (Default: False).
+        openstudio_version: Optional text to specify the version of OpenStudio
+            with which the OSM will be written (eg. "3.9.0"). Versions going
+            back to 3.7 are supported. If None, the OSM will be for the latest
+            version of OpenStudio used by this package. (Default: None).
         print_progress: Set to True to have the progress of the translation
             printed as it is completed. (Default: False).
     """
@@ -1284,7 +1306,7 @@ def model_to_osm(
     # translate the Honeybee Model to an OpenStudio Model
     os_model = model_to_openstudio(
         model, seed_model, schedule_directory, use_geometry_names, use_resource_names,
-        print_progress=print_progress
+        openstudio_version=openstudio_version, print_progress=print_progress
     )
     return str(os_model)
 

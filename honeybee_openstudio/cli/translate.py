@@ -23,10 +23,15 @@ def translate():
 @click.argument('model-file', type=click.Path(
     exists=True, file_okay=True, dir_okay=False, resolve_path=True))
 @click.option(
+    '--openstudio-version', '-v', help='Optional text to specify the version of '
+    'OpenStudio with which the OSM will be written (eg. "3.9.0"). Versions going '
+    'back to 3.7 are supported. If None, the OSM will be for the latest version of '
+    'OpenStudio used by this package.', type=str, default=None, show_default=True)
+@click.option(
     '--output-file', '-o', help='Optional OSM file path to output the OSM string '
     'of the translation. By default this will be printed to stdout.',
     type=click.File('w'), default='-', show_default=True)
-def model_to_osm_cli(model_file, output_file):
+def model_to_osm_cli(model_file, openstudio_version, output_file):
     """Translate a Honeybee Model to an OSM file.
 
     \b
@@ -34,7 +39,7 @@ def model_to_osm_cli(model_file, output_file):
         model_file: Full path to a Honeybee Model file (HBJSON or HBpkl).
     """
     try:
-        model_to_osm(model_file, output_file)
+        model_to_osm(model_file, openstudio_version, output_file)
     except Exception as e:
         _logger.exception(f'Model translation failed:\n{e}')
         sys.exit(1)
@@ -42,16 +47,22 @@ def model_to_osm_cli(model_file, output_file):
         sys.exit(0)
 
 
-def model_to_osm(model_file, output_file=None):
+def model_to_osm(model_file, openstudio_version=None, output_file=None):
     """Translate a Honeybee Model to an OSM file.
 
     Args:
         model_file: Full path to a Honeybee Model file (HBJSON or HBpkl).
+        openstudio_version: Optional text to specify the version of OpenStudio
+            with which the OSM will be written (eg. "3.9.0"). Versions going
+            back to 3.7 are supported. If None, the OSM will be for the latest
+            version of OpenStudio used by this package.
         output_file: Optional OSM file path to output the OSM string of the
             translation. If None, the string will be returned from this function.
     """
     model = Model.from_file(model_file)
-    os_model = model_to_openstudio(model, print_progress=True)
+    os_model = model_to_openstudio(
+        model, openstudio_version=openstudio_version, print_progress=True
+    )
     if output_file is not None and 'stdout' not in str(output_file):
         output_file = output_file.name \
             if not isinstance(output_file, str) else output_file
