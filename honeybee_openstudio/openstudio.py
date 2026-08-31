@@ -114,6 +114,7 @@ OSInternalMassDefinition = openstudio_model.InternalMassDefinition
 OSInternalMass = openstudio_model.InternalMass
 # loads classes
 OSSpaceType = openstudio_model.SpaceType
+OSDefaultScheduleSet = openstudio_model.DefaultScheduleSet
 OSPeopleDefinition = openstudio_model.PeopleDefinition
 OSPeople = openstudio_model.People
 OSLightsDefinition = openstudio_model.LightsDefinition
