@@ -43,7 +43,8 @@ from honeybee_openstudio.load import people_to_openstudio, lighting_to_openstudi
     infiltration_to_openstudio, ventilation_to_openstudio, \
     setpoint_to_openstudio_thermostat, setpoint_to_openstudio_humidistat, \
     daylight_to_openstudio
-from honeybee_openstudio.programtype import program_type_to_openstudio
+from honeybee_openstudio.programtype import program_type_to_openstudio, \
+    program_types_to_openstudio_schedule_sets
 from honeybee_openstudio.ventcool import ventilation_opening_to_openstudio, \
     ventilation_fan_to_openstudio, ventilation_sim_control_to_openstudio, \
     afn_crack_to_openstudio, ventilation_opening_to_openstudio_afn, \
@@ -790,8 +791,13 @@ def model_to_openstudio(
 
     # translate all of the programs
     p_types = model.properties.energy.program_types
+    sch_sets = program_types_to_openstudio_schedule_sets(p_types, os_model)
     for program in p_types:
-        program_type_to_openstudio(program, os_model, use_simple_vent)
+        sch_set = sch_sets[program.identifier]
+        program_type_to_openstudio(
+            program, os_model, os_schedule_set=sch_set,
+            include_infiltration=use_simple_vent
+        )
     if print_progress:
         print('Translated {} Program Types'.format(len(p_types)))
 

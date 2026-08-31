@@ -42,7 +42,7 @@ def _create_constant_schedule(schedule_name, schedule_value, os_model):
 """____________TRANSLATORS TO OPENSTUDIO____________"""
 
 
-def people_to_openstudio(people, os_model):
+def people_to_openstudio(people, os_model, include_schedule=True):
     """Convert Honeybee People object to OpenStudio People object."""
     # create people OpenStudio object and set identifier
     os_people_def = OSPeopleDefinition(os_model)
@@ -54,16 +54,18 @@ def people_to_openstudio(people, os_model):
         os_people.setDisplayName(people.display_name)
     # assign people per space floor area
     os_people_def.setPeopleperSpaceFloorArea(people.people_per_area)
-    # assign occupancy schedule
-    occupancy_sch = os_model.getScheduleByName(people.occupancy_schedule.identifier)
-    if occupancy_sch.is_initialized():
-        occupancy_sch = occupancy_sch.get()
-        os_people.setNumberofPeopleSchedule(occupancy_sch)
-    # assign activity schedule
-    activity_sch = os_model.getScheduleByName(people.activity_schedule.identifier)
-    if activity_sch.is_initialized():
-        activity_sch = activity_sch.get()
-        os_people.setActivityLevelSchedule(activity_sch)
+    # assign schedules if requested
+    if include_schedule:
+        # assign occupancy schedule
+        occupancy_sch = os_model.getScheduleByName(people.occupancy_schedule.identifier)
+        if occupancy_sch.is_initialized():
+            occupancy_sch = occupancy_sch.get()
+            os_people.setNumberofPeopleSchedule(occupancy_sch)
+        # assign activity schedule
+        activity_sch = os_model.getScheduleByName(people.activity_schedule.identifier)
+        if activity_sch.is_initialized():
+            activity_sch = activity_sch.get()
+            os_people.setActivityLevelSchedule(activity_sch)
     # assign radiant and latent fractions
     os_people_def.setFractionRadiant(people.radiant_fraction)
     if people.latent_fraction == autocalculate:
@@ -73,7 +75,7 @@ def people_to_openstudio(people, os_model):
     return os_people
 
 
-def lighting_to_openstudio(lighting, os_model):
+def lighting_to_openstudio(lighting, os_model, include_schedule=True):
     """Convert Honeybee Lighting object to OpenStudio Lights object."""
     # create people OpenStudio object and set identifier
     os_lighting_def = OSLightsDefinition(os_model)
@@ -85,11 +87,12 @@ def lighting_to_openstudio(lighting, os_model):
         os_lighting.setDisplayName(lighting.display_name)
     # assign watts per space floor area
     os_lighting_def.setWattsperSpaceFloorArea(lighting.watts_per_area)
-    # assign lighting schedule
-    lighting_schedule = os_model.getScheduleByName(lighting.schedule.identifier)
-    if lighting_schedule.is_initialized():
-        lighting_schedule = lighting_schedule.get()
-        os_lighting.setSchedule(lighting_schedule)
+    # assign schedule if requested
+    if include_schedule:
+        lighting_schedule = os_model.getScheduleByName(lighting.schedule.identifier)
+        if lighting_schedule.is_initialized():
+            lighting_schedule = lighting_schedule.get()
+            os_lighting.setSchedule(lighting_schedule)
     # assign visible, radiant, and return air fractions
     os_lighting_def.setFractionVisible(lighting.visible_fraction)
     os_lighting_def.setFractionRadiant(lighting.radiant_fraction)
@@ -97,31 +100,34 @@ def lighting_to_openstudio(lighting, os_model):
     return os_lighting
 
 
-def _equipment_to_openstudio(equipment, os_equip_def, os_equip, os_model):
+def _equipment_to_openstudio(
+    equipment, os_equip_def, os_equip, os_model, include_schedule=True
+):
     """Process any type of equipment object to OpenStudio."""
     os_equip_def.setName(equipment.identifier)
     os_equip.setName(equipment.identifier)
     if equipment._display_name is not None:
         os_equip_def.setDisplayName(equipment.display_name)
         os_equip.setDisplayName(equipment.display_name)
-    # assign schedule
-    equip_schedule = os_model.getScheduleByName(equipment.schedule.identifier)
-    if equip_schedule.is_initialized():
-        equip_schedule = equip_schedule.get()
-        os_equip.setSchedule(equip_schedule)
+    # assign schedule if requested
+    if include_schedule:
+        equip_schedule = os_model.getScheduleByName(equipment.schedule.identifier)
+        if equip_schedule.is_initialized():
+            equip_schedule = equip_schedule.get()
+            os_equip.setSchedule(equip_schedule)
     # assign radiant, latent, and lost fractions
     os_equip_def.setFractionRadiant(equipment.radiant_fraction)
     os_equip_def.setFractionLatent(equipment.latent_fraction)
     os_equip_def.setFractionLost(equipment.lost_fraction)
 
 
-def electric_equipment_to_openstudio(equipment, os_model):
+def electric_equipment_to_openstudio(equipment, os_model, include_schedule=True):
     """Convert Honeybee ElectricEquipment object to OpenStudio ElectricEquipment object.
     """
     # create the OpenStudio object
     os_equip_def = OSElectricEquipmentDefinition(os_model)
     os_equip = OSElectricEquipment(os_equip_def)
-    _equipment_to_openstudio(equipment, os_equip_def, os_equip, os_model)
+    _equipment_to_openstudio(equipment, os_equip_def, os_equip, os_model, include_schedule)
     # assign watts per area
     os_equip_def.setWattsperSpaceFloorArea(equipment.watts_per_area)
     # ensure that it's always reported under electric equipment
@@ -129,13 +135,13 @@ def electric_equipment_to_openstudio(equipment, os_model):
     return os_equip
 
 
-def gas_equipment_to_openstudio(equipment, os_model):
+def gas_equipment_to_openstudio(equipment, os_model, include_schedule=True):
     """Convert Honeybee GasEquipment object to OpenStudio GasEquipment object.
     """
     # create the OpenStudio object
     os_equip_def = OSGasEquipmentDefinition(os_model)
     os_equip = OSGasEquipment(os_equip_def)
-    _equipment_to_openstudio(equipment, os_equip_def, os_equip, os_model)
+    _equipment_to_openstudio(equipment, os_equip_def, os_equip, os_model, include_schedule)
     # assign watts per area
     os_equip_def.setWattsperSpaceFloorArea(equipment.watts_per_area)
     # ensure that it's always reported under electric equipment
@@ -143,13 +149,13 @@ def gas_equipment_to_openstudio(equipment, os_model):
     return os_equip
 
 
-def process_to_openstudio(process, os_model):
+def process_to_openstudio(process, os_model, include_schedule=True):
     """Convert Honeybee Process object to OpenStudio OtherEquipment object.
     """
     # create the OpenStudio object
     os_equip_def = OSOtherEquipmentDefinition(os_model)
     os_equip = OSOtherEquipment(os_equip_def)
-    _equipment_to_openstudio(process, os_equip_def, os_equip, os_model)
+    _equipment_to_openstudio(process, os_equip_def, os_equip, os_model, include_schedule)
     # assign watts
     os_equip_def.setDesignLevel(process.watts)
     # assign the fuel type and end use category
@@ -212,7 +218,7 @@ def hot_water_to_openstudio(hot_water, room, os_model):
     return os_shw_conn
 
 
-def infiltration_to_openstudio(infiltration, os_model):
+def infiltration_to_openstudio(infiltration, os_model, include_schedule=True):
     """Convert Honeybee Infiltration to OpenStudio SpaceInfiltrationDesignFlowRate."""
     # create infiltration OpenStudio object and set identifier
     os_inf = OSSpaceInfiltrationDesignFlowRate(os_model)
@@ -221,11 +227,12 @@ def infiltration_to_openstudio(infiltration, os_model):
         os_inf.setDisplayName(infiltration.display_name)
     # assign flow per surface
     os_inf.setFlowperExteriorSurfaceArea(infiltration.flow_per_exterior_area)
-    # assign schedule
-    inf_schedule = os_model.getScheduleByName(infiltration.schedule.identifier)
-    if inf_schedule.is_initialized():
-        inf_schedule = inf_schedule.get()
-        os_inf.setSchedule(inf_schedule)
+    # assign schedule if requested
+    if include_schedule:
+        inf_schedule = os_model.getScheduleByName(infiltration.schedule.identifier)
+        if inf_schedule.is_initialized():
+            inf_schedule = inf_schedule.get()
+            os_inf.setSchedule(inf_schedule)
     # assign constant, temperature, and velocity coefficients
     os_inf.setConstantTermCoefficient(infiltration.constant_coefficient)
     os_inf.setTemperatureTermCoefficient(infiltration.temperature_coefficient)
