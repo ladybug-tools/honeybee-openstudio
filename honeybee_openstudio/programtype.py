@@ -100,6 +100,9 @@ def program_types_to_openstudio_schedule_sets(program_types, os_model):
         A dictionary with ProgramType identifiers as keys and OpenStudio
         DefaultScheduleSet objects as values.
     """
+    # sort programs by display name to help similar programs get the same schedule set
+    program_types = sorted(program_types, key=lambda p: p.display_name)
+
     # track the schedules used by each of the input ProgramTypes
     sch_set_dict, sch_set_vals = {}, []
     for program in program_types:
