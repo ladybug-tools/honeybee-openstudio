@@ -197,7 +197,8 @@ def program_type_from_openstudio(os_space_type, schedules=None):
     # assign people
     for os_people in os_space_type.people():
         people_def = os_people.peopleDefinition()  # only translate if people per floor
-        if people_def.peopleperSpaceFloorArea().is_initialized():
+        if people_def.peopleperSpaceFloorArea().is_initialized() or \
+                people_def.spaceFloorAreaperPerson().is_initialized():
             program_type.people = people_from_openstudio(os_people, schedules)
     # assign lighting
     for os_lights in os_space_type.lights():
