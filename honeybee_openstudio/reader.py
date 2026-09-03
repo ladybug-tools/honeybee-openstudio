@@ -386,7 +386,8 @@ def room_from_openstudio(os_space, constructions=None, schedules=None):
         # assign people
         for os_people in os_space.people():
             people_def = os_people.peopleDefinition()
-            if people_def.peopleperSpaceFloorArea().is_initialized():
+            if people_def.peopleperSpaceFloorArea().is_initialized() or \
+                    people_def.spaceFloorAreaperPerson().is_initialized():
                 room.properties.energy.people = \
                     people_from_openstudio(os_people, schedules)
         # assign lighting

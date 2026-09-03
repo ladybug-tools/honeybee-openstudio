@@ -344,8 +344,11 @@ def people_from_openstudio(os_people, schedules=None):
     """Convert OpenStudio People object to Honeybee People."""
     # create the people object
     load_def = os_people.peopleDefinition()
-    people_per_area = float(str(load_def.peopleperSpaceFloorArea())) \
-        if load_def.peopleperSpaceFloorArea().is_initialized() else 0
+    people_per_area = 0
+    if load_def.peopleperSpaceFloorArea().is_initialized():
+        people_per_area = float(str(load_def.peopleperSpaceFloorArea()))
+    elif load_def.spaceFloorAreaperPerson().is_initialized():
+        people_per_area = 1 / float(str(load_def.spaceFloorAreaperPerson()))
     occupancy_schedule = always_on
     if schedules is not None and os_people.numberofPeopleSchedule().is_initialized():
         schedule = os_people.numberofPeopleSchedule().get()
