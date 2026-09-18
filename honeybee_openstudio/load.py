@@ -215,6 +215,11 @@ def hot_water_to_openstudio(hot_water, room, os_model):
     os_shw_def.setTargetTemperatureSchedule(target_water_sch)
     # create the hot water connection with same temperature as target temperature
     os_shw_conn.setHotWaterSupplyTemperatureSchedule(target_water_sch)
+    # assign the water equipment to the space that the room represents
+    space_ref = os_model.getSpaceByName('{}_Space'.format(room.identifier))
+    if space_ref.is_initialized():
+        os_space = space_ref.get()
+        os_shw.setSpace(os_space)
     return os_shw_conn
 
 
