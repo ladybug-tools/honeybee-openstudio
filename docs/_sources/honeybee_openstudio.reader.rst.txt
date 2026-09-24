@@ -1,0 +1,7 @@
+honeybee\_openstudio.reader module
+==================================
+
+.. automodule:: honeybee_openstudio.reader
+   :members:
+   :undoc-members:
+   :show-inheritance:

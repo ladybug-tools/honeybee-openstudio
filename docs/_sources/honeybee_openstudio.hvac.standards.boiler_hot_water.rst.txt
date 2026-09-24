@@ -1,0 +1,7 @@
+honeybee\_openstudio.hvac.standards.boiler\_hot\_water module
+=============================================================
+
+.. automodule:: honeybee_openstudio.hvac.standards.boiler_hot_water
+   :members:
+   :undoc-members:
+   :show-inheritance:

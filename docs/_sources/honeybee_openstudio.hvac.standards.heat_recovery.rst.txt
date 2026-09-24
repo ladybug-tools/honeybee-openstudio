@@ -1,0 +1,7 @@
+honeybee\_openstudio.hvac.standards.heat\_recovery module
+=========================================================
+
+.. automodule:: honeybee_openstudio.hvac.standards.heat_recovery
+   :members:
+   :undoc-members:
+   :show-inheritance:

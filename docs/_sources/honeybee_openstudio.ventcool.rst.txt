@@ -1,0 +1,7 @@
+honeybee\_openstudio.ventcool module
+====================================
+
+.. automodule:: honeybee_openstudio.ventcool
+   :members:
+   :undoc-members:
+   :show-inheritance:

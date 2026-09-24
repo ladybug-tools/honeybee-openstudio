@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>honeybee_openstudio.constructionset module &#8212; honeybee-openstudio  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=0bf093e7" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=e6365d57" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="honeybee_openstudio.generator module" href="honeybee_openstudio.generator.html" />
+    <link rel="prev" title="honeybee_openstudio.construction module" href="honeybee_openstudio.construction.html" />
+<link rel="icon" type="image/x-icon" href="https://github.com/ladybug-tools/artwork/raw/refs/heads/master/icons_bugs/ico/honeybee.ico">
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-inverse navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          honeybee-openstudio</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="cli/index.html">CLI Docs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cli/index.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli/index.html#commands">Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cli/translate.html">translate</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="honeybee_openstudio.html">honeybee_openstudio package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="honeybee_openstudio.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.cli.html">honeybee_openstudio.cli package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.cli.html#submodules">Submodules</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="honeybee_openstudio.cli.translate.html">honeybee_openstudio.cli.translate module</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.cli.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.hvac.html">honeybee_openstudio.hvac package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.hvac.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="honeybee_openstudio.hvac.standards.html">honeybee_openstudio.hvac.standards package</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="honeybee_openstudio.hvac.standards.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.data.html">honeybee_openstudio.hvac.standards.data package</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.data.html#module-honeybee_openstudio.hvac.standards.data">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="honeybee_openstudio.hvac.standards.html#submodules">Submodules</a><ul>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.air_conditioner_variable_refrigerant_flow.html">honeybee_openstudio.hvac.standards.air_conditioner_variable_refrigerant_flow module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.boiler_hot_water.html">honeybee_openstudio.hvac.standards.boiler_hot_water module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.central_air_source_heat_pump.html">honeybee_openstudio.hvac.standards.central_air_source_heat_pump module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.coil_cooling.html">honeybee_openstudio.hvac.standards.coil_cooling module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.coil_heating.html">honeybee_openstudio.hvac.standards.coil_heating module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.cooling_tower.html">honeybee_openstudio.hvac.standards.cooling_tower module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.fan.html">honeybee_openstudio.hvac.standards.fan module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.heat_recovery.html">honeybee_openstudio.hvac.standards.heat_recovery module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.hvac_systems.html">honeybee_openstudio.hvac.standards.hvac_systems module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.plant_loop.html">honeybee_openstudio.hvac.standards.plant_loop module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.pump_variable_speed.html">honeybee_openstudio.hvac.standards.pump_variable_speed module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.pump_variable_speed.html#honeybee_openstudio.hvac.standards.pump_variable_speed.pump_variable_speed_set_control_type"><code class="docutils literal notranslate"><span class="pre">pump_variable_speed_set_control_type()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.radiant_system_controls.html">honeybee_openstudio.hvac.standards.radiant_system_controls module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.schedule.html">honeybee_openstudio.hvac.standards.schedule module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.sizing_system.html">honeybee_openstudio.hvac.standards.sizing_system module</a></li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.thermal_zone.html">honeybee_openstudio.hvac.standards.thermal_zone module</a><ul>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_occupancy_schedule"><code class="docutils literal notranslate"><span class="pre">thermal_zone_get_occupancy_schedule()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_outdoor_airflow_rate"><code class="docutils literal notranslate"><span class="pre">thermal_zone_get_outdoor_airflow_rate()</span></code></a></li>
+<li class="toctree-l8"><a class="reference internal" href="honeybee_openstudio.hvac.standards.thermal_zone.html#honeybee_openstudio.hvac.standards.thermal_zone.thermal_zone_get_outdoor_airflow_rate_per_area"><code class="docutils literal notranslate"><span class="pre">thermal_zone_get_outdoor_airflow_rate_per_area()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l7"><a class="reference internal" href="honeybee_openstudio.hvac.standards.utilities.html">honeybee_openstudio.hvac.standards.utilities module</a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="honeybee_openstudio.hvac.standards.html#module-honeybee_openstudio.hvac.standards">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.hvac.html#submodules">Submodules</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="honeybee_openstudio.hvac.idealair.html">honeybee_openstudio.hvac.idealair module</a></li>
+<li class="toctree-l5"><a class="reference internal" href="honeybee_openstudio.hvac.template.html">honeybee_openstudio.hvac.template module</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="honeybee_openstudio.hvac.html#module-honeybee_openstudio.hvac">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="honeybee_openstudio.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.construction.html">honeybee_openstudio.construction module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">honeybee_openstudio.constructionset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.generator.html">honeybee_openstudio.generator module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.internalmass.html">honeybee_openstudio.internalmass module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.load.html">honeybee_openstudio.load module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.material.html">honeybee_openstudio.material module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.openstudio.html">honeybee_openstudio.openstudio module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.programtype.html">honeybee_openstudio.programtype module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.reader.html">honeybee_openstudio.reader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.schedule.html">honeybee_openstudio.schedule module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.shw.html">honeybee_openstudio.shw module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.simulation.html">honeybee_openstudio.simulation module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.ventcool.html">honeybee_openstudio.ventcool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.writer.html">honeybee_openstudio.writer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="honeybee_openstudio.html#module-honeybee_openstudio">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="cli/index.html">CLI Docs</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="honeybee_openstudio.html">honeybee_openstudio package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="honeybee_openstudio.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="honeybee_openstudio.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.construction.html">honeybee_openstudio.construction module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">honeybee_openstudio.constructionset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.generator.html">honeybee_openstudio.generator module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.internalmass.html">honeybee_openstudio.internalmass module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.load.html">honeybee_openstudio.load module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.material.html">honeybee_openstudio.material module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.openstudio.html">honeybee_openstudio.openstudio module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.programtype.html">honeybee_openstudio.programtype module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.reader.html">honeybee_openstudio.reader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.schedule.html">honeybee_openstudio.schedule module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.shw.html">honeybee_openstudio.shw module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.simulation.html">honeybee_openstudio.simulation module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.ventcool.html">honeybee_openstudio.ventcool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.writer.html">honeybee_openstudio.writer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="honeybee_openstudio.html#module-honeybee_openstudio">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="honeybee_openstudio.construction.html" title="Previous Chapter: honeybee_openstudio.construction module"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; honeybee_open...</span>
+    </a>
+  </li>
+  <li>
+    <a href="honeybee_openstudio.generator.html" title="Next Chapter: honeybee_openstudio.generator module"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">honeybee_open... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+            
+              <li class="hidden-sm">
+<div id="sourcelink">
+  <a href="_sources/honeybee_openstudio.constructionset.rst.txt"
+     rel="nofollow">Source</a>
+</div></li>
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-4">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
+<li class="toctree-l1"><a class="reference internal" href="cli/index.html">CLI Docs</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="honeybee_openstudio.html">honeybee_openstudio package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="honeybee_openstudio.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="honeybee_openstudio.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.construction.html">honeybee_openstudio.construction module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">honeybee_openstudio.constructionset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.generator.html">honeybee_openstudio.generator module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.internalmass.html">honeybee_openstudio.internalmass module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.load.html">honeybee_openstudio.load module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.material.html">honeybee_openstudio.material module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.openstudio.html">honeybee_openstudio.openstudio module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.programtype.html">honeybee_openstudio.programtype module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.reader.html">honeybee_openstudio.reader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.schedule.html">honeybee_openstudio.schedule module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.shw.html">honeybee_openstudio.shw module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.simulation.html">honeybee_openstudio.simulation module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.ventcool.html">honeybee_openstudio.ventcool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="honeybee_openstudio.writer.html">honeybee_openstudio.writer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="honeybee_openstudio.html#module-honeybee_openstudio">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    <div class="body col-md-8 content" role="main">
+      
+  <section id="honeybee-openstudio-constructionset-module">
+<h1>honeybee_openstudio.constructionset module<a class="headerlink" href="#honeybee-openstudio-constructionset-module" title="Link to this heading">¶</a></h1>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, Ladybug Tools.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 8.0.2.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
