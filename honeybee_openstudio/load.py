@@ -23,8 +23,9 @@ from honeybee_openstudio.openstudio import OSPeopleDefinition, OSPeople, \
     OSGasEquipmentDefinition, OSGasEquipment, OSOtherEquipmentDefinition, \
     OSOtherEquipment, OSWaterUseEquipmentDefinition, OSWaterUseEquipment, \
     OSWaterUseConnections, OSSpaceInfiltrationDesignFlowRate, \
-    OSDesignSpecificationOutdoorAir, OSThermostatSetpointDualSetpoint, \
-    OSZoneControlHumidistat, OSDaylightingControl, OSScheduleRuleset, os_vector_len
+    OSDesignSpecificationOutdoorAir, OSFanZoneExhaust, \
+    OSThermostatSetpointDualSetpoint, OSZoneControlHumidistat, \
+    OSDaylightingControl, OSScheduleRuleset, os_vector_len
 
 
 def _create_constant_schedule(schedule_name, schedule_value, os_model):
@@ -270,6 +271,38 @@ def ventilation_to_openstudio(ventilation, os_model):
             vent_sch = vent_sch.get()
             os_vent.setOutdoorAirFlowRateFractionSchedule(vent_sch)
     return os_vent
+
+
+def exhaust_to_openstudio(room, os_model):
+    """Convert a Room with Honeybee ExhaustAir to OpenStudio FanZoneExhaust."""
+    # create OpenStudio object and set identifier
+    exhaust = room.properties.energy.exhaust
+    if exhaust is None:
+        return
+    os_exhaust = OSFanZoneExhaust(os_model)
+    os_exhaust.setName('{}..{}'.format(exhaust.identifier, room.identifier))
+    if exhaust._display_name is not None:
+        os_exhaust.setDisplayName(exhaust.display_name)
+    os_exhaust.setEndUseSubcategory('Exhaust Fans')
+    os_exhaust.setSystemAvailabilityManagerCouplingMode('Coupled')
+    # assign air changes per hour if it exists
+    os_exhaust.setMaximumFlowRate(exhaust.room_absolute_flow(room))
+    os_exhaust.	setPressureRise(exhaust.pressure_rise)
+    os_exhaust.setFanTotalEfficiency(exhaust.efficiency)
+    # set the schedule if it exists
+    if exhaust._schedule is not None:
+        vent_sch = os_model.getScheduleByName(exhaust.schedule.identifier)
+        if vent_sch.is_initialized():
+            vent_sch = vent_sch.get()
+            os_exhaust.setAvailabilitySchedule(vent_sch)
+            os_exhaust.setFlowFractionSchedule(vent_sch)
+    # set the balancing_schedule if it exists
+    if exhaust._balancing_schedule is not None:
+        b_sch = os_model.getScheduleByName(exhaust.balancing_schedule.identifier)
+        if b_sch.is_initialized():
+            b_sch = b_sch.get()
+            os_exhaust.setBalancedExhaustFractionSchedule(b_sch)
+    return os_exhaust
 
 
 def setpoint_to_openstudio_thermostat(setpoint, os_model, zone_identifier=None):

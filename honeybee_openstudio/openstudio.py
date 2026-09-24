@@ -130,6 +130,7 @@ OSWaterUseEquipment = openstudio_model.WaterUseEquipment
 OSWaterUseConnections = openstudio_model.WaterUseConnections
 OSSpaceInfiltrationDesignFlowRate = openstudio_model.SpaceInfiltrationDesignFlowRate
 OSDesignSpecificationOutdoorAir = openstudio_model.DesignSpecificationOutdoorAir
+OSFanZoneExhaust = openstudio_model.FanZoneExhaust
 OSThermostatSetpointDualSetpoint = openstudio_model.ThermostatSetpointDualSetpoint
 OSZoneControlHumidistat = openstudio_model.ZoneControlHumidistat
 OSDaylightingControl = openstudio_model.DaylightingControl

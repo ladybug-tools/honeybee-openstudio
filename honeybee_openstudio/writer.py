@@ -40,7 +40,7 @@ from honeybee_openstudio.internalmass import internal_mass_to_openstudio
 from honeybee_openstudio.load import people_to_openstudio, lighting_to_openstudio, \
     electric_equipment_to_openstudio, gas_equipment_to_openstudio, \
     hot_water_to_openstudio, process_to_openstudio, \
-    infiltration_to_openstudio, ventilation_to_openstudio, \
+    infiltration_to_openstudio, ventilation_to_openstudio, exhaust_to_openstudio, \
     setpoint_to_openstudio_thermostat, setpoint_to_openstudio_humidistat, \
     daylight_to_openstudio
 from honeybee_openstudio.programtype import program_type_to_openstudio, \
@@ -900,6 +900,11 @@ def model_to_openstudio(
         zone_count += 1
         if print_progress and zone_count % 100 == 0:
             print('  Translated {} Zones'.format(zone_count))
+    # add any exhaust fans to zones if they are present
+    for room in model.rooms:
+        if room.properties.energy.exhaust is not None:
+            os_exhaust = exhaust_to_openstudio(room, os_model)
+            os_exhaust.addToThermalZone(zone_map[room.identifier])
     if print_progress:
         print('Translated all {} Zones'.format(zone_count))
 
