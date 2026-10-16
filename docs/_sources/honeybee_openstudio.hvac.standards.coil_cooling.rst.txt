@@ -1,0 +1,7 @@
+honeybee\_openstudio.hvac.standards.coil\_cooling module
+========================================================
+
+.. automodule:: honeybee_openstudio.hvac.standards.coil_cooling
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,7 @@
+honeybee\_openstudio.hvac.template module
+=========================================
+
+.. automodule:: honeybee_openstudio.hvac.template
+   :members:
+   :undoc-members:
+   :show-inheritance:
