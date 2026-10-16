@@ -114,7 +114,7 @@ def shades_from_openstudio(os_shade_group, constructions=None, schedules=None):
                     const = const_obj.to_LayeredConstruction().get()
                     construction = shade_construction_from_openstudio(const)
                     shade.properties.energy.construction = construction
-                    constructions[const_name] = const
+                    constructions[const_name] = construction
 
         # assign the transmittance schedule if it exists
         trans_sch = os_shade.transmittanceSchedule()
