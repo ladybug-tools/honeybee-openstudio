@@ -4013,9 +4013,9 @@ def model_add_low_temp_radiant(
             end_hour = 22
             end_minute = 0
         elif radiant_availability_type == 'occupancy':
-            start_hour = model_occ_hr_end.to_i
+            start_hour = int(model_occ_hr_end)
             start_minute = int((model_occ_hr_end % 1) * 60)
-            end_hour = model_occ_hr_start.to_i
+            end_hour = int(model_occ_hr_start)
             end_minute = int((model_occ_hr_start % 1) * 60)
         else:
             msg = 'Unsupported radiant availability preset "{}"' \
