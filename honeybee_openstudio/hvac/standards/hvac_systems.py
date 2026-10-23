@@ -4604,7 +4604,9 @@ def model_add_water_source_hp(model, thermal_zones, condenser_loop, ventilation=
     return water_to_air_hp_systems
 
 
-def model_add_zone_erv(model, thermal_zones):
+def model_add_zone_erv(
+    model, thermal_zones, sensible_heat_recovery=0.76, latent_heat_recovery=0.68
+):
     """Adds zone level ERVs for each zone.
 
     Args:
@@ -4617,11 +4619,15 @@ def model_add_zone_erv(model, thermal_zones):
         zone_name = zone.nameString()
         # Determine the OA requirement for this zone
         min_oa_flow_m3_per_s_per_m2 = thermal_zone_get_outdoor_airflow_rate_per_area(zone)
-        supply_fan = create_fan_by_name(model, 'ERV_Supply_Fan',
-                                        fan_name='{} ERV Supply Fan'.format(zone_name))
+        supply_fan = create_fan_by_name(
+            model, 'ERV_Supply_Fan', fan_name='{} ERV Supply Fan'.format(zone_name),
+            end_use_subcategory='ERV Fans'
+        )
         fan_change_impeller_efficiency(supply_fan, impeller_eff=0.55)
-        exhaust_fan = create_fan_by_name(model, 'ERV_Supply_Fan',
-                                         fan_name='{} ERV Exhaust Fan'.format(zone_name))
+        exhaust_fan = create_fan_by_name(
+            model, 'ERV_Supply_Fan', fan_name='{} ERV Exhaust Fan'.format(zone_name),
+            end_use_subcategory='ERV Fans'
+        )
         fan_change_impeller_efficiency(exhaust_fan, impeller_eff=0.55)
 
         erv_controller = openstudio_model.ZoneHVACEnergyRecoveryVentilatorController(model)
@@ -4630,11 +4636,15 @@ def model_add_zone_erv(model, thermal_zones):
         heat_exchanger = create_hx_air_to_air_sensible_and_latent(
             model, name='{} ERV HX'.format(zone_name), type='Plate',
             economizer_lockout=False, supply_air_outlet_temperature_control=False,
-            sensible_heating_100_eff=0.76, latent_heating_100_eff=0.68,
-            sensible_cooling_100_eff=0.76, latent_cooling_100_eff=0.68,)
+            sensible_heating_100_eff=sensible_heat_recovery,
+            latent_heating_100_eff=latent_heat_recovery,
+            sensible_cooling_100_eff=sensible_heat_recovery,
+            latent_cooling_100_eff=latent_heat_recovery
+        )
 
         zone_hvac = openstudio_model.ZoneHVACEnergyRecoveryVentilator(
-            model, heat_exchanger, supply_fan, exhaust_fan)
+            model, heat_exchanger, supply_fan, exhaust_fan
+        )
         zone_hvac.setName('{} ERV'.format(zone_name))
         zone_hvac.setVentilationRateperUnitFloorArea(min_oa_flow_m3_per_s_per_m2)
         zone_hvac.setController(erv_controller)
@@ -4642,14 +4652,14 @@ def model_add_zone_erv(model, thermal_zones):
 
         # ensure the ERV takes priority, so ventilation load is included when
         # treated by other zonal systems
-        zone.setCoolingPriority(zone_hvac.to_ModelObject().get(), 1)
-        zone.setHeatingPriority(zone_hvac.to_ModelObject().get(), 1)
+        zone.setCoolingPriority(zone_hvac, 1)
+        zone.setHeatingPriority(zone_hvac, 1)
 
         # set the cooling and heating fraction to zero so that the ERV does
         # not try to meet the heating or cooling load.
         if model.version() >= openstudio.VersionString('2.8.0'):
-            zone.setSequentialCoolingFraction(zone_hvac.to_ModelObject().get(), 0.0)
-            zone.setSequentialHeatingFraction(zone_hvac.to_ModelObject().get(), 0.0)
+            zone.setSequentialCoolingFraction(zone_hvac, 0.0)
+            zone.setSequentialHeatingFraction(zone_hvac, 0.0)
 
         # Calculate ERV SAT during sizing periods
         # Standard rating conditions based on AHRI Std 1060 - 2013
@@ -4735,8 +4745,8 @@ def model_add_residential_ventilator(model, thermal_zones):
 
         # Ensure the unit ventilator takes priority, so ventilation load is
         # included when treated by other zonal systems
-        thermal_zone.setCoolingPriority(unit_ventilator.to_ModelObject.get, 1)
-        thermal_zone.setHeatingPriority(unit_ventilator.to_ModelObject.get, 1)
+        thermal_zone.setCoolingPriority(unit_ventilator, 1)
+        thermal_zone.setHeatingPriority(unit_ventilator, 1)
 
         unit_ventilators.append(unit_ventilator)
 

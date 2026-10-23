@@ -5,6 +5,7 @@ from __future__ import division
 from honeybee.typing import clean_ep_string
 from honeybee_energy.hvac.allair._base import _AllAirBase
 from honeybee_energy.hvac.doas._base import _DOASBase
+from honeybee_energy.hvac.heatcool._base import _HeatCoolBase
 from honeybee_energy.hvac.allair.ptac import PTAC
 from honeybee_energy.hvac.allair.psz import PSZ
 from honeybee_energy.hvac.allair.pvav import PVAV
@@ -28,7 +29,7 @@ from honeybee_openstudio.openstudio import openstudio, openstudio_model, \
     OSScheduleRuleset, OSTime
 from .standards.hvac_systems import model_add_hvac_system, model_add_low_temp_radiant, \
     model_get_or_add_chilled_water_loop, model_add_hw_loop, model_add_chw_loop, \
-    model_add_cw_loop, model_get_or_add_ambient_water_loop
+    model_add_cw_loop, model_get_or_add_ambient_water_loop, model_add_zone_erv
 
 
 def template_hvac_to_openstudio(hvac, os_zones, os_model):
@@ -1113,6 +1114,21 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
                 if ptac is not None and ptac.is_initialized():
                     ptac = ptac.get()
                     ptac.setSupplyAirFanOperatingModeSchedule(vent_sched)
+
+    # if the system is HeatCool and unit_ventilators are specified, include them
+    if isinstance(hvac, _HeatCoolBase) and hvac.unit_ventilators:
+        os_ervs = model_add_zone_erv(
+            os_model, zones, hvac.sensible_heat_recovery, hvac.latent_heat_recovery
+        )
+        avail_sch = None
+        if hvac.vent_availability_schedule is not None:
+            sch_id = hvac.vent_availability_schedule.identifier
+            schedule = os_model.getScheduleByName(sch_id)
+            if schedule.is_initialized():
+                avail_sch = schedule.get()
+        if avail_sch is not None:
+            for os_erv in os_ervs:
+                os_erv.setAvailabilitySchedule(avail_sch)
 
 
 def _get_or_add_heat_recovery(os_model, os_air_loop):
