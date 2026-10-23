@@ -354,7 +354,8 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
             os_model, zones, hot_water_loop, chilled_water_loop, radiant_type=radiant_type,
             include_carpet=include_carpet, control_strategy=control_strategy,
             radiant_temperature_control_type=radiant_temperature_control_type,
-            radiant_availability_type='all_day')
+            radiant_availability_type='all_day', switch_over_time=hvac.switch_over_time
+        )
 
     elif isinstance(hvac, VRFwithDOAS):
         if equip == 'DOAS_VRF':
@@ -530,7 +531,8 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
             os_model, zones, hot_water_loop, chilled_water_loop, radiant_type=radiant_type,
             include_carpet=include_carpet, control_strategy=control_strategy,
             radiant_temperature_control_type=radiant_temperature_control_type,
-            radiant_availability_type='all_day')
+            radiant_availability_type='all_day', switch_over_time=hvac.switch_over_time
+        )
 
     elif isinstance(hvac, ForcedAirFurnace):
         if equip == 'Furnace':
