@@ -31,6 +31,7 @@ from honeybee_openstudio.openstudio import openstudio, openstudio_model, \
 from .standards.hvac_systems import model_add_hvac_system, model_add_low_temp_radiant, \
     model_get_or_add_chilled_water_loop, model_add_hw_loop, model_add_chw_loop, \
     model_add_cw_loop, model_get_or_add_ambient_water_loop, model_add_zone_erv
+from .standards.thermal_zone import thermal_zone_get_outdoor_airflow_rate
 
 
 def template_hvac_to_openstudio(hvac, os_zones, os_model):
@@ -161,7 +162,8 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
 
         elif equip == 'DOAS_FCU_Chiller_GasHeaters':
             air_loop = model_add_hvac_system(os_model, doas_type, None, None,
-                                             'Electricity', zones)
+                                             'Electricity', zones,
+                                             air_loop_heating_type='NaturalGas')
             model_add_hvac_system(os_model, 'Fan Coil', None, None, 'Electricity', zones,
                                   zone_equipment_ventilation=False)
             model_add_hvac_system(os_model, 'Unit Heaters', 'NaturalGas', None,
@@ -212,7 +214,8 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
         elif equip == 'DOAS_FCU_ACChiller_GasHeaters':
             air_loop = model_add_hvac_system(os_model, doas_type, None, None,
                                              'Electricity', zones,
-                                             chilled_water_loop_cooling_type='AirCooled')
+                                             chilled_water_loop_cooling_type='AirCooled',
+                                             air_loop_heating_type='NaturalGas')
             model_add_hvac_system(os_model, 'Fan Coil', None, None, 'Electricity', zones,
                                   chilled_water_loop_cooling_type='AirCooled',
                                   zone_equipment_ventilation=False)
@@ -258,7 +261,8 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
 
         elif equip == 'DOAS_FCU_DCW_GasHeaters':
             air_loop = model_add_hvac_system(os_model, doas_type, None, None,
-                                             'DistrictCooling', zones)
+                                             'DistrictCooling', zones,
+                                             air_loop_heating_type='NaturalGas')
             model_add_hvac_system(os_model, 'Fan Coil', None, None, 'DistrictCooling',
                                   zones, zone_equipment_ventilation=False)
             model_add_hvac_system(os_model, 'Unit Heaters', 'NaturalGas',
@@ -553,72 +557,79 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
                                   None, None, heated_zones)
 
     elif isinstance(hvac, PTAC):
+        vent = hvac.sensible_heat_recovery == 0 and hvac.latent_heat_recovery == 0
         if equip == 'PTAC_ElectricBaseboard':
             model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
-                                  system_zones)
+                                  system_zones, zone_equipment_ventilation=vent)
             model_add_hvac_system(os_model, 'Baseboards', 'Electricity',
                                   None, None, heated_zones)
 
         elif equip == 'PTAC_BoilerBaseboard':
             model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
-                                  system_zones)
+                                  system_zones, zone_equipment_ventilation=vent)
             model_add_hvac_system(os_model, 'Baseboards', 'NaturalGas',
                                   None, None, heated_zones)
 
         elif equip == 'PTAC_DHWBaseboard':
             model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
-                                  system_zones)
+                                  system_zones, zone_equipment_ventilation=vent)
             model_add_hvac_system(os_model, 'Baseboards', 'DistrictHeating',
                                   None, None, heated_zones)
 
         elif equip == 'PTAC_GasHeaters':
             model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
-                                  system_zones)
+                                  system_zones, zone_equipment_ventilation=vent)
             model_add_hvac_system(os_model, 'Unit Heaters', 'NaturalGas',
                                   None, None, heated_zones)
 
         elif equip == 'PTAC_ElectricCoil':
             model_add_hvac_system(os_model, 'PTAC', None, 'Electricity',
-                                  'Electricity', system_zones)
+                                  'Electricity', system_zones,
+                                  zone_equipment_ventilation=vent)
             # use 'Baseboard electric' for heated only zones
             model_add_hvac_system(os_model, 'Baseboards', 'Electricity',
                                   None, None, heated_only_zones)
 
         elif equip == 'PTAC_GasCoil':
             model_add_hvac_system(os_model, 'PTAC', None, 'NaturalGas',
-                                  'Electricity', system_zones)
+                                  'Electricity', system_zones,
+                                  zone_equipment_ventilation=vent)
             # use 'Baseboard electric' for heated only zones
             model_add_hvac_system(os_model, 'Baseboards', 'Electricity',
                                   None, None, heated_only_zones)
 
         elif equip == 'PTAC_Boiler':
             model_add_hvac_system(os_model, 'PTAC', 'NaturalGas', None,
-                                  'Electricity', system_zones)
+                                  'Electricity', system_zones,
+                                  zone_equipment_ventilation=vent)
             # use 'Baseboard gas boiler' for heated only zones
             model_add_hvac_system(os_model, 'Baseboards', 'NaturalGas',
                                   None, None, heated_only_zones)
 
         elif equip == 'PTAC_ASHP':
             model_add_hvac_system(os_model, 'PTAC', 'AirSourceHeatPump',
-                                  None, 'Electricity', system_zones)
+                                  None, 'Electricity', system_zones,
+                                  zone_equipment_ventilation=vent)
             # use 'Baseboard central air source heat pump' for heated only zones
             model_add_hvac_system(os_model, 'Baseboards', 'AirSourceHeatPump',
                                   None, None, zones)
 
         elif equip == 'PTAC_DHW':
             model_add_hvac_system(os_model, 'PTAC', 'DistrictHeating', None,
-                                  'Electricity', system_zones)
+                                  'Electricity', system_zones,
+                                  zone_equipment_ventilation=vent)
             # use 'Baseboard district hot water heat' for heated only zones
             model_add_hvac_system(os_model, 'Baseboards', 'DistrictHeating',
                                   None, None, heated_only_zones)
 
         elif equip == 'PTAC':
             model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
-                                  system_zones)
+                                  system_zones, zone_equipment_ventilation=vent)
 
         elif equip == 'PTHP':
             model_add_hvac_system(os_model, 'PTHP', 'Electricity', None,
-                                  'Electricity', system_zones)
+                                  'Electricity', system_zones,
+                                  zone_equipment_ventilation=vent)
             # use 'Baseboard electric' for heated only zones
             model_add_hvac_system(os_model, 'Baseboards', 'Electricity',
                                   None, None, heated_only_zones)
@@ -630,7 +641,7 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
                                              air_loop_heating_type='DX',
                                              air_loop_cooling_type='DX')
             model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
-                                  system_zones)
+                                  system_zones, zone_equipment_ventilation=False)
             model_add_hvac_system(os_model, 'Baseboards', 'Electricity',
                                   None, None, heated_zones)
 
@@ -639,7 +650,7 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
                                              'Electricity', zones,
                                              air_loop_cooling_type='DX')
             model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
-                                  system_zones)
+                                  system_zones, zone_equipment_ventilation=False)
             model_add_hvac_system(os_model, 'Baseboards', 'NaturalGas',
                                   None, None, heated_zones)
 
@@ -648,7 +659,7 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
                                              None, 'Electricity', zones,
                                              air_loop_cooling_type='DX')
             model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
-                                  system_zones)
+                                  system_zones, zone_equipment_ventilation=False)
             model_add_hvac_system(os_model, 'Baseboards', 'DistrictHeating',
                                   None, None, heated_zones)
 
@@ -656,9 +667,9 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
             air_loop = model_add_hvac_system(os_model, doas_type, None, None,
                                              'Electricity', zones,
                                              air_loop_cooling_type='DX',
-                                             air_loop_heating_type='Gas')
+                                             air_loop_heating_type='NaturalGas')
             model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
-                                  system_zones)
+                                  system_zones, zone_equipment_ventilation=False)
             model_add_hvac_system(os_model, 'Unit Heaters', 'NaturalGas',
                                   None, None, heated_zones)
 
@@ -667,8 +678,8 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
                                              None, 'Electricity', zones,
                                              air_loop_heating_type='DX',
                                              air_loop_cooling_type='DX')
-            model_add_hvac_system(os_model, 'PTAC', None, 'Electricity',
-                                  'Electricity', system_zones)
+            model_add_hvac_system(os_model, 'PTAC', None, 'Electricity', 'Electricity',
+                                  system_zones, zone_equipment_ventilation=False)
             # use 'Baseboard electric' for heated only zones
             model_add_hvac_system(os_model, 'Baseboards', 'Electricity',
                                   None, None, heated_only_zones)
@@ -677,9 +688,9 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
             air_loop = model_add_hvac_system(os_model, doas_type, None, None,
                                              'Electricity', zones,
                                              air_loop_cooling_type='DX',
-                                             air_loop_heating_type='Gas')
-            model_add_hvac_system(os_model, 'PTAC', None, 'NaturalGas',
-                                  'Electricity', system_zones)
+                                             air_loop_heating_type='NaturalGas')
+            model_add_hvac_system(os_model, 'PTAC', None, 'NaturalGas', 'Electricity',
+                                  system_zones, zone_equipment_ventilation=False)
             # use 'Baseboard electric' for heated only zones
             model_add_hvac_system(os_model, 'Baseboards', 'Electricity',
                                   None, None, heated_only_zones)
@@ -688,8 +699,8 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
             air_loop = model_add_hvac_system(os_model, doas_type, 'NaturalGas', None,
                                              'Electricity', zones,
                                              air_loop_cooling_type='DX')
-            model_add_hvac_system(os_model, 'PTAC', 'NaturalGas', None,
-                                  'Electricity', system_zones)
+            model_add_hvac_system(os_model, 'PTAC', 'NaturalGas', None, 'Electricity',
+                                  system_zones, zone_equipment_ventilation=False)
             # use 'Baseboard gas boiler' for heated only zones
             model_add_hvac_system(os_model, 'Baseboards', 'NaturalGas',
                                   None, None, heated_only_zones)
@@ -698,8 +709,9 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
             air_loop = model_add_hvac_system(os_model, doas_type, 'AirSourceHeatPump',
                                              None, 'Electricity', zones,
                                              air_loop_cooling_type='DX')
-            model_add_hvac_system(os_model, 'PTAC', 'AirSourceHeatPump',
-                                  None, 'Electricity', system_zones)
+            model_add_hvac_system(os_model, 'PTAC', 'AirSourceHeatPump', None,
+                                  'Electricity', system_zones,
+                                  zone_equipment_ventilation=False)
             # use 'Baseboard central air source heat pump' for heated only zones
             model_add_hvac_system(os_model, 'Baseboards', 'AirSourceHeatPump',
                                   None, None, zones)
@@ -708,8 +720,8 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
             air_loop = model_add_hvac_system(os_model, doas_type, 'DistrictHeating',
                                              None, 'Electricity', zones,
                                              air_loop_cooling_type='DX')
-            model_add_hvac_system(os_model, 'PTAC', 'DistrictHeating', None,
-                                  'Electricity', system_zones)
+            model_add_hvac_system(os_model, 'PTAC', 'DistrictHeating', None, 'Electricity',
+                                  system_zones, zone_equipment_ventilation=False)
             # use 'Baseboard district hot water heat' for heated only zones
             model_add_hvac_system(os_model, 'Baseboards', 'DistrictHeating',
                                   None, None, heated_only_zones)
@@ -720,15 +732,15 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
                                              air_loop_heating_type='DX',
                                              air_loop_cooling_type='DX')
             model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
-                                  system_zones)
+                                  system_zones, zone_equipment_ventilation=False)
 
         elif equip == 'DOAS_PTHP':
             air_loop = model_add_hvac_system(os_model, doas_type, 'Electricity',
                                              None, 'Electricity', zones,
                                              air_loop_heating_type='DX',
                                              air_loop_cooling_type='DX')
-            model_add_hvac_system(os_model, 'PTHP', 'Electricity', None,
-                                  'Electricity', system_zones)
+            model_add_hvac_system(os_model, 'PTHP', 'Electricity', None, 'Electricity',
+                                  system_zones, zone_equipment_ventilation=False)
             # use 'Baseboard electric' for heated only zones
             model_add_hvac_system(os_model, 'Baseboards', 'Electricity',
                                   None, None, heated_only_zones)
@@ -1200,31 +1212,39 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
 
     # if the systems are PTAC and there is ventilation, ensure the system includes it
     if isinstance(hvac, PTAC):
-        always_on = os_model.alwaysOnDiscreteSchedule()
-        for zone in zones:
-            # check if the space type has ventilation assigned to it
-            out_air = zone.spaces()[0].designSpecificationOutdoorAir()
-            if out_air.is_initialized():
-                # get any ventilation schedules
-                vent_sched = always_on
-                out_air = out_air.get()
-                air_sch = out_air.outdoorAirFlowRateFractionSchedule()
-                if air_sch.is_initialized():
-                    vent_sched = air_sch.get()
-                # get the PTAC object
-                ptac = None
-                for equip in zone.equipment():
-                    e_name = equip.nameString()
-                    if 'PTAC' in e_name:
-                        ptac = os_model.getZoneHVACPackagedTerminalAirConditioner(
-                            equip.handle())
-                    elif 'PTHP' in e_name:
-                        ptac = os_model.getZoneHVACPackagedTerminalHeatPump(
-                            equip.handle())
-                # assign the schedule to the PTAC object
-                if ptac is not None and ptac.is_initialized():
-                    ptac = ptac.get()
-                    ptac.setSupplyAirFanOperatingModeSchedule(vent_sched)
+        if hvac.sensible_heat_recovery != 0 or hvac.latent_heat_recovery != 0:
+            # bring the ventilation air through an ERV
+            os_ervs = model_add_zone_erv(
+                os_model, zones, hvac.sensible_heat_recovery, hvac.latent_heat_recovery
+            )
+        else:  # bring the ventilation air through the PTAC's heating/cooling coils
+            always_on = os_model.alwaysOnDiscreteSchedule()
+            for zone in zones:
+                # check if the space type has ventilation assigned to it
+                out_air = zone.spaces()[0].designSpecificationOutdoorAir()
+                if out_air.is_initialized():
+                    if thermal_zone_get_outdoor_airflow_rate(zone) == 0:
+                        continue  # no ventilation to adjust for
+                    # get any ventilation schedules
+                    vent_sched = always_on
+                    out_air = out_air.get()
+                    air_sch = out_air.outdoorAirFlowRateFractionSchedule()
+                    if air_sch.is_initialized():
+                        vent_sched = air_sch.get()
+                    # get the PTAC object
+                    ptac = None
+                    for equip in zone.equipment():
+                        e_name = equip.nameString()
+                        if 'PTAC' in e_name:
+                            ptac = os_model.getZoneHVACPackagedTerminalAirConditioner(
+                                equip.handle())
+                        elif 'PTHP' in e_name:
+                            ptac = os_model.getZoneHVACPackagedTerminalHeatPump(
+                                equip.handle())
+                    # assign the schedule to the PTAC object
+                    if ptac is not None and ptac.is_initialized():
+                        ptac = ptac.get()
+                        ptac.setSupplyAirFanOperatingModeSchedule(vent_sched)
 
     # if the system is HeatCool and unit_ventilators are specified, include them
     if isinstance(hvac, _HeatCoolBase) and hvac.unit_ventilators:
