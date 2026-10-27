@@ -1,0 +1,7 @@
+honeybee\_openstudio.cli.translate module
+=========================================
+
+.. automodule:: honeybee_openstudio.cli.translate
+   :members:
+   :undoc-members:
+   :show-inheritance:
