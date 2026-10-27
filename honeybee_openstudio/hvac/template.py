@@ -12,6 +12,7 @@ from honeybee_energy.hvac.allair.pvav import PVAV
 from honeybee_energy.hvac.allair.vav import VAV
 from honeybee_energy.hvac.allair.furnace import ForcedAirFurnace
 from honeybee_energy.hvac.doas.fcu import FCUwithDOAS
+from honeybee_energy.hvac.doas.ptac import PTACwithDOAS
 from honeybee_energy.hvac.doas.vrf import VRFwithDOAS
 from honeybee_energy.hvac.doas.wshp import WSHPwithDOAS
 from honeybee_energy.hvac.doas.radiant import RadiantwithDOAS
@@ -602,7 +603,7 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
                                   None, 'Electricity', system_zones)
             # use 'Baseboard central air source heat pump' for heated only zones
             model_add_hvac_system(os_model, 'Baseboards', 'AirSourceHeatPump',
-                                  None, None, heated_only_zones)
+                                  None, None, zones)
 
         elif equip == 'PTAC_DHW':
             model_add_hvac_system(os_model, 'PTAC', 'DistrictHeating', None,
@@ -616,6 +617,116 @@ def template_hvac_to_openstudio(hvac, os_zones, os_model):
                                   system_zones)
 
         elif equip == 'PTHP':
+            model_add_hvac_system(os_model, 'PTHP', 'Electricity', None,
+                                  'Electricity', system_zones)
+            # use 'Baseboard electric' for heated only zones
+            model_add_hvac_system(os_model, 'Baseboards', 'Electricity',
+                                  None, None, heated_only_zones)
+
+    elif isinstance(hvac, PTACwithDOAS):
+        if equip == 'DOAS_PTAC_ElectricBaseboard':
+            air_loop = model_add_hvac_system(os_model, doas_type, 'Electricity',
+                                             None, 'Electricity', zones,
+                                             air_loop_heating_type='DX',
+                                             air_loop_cooling_type='DX')
+            model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
+                                  system_zones)
+            model_add_hvac_system(os_model, 'Baseboards', 'Electricity',
+                                  None, None, heated_zones)
+
+        elif equip == 'DOAS_PTAC_BoilerBaseboard':
+            air_loop = model_add_hvac_system(os_model, doas_type, 'NaturalGas', None,
+                                             'Electricity', zones,
+                                             air_loop_cooling_type='DX')
+            model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
+                                  system_zones)
+            model_add_hvac_system(os_model, 'Baseboards', 'NaturalGas',
+                                  None, None, heated_zones)
+
+        elif equip == 'DOAS_PTAC_DHWBaseboard':
+            air_loop = model_add_hvac_system(os_model, doas_type, 'DistrictHeating',
+                                             None, 'Electricity', zones,
+                                             air_loop_cooling_type='DX')
+            model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
+                                  system_zones)
+            model_add_hvac_system(os_model, 'Baseboards', 'DistrictHeating',
+                                  None, None, heated_zones)
+
+        elif equip == 'DOAS_PTAC_GasHeaters':
+            air_loop = model_add_hvac_system(os_model, doas_type, None, None,
+                                             'Electricity', zones,
+                                             air_loop_cooling_type='DX',
+                                             air_loop_heating_type='Gas')
+            model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
+                                  system_zones)
+            model_add_hvac_system(os_model, 'Unit Heaters', 'NaturalGas',
+                                  None, None, heated_zones)
+
+        elif equip == 'DOAS_PTAC_ElectricCoil':
+            air_loop = model_add_hvac_system(os_model, doas_type, 'Electricity',
+                                             None, 'Electricity', zones,
+                                             air_loop_heating_type='DX',
+                                             air_loop_cooling_type='DX')
+            model_add_hvac_system(os_model, 'PTAC', None, 'Electricity',
+                                  'Electricity', system_zones)
+            # use 'Baseboard electric' for heated only zones
+            model_add_hvac_system(os_model, 'Baseboards', 'Electricity',
+                                  None, None, heated_only_zones)
+
+        elif equip == 'DOAS_PTAC_GasCoil':
+            air_loop = model_add_hvac_system(os_model, doas_type, None, None,
+                                             'Electricity', zones,
+                                             air_loop_cooling_type='DX',
+                                             air_loop_heating_type='Gas')
+            model_add_hvac_system(os_model, 'PTAC', None, 'NaturalGas',
+                                  'Electricity', system_zones)
+            # use 'Baseboard electric' for heated only zones
+            model_add_hvac_system(os_model, 'Baseboards', 'Electricity',
+                                  None, None, heated_only_zones)
+
+        elif equip == 'DOAS_PTAC_Boiler':
+            air_loop = model_add_hvac_system(os_model, doas_type, 'NaturalGas', None,
+                                             'Electricity', zones,
+                                             air_loop_cooling_type='DX')
+            model_add_hvac_system(os_model, 'PTAC', 'NaturalGas', None,
+                                  'Electricity', system_zones)
+            # use 'Baseboard gas boiler' for heated only zones
+            model_add_hvac_system(os_model, 'Baseboards', 'NaturalGas',
+                                  None, None, heated_only_zones)
+
+        elif equip == 'DOAS_PTAC_ASHP':
+            air_loop = model_add_hvac_system(os_model, doas_type, 'AirSourceHeatPump',
+                                             None, 'Electricity', zones,
+                                             air_loop_cooling_type='DX')
+            model_add_hvac_system(os_model, 'PTAC', 'AirSourceHeatPump',
+                                  None, 'Electricity', system_zones)
+            # use 'Baseboard central air source heat pump' for heated only zones
+            model_add_hvac_system(os_model, 'Baseboards', 'AirSourceHeatPump',
+                                  None, None, zones)
+
+        elif equip == 'DOAS_PTAC_DHW':
+            air_loop = model_add_hvac_system(os_model, doas_type, 'DistrictHeating',
+                                             None, 'Electricity', zones,
+                                             air_loop_cooling_type='DX')
+            model_add_hvac_system(os_model, 'PTAC', 'DistrictHeating', None,
+                                  'Electricity', system_zones)
+            # use 'Baseboard district hot water heat' for heated only zones
+            model_add_hvac_system(os_model, 'Baseboards', 'DistrictHeating',
+                                  None, None, heated_only_zones)
+
+        elif equip == 'DOAS_PTAC':
+            air_loop = model_add_hvac_system(os_model, doas_type, 'Electricity',
+                                             None, 'Electricity', zones,
+                                             air_loop_heating_type='DX',
+                                             air_loop_cooling_type='DX')
+            model_add_hvac_system(os_model, 'PTAC', None, None, 'Electricity',
+                                  system_zones)
+
+        elif equip == 'DOAS_PTHP':
+            air_loop = model_add_hvac_system(os_model, doas_type, 'Electricity',
+                                             None, 'Electricity', zones,
+                                             air_loop_heating_type='DX',
+                                             air_loop_cooling_type='DX')
             model_add_hvac_system(os_model, 'PTHP', 'Electricity', None,
                                   'Electricity', system_zones)
             # use 'Baseboard electric' for heated only zones
