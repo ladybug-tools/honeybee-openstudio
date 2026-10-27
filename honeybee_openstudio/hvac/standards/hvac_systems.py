@@ -1352,7 +1352,8 @@ def model_add_doas(
         min_oa_sch=None, min_frac_oa_sch=None, fan_maximum_flow_rate=None,
         econo_ctrl_mthd='NoEconomizer', include_exhaust_fan=True,
         demand_control_ventilation=False, doas_control_strategy='NeutralSupplyAir',
-        clg_dsgn_sup_air_temp=60.0, htg_dsgn_sup_air_temp=70.0, energy_recovery=False):
+        clg_dsgn_sup_air_temp=60.0, htg_dsgn_sup_air_temp=70.0, energy_recovery=False,
+        heating_type=None):
     """Creates a DOAS system with terminal units for each zone.
 
     Args:
@@ -1389,6 +1390,7 @@ def model_add_doas(
         htg_dsgn_sup_air_temp: [Double] design heating supply air temperature in
             degrees Fahrenheit, default 75F.
         energy_recovery: [Boolean] if true, an ERV will be added to the system.
+        heating_type: Used only when hot_water_loop is None. Choose from DX or NaturalGas.
     """
     # Check the total OA requirement for all zones on the system
     tot_oa_req = 0
@@ -1452,12 +1454,16 @@ def model_add_doas(
 
     # create heating coil
     if hot_water_loop is None:
-        # electric backup heating coil
-        create_coil_heating_electric(model, air_loop_node=air_loop.supplyInletNode(),
-                                     name='{} Backup Htg Coil'.format(loop_name))
-        # heat pump coil
-        create_coil_heating_dx_single_speed(model, air_loop_node=air_loop.supplyInletNode(),
-                                            name='{} Htg Coil'.format(loop_name))
+        if heating_type == 'NaturalGas':
+            create_coil_heating_gas(model, air_loop_node=air_loop.supplyInletNode(),
+                                    name='{} Gas Htg Coil'.format(loop_name))
+        else:
+            # electric backup heating coil
+            create_coil_heating_electric(model, air_loop_node=air_loop.supplyInletNode(),
+                                         name='{} Backup Htg Coil'.format(loop_name))
+            # heat pump coil
+            create_coil_heating_dx_single_speed(model, air_loop_node=air_loop.supplyInletNode(),
+                                                name='{} Htg Coil'.format(loop_name))
     else:
         create_coil_heating_water(
             model, hot_water_loop, air_loop_node=air_loop.supplyInletNode(),
@@ -2868,11 +2874,13 @@ def model_add_ptac(
 
         # add fan
         if fan_type == 'ConstantVolume':
-            fan = create_fan_by_name(model, 'PTAC_CAV_Fan',
-                                     fan_name='{} PTAC Fan'.format(zone_name))
+            fan = create_fan_by_name(
+                model, 'PTAC_CAV_Fan', fan_name='{} PTAC Fan'.format(zone_name),
+                end_use_subcategory='PTAC Fans')
         elif fan_type == 'Cycling':
-            fan = create_fan_by_name(model, 'PTAC_Cycling_Fan',
-                                     fan_name='{} PTAC Fan'.format(zone_name))
+            fan = create_fan_by_name(
+                model, 'PTAC_Cycling_Fan', fan_name='{} PTAC Fan'.format(zone_name),
+                end_use_subcategory='PTAC Fans')
         else:
             raise ValueError('ptac_fan_type "{}" is not recognized.'.format(fan_type))
         fan.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule())
@@ -2922,7 +2930,7 @@ def model_add_ptac(
         else:
             ptac_system.setSupplyAirFanOperatingModeSchedule(
                 model.alwaysOffDiscreteSchedule())
-        if not ventilation:
+        if not ventilation or thermal_zone_get_outdoor_airflow_rate(zone) == 0:
             ptac_system.setOutdoorAirFlowRateDuringCoolingOperation(0.0)
             ptac_system.setOutdoorAirFlowRateDuringHeatingOperation(0.0)
             ptac_system.setOutdoorAirFlowRateWhenNoCoolingorHeatingisNeeded(0.0)
@@ -2971,11 +2979,13 @@ def model_add_pthp(model, thermal_zones, fan_type='Cycling', ventilation=True):
 
         # add fan
         if fan_type == 'ConstantVolume':
-            fan = create_fan_by_name(model, 'PTAC_CAV_Fan',
-                                     fan_name='{} PTHP Fan'.format(zone_name))
+            fan = create_fan_by_name(
+                model, 'PTAC_CAV_Fan', fan_name='{} PTHP Fan'.format(zone_name),
+                end_use_subcategory='PTHP Fans')
         elif fan_type == 'Cycling':
-            fan = create_fan_by_name(model, 'PTAC_Cycling_Fan',
-                                     fan_name='{} PTHP Fan'.format(zone_name))
+            fan = create_fan_by_name(
+                model, 'PTAC_Cycling_Fan', fan_name='{} PTHP Fan'.format(zone_name),
+                end_use_subcategory='PTHP Fans')
         else:
             raise ValueError('PTHP fan_type of {} is not recognized.'.format(fan_type))
         fan.setAvailabilitySchedule(model.alwaysOnDiscreteSchedule())
@@ -3001,7 +3011,7 @@ def model_add_pthp(model, thermal_zones, fan_type='Cycling', ventilation=True):
         else:
             pthp_system.setSupplyAirFanOperatingModeSchedule(
                 model.alwaysOffDiscreteSchedule())
-        if not ventilation:
+        if not ventilation or thermal_zone_get_outdoor_airflow_rate(zone) == 0:
             pthp_system.setOutdoorAirFlowRateDuringCoolingOperation(0.0)
             pthp_system.setOutdoorAirFlowRateDuringHeatingOperation(0.0)
             pthp_system.setOutdoorAirFlowRateWhenNoCoolingorHeatingisNeeded(0.0)
@@ -4653,6 +4663,7 @@ def model_add_zone_erv(
         )
         zone_hvac.setName('{} ERV'.format(zone_name))
         zone_hvac.setVentilationRateperUnitFloorArea(min_oa_flow_m3_per_s_per_m2)
+        zone_hvac.setVentilationRateperOccupant(0)
         zone_hvac.setController(erv_controller)
         zone_hvac.addToThermalZone(zone)
 
@@ -5454,7 +5465,7 @@ def model_add_hvac_system(
         air_loop_heating_type: [String] type of heating coil serving main air loop.
             Options are.
 
-            * Gas
+            * NaturalGas
             * DX
             * Water
 
@@ -5861,7 +5872,7 @@ def model_add_hvac_system(
 
         air_loop = model_add_doas(
             model, zones, hot_water_loop=hot_water_loop,
-            chilled_water_loop=chilled_water_loop)
+            chilled_water_loop=chilled_water_loop, heating_type=air_loop_heating_type)
 
     elif system_type == 'DOAS with DCV':
         if air_loop_heating_type == 'Water':
@@ -5886,7 +5897,8 @@ def model_add_hvac_system(
         air_loop = model_add_doas(
             model, zones,
             hot_water_loop=hot_water_loop, chilled_water_loop=chilled_water_loop,
-            doas_type='DOASVAV', demand_control_ventilation=True)
+            doas_type='DOASVAV', demand_control_ventilation=True,
+            heating_type=air_loop_heating_type)
 
     elif system_type == 'DOAS with Economizing':
         if air_loop_heating_type == 'Water':
