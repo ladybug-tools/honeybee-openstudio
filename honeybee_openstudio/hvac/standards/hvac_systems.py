@@ -3124,7 +3124,13 @@ def model_add_unitheater(
         unit_heater = openstudio_model.ZoneHVACUnitHeater(
             model, hvac_op_sch, fan, htg_coil)
         unit_heater.setName('{} Unit Heater'.format(zone_name))
-        unit_heater.setFanControlType(fan_control_type)
+        if model.version() < openstudio.VersionString('3.11.0'):
+            unit_heater.setFanControlType(fan_control_type)
+        else:
+            if fan_control_type in ('OnOff', 'VariableVolume'):
+                unit_heater.setFanControlType('Cycling')
+            else:
+                unit_heater.setFanControlType('Continuous')
         unit_heater.addToThermalZone(zone)
         unit_heaters.append(unit_heater)
 
@@ -5503,9 +5509,10 @@ def model_add_hvac_system(
             hot_water_loop = model_get_or_add_hot_water_loop(
                 model, main_heat_fuel, hot_water_loop_type=hot_water_loop_type)
         elif main_heat_fuel == 'AirSourceHeatPump':
-            heating_type = 'Water'
             hot_water_loop = model_get_or_add_hot_water_loop(
                 model, main_heat_fuel, hot_water_loop_type='LowTemperature')
+            heating_type = None  # use electric coils for sizing
+            hot_water_loop = None
         elif main_heat_fuel == 'Electricity':
             heating_type = main_heat_fuel
             hot_water_loop = None
