@@ -3,6 +3,8 @@
 from __future__ import division
 import sys
 import os
+import tempfile
+import xml.etree.ElementTree as ET
 
 from ladybug_geometry.geometry3d import Point3D, Face3D
 from honeybee.typing import clean_string, clean_ep_string
@@ -642,6 +644,37 @@ def model_from_gbxml_file(gbxml_file, reset_properties=False, print_warnings=Fal
         print_warnings: Boolean for whether warnings about unimported objects
             should be printed. (Default: False).
     """
+    # preprocess the gbXML so that zone IDs are always different than room IDs
+    ET.register_namespace('', 'http://www.gbxml.org/schema')
+    gbxml_header = r'{http://www.gbxml.org/schema}'
+    tree = ET.parse(gbxml_file)
+    root = tree.getroot()
+    zone_ids, has_id_match = {}, False
+    building = root[0][1]
+    for room_element in building.findall(gbxml_header + 'Space'):
+        room_id = room_element.get('id')
+        zone_id = room_element.get('zoneIdRef')
+        if room_id and zone_id:
+            if room_id == zone_id:
+                has_id_match = True
+                new_zone_id = '{} Zone'.format(zone_id)
+                room_element.set('zoneIdRef', new_zone_id)
+                zone_ids[zone_id] = new_zone_id
+    if has_id_match:
+        for zone_element in root.findall(gbxml_header + 'Zone'):
+            zone_id = zone_element.get('id')
+            if zone_id in zone_ids:
+                zone_element.set('id', zone_ids[zone_id])
+        if sys.version_info >= (3, 0):
+            ET.indent(root)
+            gbxml_str = ET.tostring(root, encoding='unicode', xml_declaration=True)
+        else:
+            gbxml_str = ET.tostring(root)
+        with tempfile.NamedTemporaryFile(mode='w+', suffix='.xml', delete=False) as temp_file:
+            temp_file.write(gbxml_str)
+            temp_file.flush()
+            gbxml_file = temp_file.name
+
     # get the version translator
     assert os.path.isfile(gbxml_file), 'No file was found at: {}.'.format(gbxml_file)
     if (sys.version_info < (3, 0)):
@@ -665,4 +698,11 @@ def model_from_gbxml_file(gbxml_file, reset_properties=False, print_warnings=Fal
         if os_vector_len(os_surfaces) == 0:
             os_space.remove()
     # translate the OpenStudio Model to Honeybee
-    return model_from_openstudio(os_model, reset_properties)
+    hb_model = model_from_openstudio(os_model, reset_properties)
+
+    # put back any zone IDs that matched room IDs and return the model
+    if has_id_match:
+        for room in hb_model.rooms:
+            if room.zone == '{} Zone'.format(room.identifier):
+                room.zone = None  # room is its own zone in the gbXML
+    return hb_model
