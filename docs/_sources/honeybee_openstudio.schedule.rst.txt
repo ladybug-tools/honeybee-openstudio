@@ -1,0 +1,7 @@
+honeybee\_openstudio.schedule module
+====================================
+
+.. automodule:: honeybee_openstudio.schedule
+   :members:
+   :undoc-members:
+   :show-inheritance:
