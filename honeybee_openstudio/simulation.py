@@ -110,6 +110,22 @@ def design_day_to_openstudio(design_day, os_model):
     return os_des_day
 
 
+def location_to_openstudio(location, os_model):
+    """Convert Ladybug Location to OpenStudio Site.
+
+    Args:
+        location: A Ladybug Location to be translated to OpenStudio.
+        os_model: The OpenStudio Model object.
+    """
+    os_site = os_model.getSite()
+    os_site.setLatitude(location.latitude)
+    os_site.setLongitude(location.latitude)
+    os_site.setTimeZone(location.time_zone)
+    os_site.setElevation(location.elevation)
+    os_site.setKeepSiteLocationInformation(True)
+    return os_site
+
+
 def sizing_to_openstudio(sizing, os_model):
     """Convert Honeybee SizingParameter to OpenStudio SizingParameters.
 
@@ -279,4 +295,6 @@ def simulation_parameter_to_openstudio(sim_par, seed_model=None):
     # set the water mains to use the EPW temperature
     os_water_mains = os_model.getSiteWaterMainsTemperature()
     os_water_mains.setCalculationMethod('CorrelationFromWeatherFile')
+    if sim_par.location is not None:
+        location_to_openstudio(sim_par.location, os_model)
     return os_model
