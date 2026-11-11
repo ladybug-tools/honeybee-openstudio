@@ -7,7 +7,7 @@
 
 Honeybee extension for translation to/from OpenStudio.
 
-Specifically, this package extends [honeybee-core](https://github.com/ladybug-tools/honeybee-core) and [honeybee-energy](https://github.com/ladybug-tools/honeybee-energy) to perform translations to/from OpenStudio using the [OpenStudio](https://github.com/NREL/OpenStudio) SDK.
+Specifically, this package extends [honeybee-core](https://github.com/ladybug-tools/honeybee-core) and [honeybee-energy](https://github.com/ladybug-tools/honeybee-energy) to perform translations to/from OpenStudio using the [OpenStudio](https://github.com/NREL/OpenStudio) Python SDK.
 
 ## Installation
 
