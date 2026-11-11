@@ -202,7 +202,7 @@ def hot_water_to_openstudio(hot_water, room, os_model):
         shw_schedule = shw_schedule.get()
         os_shw.setFlowRateFractionSchedule(shw_schedule)
     # assign sensible fraction if it exists
-    sens_fract = round(hot_water.sensible_fraction)
+    sens_fract = round(hot_water.sensible_fraction, 3)
     sens_sch_name = '{} Hot Water Sensible Fraction'.format(sens_fract)
     sens_fract_sch = _create_constant_schedule(sens_sch_name, sens_fract, os_model)
     os_shw_def.setSensibleFractionSchedule(sens_fract_sch)
