@@ -119,7 +119,7 @@ def location_to_openstudio(location, os_model):
     """
     os_site = os_model.getSite()
     os_site.setLatitude(location.latitude)
-    os_site.setLongitude(location.latitude)
+    os_site.setLongitude(location.longitude)
     os_site.setTimeZone(location.time_zone)
     os_site.setElevation(location.elevation)
     os_site.setKeepSiteLocationInformation(True)
